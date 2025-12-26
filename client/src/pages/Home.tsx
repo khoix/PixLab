@@ -3,10 +3,9 @@ import { useGame } from '../lib/store';
 import { useLocation } from 'wouter';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import generatedImage from '@assets/generated_images/pixel_art_cyberpunk_greek_temple.png';
 
 export default function Home() {
-  const { state, dispatch, saveGame } = useGame();
+  const { state, dispatch } = useGame();
   const [, setLocation] = useLocation();
   const [uidInput, setUidInput] = React.useState('');
 
@@ -18,25 +17,21 @@ export default function Home() {
   const handleLoad = () => {
     if (uidInput.length > 0) {
         dispatch({ type: 'SET_UID', payload: uidInput });
-        // In a real app, we'd fetch the save from server here.
-        // For now, we assume local storage logic in Store handles it or we're just setting UID.
         handleStart();
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background with CRT effect */}
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-purple-950 via-black to-cyan-950">
+      {/* Animated background grid */}
       <div 
-        className="absolute inset-0 z-0 opacity-40" 
+        className="absolute inset-0 z-0 opacity-20" 
         style={{ 
-            backgroundImage: `url(${generatedImage})`, 
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            imageRendering: 'pixelated'
+            backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(0, 255, 245, 0.05) 25%, rgba(0, 255, 245, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 245, 0.05) 75%, rgba(0, 255, 245, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 245, 0.05) 25%, rgba(0, 255, 245, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 245, 0.05) 75%, rgba(0, 255, 245, 0.05) 76%, transparent 77%, transparent)',
+            backgroundSize: '50px 50px',
         }}
       />
-      <div className="absolute inset-0 bg-black/60 z-0" />
+      <div className="absolute inset-0 bg-black/40 z-0" />
       <div className="crt absolute inset-0 pointer-events-none z-50" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
