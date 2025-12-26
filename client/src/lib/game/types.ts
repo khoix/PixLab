@@ -1,8 +1,8 @@
 export type Position = { x: number; y: number };
 
-export type TileType = 'wall' | 'floor' | 'exit' | 'start' | 'shop' | 'boss';
+export type TileType = 'wall' | 'floor' | 'exit' | 'start';
 
-export type EntityType = 'player' | 'enemy' | 'item' | 'boss_enemy';
+export type EntityType = 'player' | 'enemy' | 'boss_enemy' | 'item';
 
 export interface Item {
   id: string;
@@ -27,7 +27,7 @@ export interface Entity {
   hp: number;
   maxHp: number;
   damage: number;
-  sprite?: string; // Color or sprite key
+  isBoss?: boolean;
 }
 
 export interface Level {
@@ -39,6 +39,8 @@ export interface Level {
   exitPos: Position;
   startPos: Position;
   levelNumber: number;
+  isBoss: boolean;
+  isShop: boolean;
 }
 
 export interface PlayerStats {
@@ -46,7 +48,7 @@ export interface PlayerStats {
   maxHp: number;
   coins: number;
   damage: number;
-  speed: number; // tiles per second or movement delay
+  speed: number;
   visionRadius: number;
 }
 
@@ -62,6 +64,7 @@ export interface GameState {
     utility: Item | null;
   };
   activeMods: string[];
+  bossDrops: Item[]; // Persistent legendary items
   settings: {
     musicVolume: number;
     sfxVolume: number;

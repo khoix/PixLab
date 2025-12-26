@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { GameState, Item, PlayerStats } from './game/types';
 import { INITIAL_STATS } from './game/constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +19,8 @@ type GameAction =
   | { type: 'EQUIP_ITEM'; payload: { slot: 'weapon' | 'armor' | 'utility'; item: Item } }
   | { type: 'NEXT_LEVEL' }
   | { type: 'SET_MODS'; payload: string[] }
-  | { type: 'SET_UID'; payload: string };
+  | { type: 'SET_UID'; payload: string }
+  | { type: 'ADD_BOSS_DROP'; payload: Item };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -37,6 +38,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       inventory: [],
       loadout: { weapon: null, armor: null, utility: null },
       activeMods: [],
+      bossDrops: [],
       settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left' },
     };
   });
@@ -66,8 +68,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case 'SET_UID':
           newState.uid = action.payload;
           break;
+        case 'ADD_BOSS_DROP':
+          newState.bossDrops = [...prev.bossDrops, action.payload];
+          break;
       }
-      // Auto-save on state change
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       return newState;
     });
@@ -75,13 +79,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetGame = () => {
     const newState: GameState = {
-      uid: state.uid, // Keep UID
+      uid: state.uid,
       screen: 'lobby',
       currentLevel: 1,
       stats: { ...INITIAL_STATS },
       inventory: [],
       loadout: { weapon: null, armor: null, utility: null },
-      activeMods: [],
+      activeMods: state.activeMods,
+      bossDrops: state.bossDrops,
       settings: state.settings,
     };
     setState(newState);
