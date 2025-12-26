@@ -1,0 +1,79 @@
+import React from 'react';
+import { useGame } from '../lib/store';
+import { useLocation } from 'wouter';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import generatedImage from '@assets/generated_images/pixel_art_cyberpunk_greek_temple.png';
+
+export default function Home() {
+  const { state, dispatch, saveGame } = useGame();
+  const [, setLocation] = useLocation();
+  const [uidInput, setUidInput] = React.useState('');
+
+  const handleStart = () => {
+    dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
+    setLocation('/play');
+  };
+
+  const handleLoad = () => {
+    if (uidInput.length > 0) {
+        dispatch({ type: 'SET_UID', payload: uidInput });
+        // In a real app, we'd fetch the save from server here.
+        // For now, we assume local storage logic in Store handles it or we're just setting UID.
+        handleStart();
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Background with CRT effect */}
+      <div 
+        className="absolute inset-0 z-0 opacity-40" 
+        style={{ 
+            backgroundImage: `url(${generatedImage})`, 
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            imageRendering: 'pixelated'
+        }}
+      />
+      <div className="absolute inset-0 bg-black/60 z-0" />
+      <div className="crt absolute inset-0 pointer-events-none z-50" />
+
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
+        <div className="text-center space-y-4">
+            <h1 className="text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
+                NEON<br/><span className="text-secondary">OLYMPUS</span>
+            </h1>
+            <p className="text-muted-foreground font-mono text-lg tracking-widest">ROGUE PROTOCOL // V.1.0</p>
+        </div>
+
+        <div className="w-full space-y-4 mt-8">
+            <Button 
+                className="w-full h-14 text-xl font-pixel bg-primary text-black hover:bg-primary/80 pixel-corners shadow-[0_0_20px_rgba(0,255,245,0.4)] transition-all hover:scale-105"
+                onClick={handleStart}
+            >
+                START RUN
+            </Button>
+            
+            <div className="flex gap-2">
+                <Input 
+                    placeholder="ENTER OPERATOR ID" 
+                    className="font-mono bg-black/50 border-white/20 text-white placeholder:text-white/30"
+                    value={uidInput}
+                    onChange={(e) => setUidInput(e.target.value)}
+                />
+                <Button variant="outline" className="font-pixel text-xs border-white/20 hover:bg-white/10" onClick={handleLoad}>
+                    LOAD
+                </Button>
+            </div>
+        </div>
+
+        <div className="mt-8 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full">
+            <p className="text-xs text-center text-muted-foreground font-mono">
+                OPERATOR ID: <span className="text-primary select-all">{state.uid.slice(0, 8)}...</span>
+            </p>
+        </div>
+      </div>
+    </div>
+  );
+}
