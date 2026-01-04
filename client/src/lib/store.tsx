@@ -1,37 +1,130 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import { GameState, Item, PlayerStats } from './game/types';
 import { INITIAL_STATS } from './game/constants';
-import { v4 as uuidv4 } from 'uuid';
+import { calculateSellValue } from './game/items';
+import { encodeGameState, decodeGameState } from './game/codec';
 
-const STORAGE_KEY = 'neon_olympus_save';
+const STORAGE_KEY = 'pixel_labyrinth_save';
+const SAVE_DEBOUNCE_MS = 500; // Debounce localStorage writes by 500ms
+
+// Helper function to clear vendor items for a specific level
+const clearVendorItems = (level: number) => {
+  try {
+    const storageKey = `vendor_items_level_${level}`;
+    localStorage.removeItem(storageKey);
+  } catch (error) {
+    console.warn('Failed to clear vendor items from localStorage:', error);
+  }
+};
+
+// Helper function to clear all vendor items (for game over/reset)
+const clearAllVendorItems = () => {
+  try {
+    // Clear vendor items for all possible levels (reasonable range)
+    for (let level = 1; level <= 100; level++) {
+      const storageKey = `vendor_items_level_${level}`;
+      localStorage.removeItem(storageKey);
+    }
+  } catch (error) {
+    console.warn('Failed to clear all vendor items from localStorage:', error);
+  }
+};
 
 interface GameContextType {
   state: GameState;
   dispatch: (action: GameAction) => void;
   resetGame: () => void;
   saveGame: () => void;
+  loadFromCode: (code: string) => boolean;
+  getCode: () => string;
 }
 
-type GameAction = 
+export type GameAction = 
   | { type: 'SET_SCREEN'; payload: GameState['screen'] }
   | { type: 'UPDATE_STATS'; payload: Partial<PlayerStats> }
   | { type: 'ADD_ITEM'; payload: Item }
   | { type: 'EQUIP_ITEM'; payload: { slot: 'weapon' | 'armor' | 'utility'; item: Item } }
+  | { type: 'UNEQUIP_ITEM'; payload: { slot: 'weapon' | 'armor' | 'utility' } }
+  | { type: 'USE_CONSUMABLE'; payload: { itemId: string } }
+  | { type: 'SELL_ITEM'; payload: { itemId: string } }
   | { type: 'NEXT_LEVEL' }
+  | { type: 'SET_CURRENT_LEVEL'; payload: number }
   | { type: 'SET_MODS'; payload: string[] }
-  | { type: 'SET_UID'; payload: string }
-  | { type: 'ADD_BOSS_DROP'; payload: Item };
+  | { type: 'LOAD_STATE'; payload: Partial<GameState> }
+  | { type: 'ADD_BOSS_DROP'; payload: Item }
+  | { type: 'CLEAR_BOSS_DROPS' }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<GameState['settings']> }
+  | { type: 'UNLOCK_COMPENDIUM_CARD'; payload: import('./game/types').MobSubtype };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<GameState>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingStateRef = useRef<GameState | null>(null);
+
+  // Debounced save function
+  const debouncedSave = (stateToSave: GameState) => {
+    pendingStateRef.current = stateToSave;
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
-    return {
-      uid: uuidv4(),
+
+    saveTimeoutRef.current = setTimeout(() => {
+      if (pendingStateRef.current) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(pendingStateRef.current));
+          pendingStateRef.current = null;
+        } catch (error) {
+          console.warn('Failed to save game state to localStorage:', error);
+        }
+      }
+    }, SAVE_DEBOUNCE_MS);
+  };
+
+  const [state, setState] = useState<GameState>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Validate parsed data structure
+        if (parsed && typeof parsed === 'object' && parsed.stats && parsed.currentLevel !== undefined) {
+          // Ensure all required properties exist with defaults
+          const stateWithCode: GameState = {
+            uid: '',
+            screen: parsed.screen || 'title',
+            currentLevel: parsed.currentLevel ?? 1,
+            stats: parsed.stats || { ...INITIAL_STATS },
+            inventory: Array.isArray(parsed.inventory) ? parsed.inventory : [],
+            loadout: parsed.loadout || { weapon: null, armor: null, utility: null },
+            activeMods: Array.isArray(parsed.activeMods) ? parsed.activeMods : [],
+            bossDrops: Array.isArray(parsed.bossDrops) ? parsed.bossDrops : [],
+            compendium: Array.isArray(parsed.compendium) ? parsed.compendium : [],
+            settings: {
+              musicVolume: parsed.settings?.musicVolume ?? 0.5,
+              sfxVolume: parsed.settings?.sfxVolume ?? 0.5,
+              joystickPosition: parsed.settings?.joystickPosition ?? 'left',
+              mobileControlType: parsed.settings?.mobileControlType ?? 'joystick',
+            },
+          };
+          // Regenerate code from saved state to ensure it's up to date
+          try {
+            stateWithCode.uid = encodeGameState(stateWithCode);
+          } catch (encodeError) {
+            console.warn('Failed to encode saved state, using default:', encodeError);
+            // Fall through to default state
+          }
+          if (stateWithCode.uid) {
+            return stateWithCode;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load save data from localStorage:', error);
+      // Fall through to default state
+    }
+    const defaultState: GameState = {
+      uid: '', // Will be set after creation
       screen: 'title',
       currentLevel: 1,
       stats: { ...INITIAL_STATS },
@@ -39,8 +132,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loadout: { weapon: null, armor: null, utility: null },
       activeMods: [],
       bossDrops: [],
-      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left' },
+      compendium: [],
+      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'joystick' },
     };
+    // Generate code from the default state
+    try {
+      defaultState.uid = encodeGameState(defaultState);
+    } catch (encodeError) {
+      console.error('Failed to encode default state:', encodeError);
+      // Use empty string as fallback
+      defaultState.uid = '';
+    }
+    return defaultState;
   });
 
   const dispatch = (action: GameAction) => {
@@ -49,37 +152,177 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       switch (action.type) {
         case 'SET_SCREEN':
           newState.screen = action.payload;
+          // Update code when screen changes
+          newState.uid = encodeGameState(newState);
+          // Save immediately on screen changes (important state transitions)
+          debouncedSave(newState);
           break;
         case 'UPDATE_STATS':
           newState.stats = { ...prev.stats, ...action.payload };
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
           break;
         case 'ADD_ITEM':
           newState.inventory = [...prev.inventory, action.payload];
+          // Auto-equip if slot is empty
+          if (action.payload.type === 'weapon' && !prev.loadout.weapon) {
+            newState.loadout = { ...prev.loadout, weapon: action.payload };
+          } else if (action.payload.type === 'armor' && !prev.loadout.armor) {
+            newState.loadout = { ...prev.loadout, armor: action.payload };
+          } else if (action.payload.type === 'utility' && !prev.loadout.utility) {
+            newState.loadout = { ...prev.loadout, utility: action.payload };
+          }
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
           break;
         case 'EQUIP_ITEM':
           newState.loadout = { ...prev.loadout, [action.payload.slot]: action.payload.item };
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
+          break;
+        case 'UNEQUIP_ITEM':
+          newState.loadout = { ...prev.loadout, [action.payload.slot]: null };
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
+          break;
+        case 'USE_CONSUMABLE':
+          const consumable = prev.inventory.find(item => item.id === action.payload.itemId);
+          if (consumable && consumable.type === 'consumable' && consumable.stats) {
+            // Apply consumable effects
+            const updates: Partial<PlayerStats> = {};
+            if (consumable.stats.heal) {
+              updates.hp = Math.min(prev.stats.maxHp, prev.stats.hp + consumable.stats.heal);
+            }
+            if (consumable.stats.speed) {
+              // Speed boost is temporary - could be implemented as a temporary effect
+              // For now, we'll just remove the item after use
+            }
+            if (Object.keys(updates).length > 0) {
+              newState.stats = { ...prev.stats, ...updates };
+            }
+            // Remove consumable from inventory
+            newState.inventory = prev.inventory.filter(item => item.id !== action.payload.itemId);
+            newState.uid = encodeGameState(newState);
+            debouncedSave(newState);
+          }
+          break;
+        case 'SELL_ITEM':
+          const itemToSell = prev.inventory.find(item => item.id === action.payload.itemId);
+          if (itemToSell) {
+            // Check if item is equipped - unequip it first
+            let newLoadout = { ...prev.loadout };
+            if (prev.loadout.weapon?.id === itemToSell.id) {
+              newLoadout.weapon = null;
+            } else if (prev.loadout.armor?.id === itemToSell.id) {
+              newLoadout.armor = null;
+            } else if (prev.loadout.utility?.id === itemToSell.id) {
+              newLoadout.utility = null;
+            }
+            newState.loadout = newLoadout;
+            
+            // Calculate sell value based on rarity and stats
+            const sellValue = calculateSellValue(itemToSell);
+            
+            // Remove item from inventory and add coins
+            newState.inventory = prev.inventory.filter(item => item.id !== action.payload.itemId);
+            newState.stats = { ...prev.stats, coins: prev.stats.coins + sellValue };
+            newState.uid = encodeGameState(newState);
+            debouncedSave(newState);
+          }
           break;
         case 'NEXT_LEVEL':
+          // Clear vendor items for the previous level when moving to a new sector
+          clearVendorItems(prev.currentLevel);
           newState.currentLevel += 1;
+          newState.uid = encodeGameState(newState);
+          // Save immediately on level changes
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+          } catch (error) {
+            console.warn('Failed to save game state to localStorage:', error);
+          }
+          break;
+        case 'SET_CURRENT_LEVEL':
+          newState.currentLevel = action.payload;
+          newState.uid = encodeGameState(newState);
+          // Save immediately on level changes
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+          } catch (error) {
+            console.warn('Failed to save game state to localStorage:', error);
+          }
           break;
         case 'SET_MODS':
           newState.activeMods = action.payload;
+          // Update code when mods change
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
           break;
-        case 'SET_UID':
-          newState.uid = action.payload;
+        case 'LOAD_STATE':
+          // Load state from decoded code
+          Object.assign(newState, action.payload);
+          // Regenerate code from loaded state
+          newState.uid = encodeGameState(newState);
+          // Save immediately when loading from code
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+          } catch (error) {
+            console.warn('Failed to save game state to localStorage:', error);
+          }
           break;
         case 'ADD_BOSS_DROP':
           newState.bossDrops = [...prev.bossDrops, action.payload];
+          // Also add to inventory so it can be equipped/used
+          newState.inventory = [...prev.inventory, action.payload];
+          // Auto-equip if slot is empty
+          if (action.payload.type === 'weapon' && !prev.loadout.weapon) {
+            newState.loadout = { ...prev.loadout, weapon: action.payload };
+          } else if (action.payload.type === 'armor' && !prev.loadout.armor) {
+            newState.loadout = { ...prev.loadout, armor: action.payload };
+          } else if (action.payload.type === 'utility' && !prev.loadout.utility) {
+            newState.loadout = { ...prev.loadout, utility: action.payload };
+          }
+          newState.uid = encodeGameState(newState);
+          // Save immediately on boss drops (important items)
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+          } catch (error) {
+            console.warn('Failed to save game state to localStorage:', error);
+          }
+          break;
+        case 'CLEAR_BOSS_DROPS':
+          newState.bossDrops = [];
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
+          break;
+        case 'UPDATE_SETTINGS':
+          newState.settings = { ...prev.settings, ...action.payload };
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
+          break;
+        case 'UNLOCK_COMPENDIUM_CARD':
+          // Only add if not already unlocked
+          if (!prev.compendium.includes(action.payload)) {
+            newState.compendium = [...prev.compendium, action.payload];
+            newState.uid = encodeGameState(newState);
+            // Save immediately on compendium unlock (important progress)
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+            } catch (error) {
+              console.warn('Failed to save game state to localStorage:', error);
+            }
+          }
           break;
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       return newState;
     });
   };
 
   const resetGame = () => {
+    // Clear all vendor items on game reset
+    clearAllVendorItems();
     const newState: GameState = {
-      uid: state.uid,
+      uid: '', // Will be set after encoding
       screen: 'lobby',
       currentLevel: 1,
       stats: { ...INITIAL_STATS },
@@ -87,18 +330,52 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loadout: { weapon: null, armor: null, utility: null },
       activeMods: state.activeMods,
       bossDrops: state.bossDrops,
+      compendium: state.compendium, // Preserve compendium across resets
       settings: state.settings,
     };
+    newState.uid = encodeGameState(newState);
     setState(newState);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    } catch (error) {
+      console.warn('Failed to save game state to localStorage:', error);
+    }
+  };
+
+  const loadFromCode = (code: string): boolean => {
+    const decoded = decodeGameState(code);
+    if (decoded) {
+      dispatch({ type: 'LOAD_STATE', payload: decoded });
+      return true;
+    }
+    return false;
+  };
+
+  const getCode = (): string => {
+    return encodeGameState(state);
   };
 
   const saveGame = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    // Force immediate save, clearing any pending debounced save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    try {
+      // Ensure code is up to date before saving
+      const stateWithCode = { ...state };
+      stateWithCode.uid = encodeGameState(stateWithCode);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithCode));
+      pendingStateRef.current = null;
+      // Update state to reflect the new code
+      setState(stateWithCode);
+    } catch (error) {
+      console.warn('Failed to save game state to localStorage:', error);
+    }
   };
 
   return (
-    <GameContext.Provider value={{ state, dispatch, resetGame, saveGame }}>
+    <GameContext.Provider value={{ state, dispatch, resetGame, saveGame, loadFromCode, getCode }}>
       {children}
     </GameContext.Provider>
   );

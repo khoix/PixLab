@@ -1,0 +1,97 @@
+/* 
+ * Web-Specific Styles
+ * Optimized for desktop browsers (min-width: 768px)
+ * These styles enhance the desktop experience with custom scrollbars,
+ * hover effects, and desktop-optimized layouts.
+ */
+
+@media (min-width: 768px) {
+  /* Custom Scrollbar Styling - Cyberpunk Theme */
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(240 20% 8%);
+    border: 1px solid hsl(240 20% 20%);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(240 20% 20%);
+    border: 1px solid hsl(180 100% 50% / 0.3);
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(180 100% 50% / 0.4);
+    border-color: hsl(180 100% 50% / 0.6);
+    box-shadow: 0 0 8px hsl(180 100% 50% / 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: hsl(180 100% 50% / 0.6);
+    border-color: hsl(180 100% 50%);
+    box-shadow: 0 0 12px hsl(180 100% 50% / 0.8);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: hsl(240 20% 8%);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(180 100% 50% / 0.4) hsl(240 20% 8%);
+  }
+
+  *:hover {
+    scrollbar-color: hsl(180 100% 50% / 0.6) hsl(240 20% 8%);
+  }
+
+  /* Enhanced hover effects for desktop */
+  /* These complement Tailwind's hover: classes but provide additional polish */
+  
+  /* Smooth transitions for interactive elements */
+  button, a, [role="button"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* Desktop-optimized focus states for keyboard navigation */
+  *:focus-visible {
+    outline-offset: 2px;
+  }
+
+  /* Lobby Page Stats - Desktop Optimizations */
+  /* Increase line spacing for stats on desktop */
+  /* Override space-y-4 (1rem) with larger spacing */
+  .lobby-page .grid > div:first-child [class*="CardContent"].space-y-4 {
+    --tw-space-y-reverse: 0;
+  }
+
+  .lobby-page .grid > div:first-child .hidden.md\:block > div:not(:first-child) {
+    margin-top: 1.5rem !important; /* Increased from 1rem (space-y-4) to 1.5rem */
+  }
+
+  /* Ensure stats use full available width */
+  .lobby-page .grid > div:first-child .hidden.md\:block {
+    width: 100%;
+  }
+
+  .lobby-page .grid > div:first-child .hidden.md\:block > div {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Vendor Station - Text sizes for price and stats on web */
+  /* Prices are already set to text-2xl in component */
+  /* Stats are set to 1.25rem inline style */
+  /* Rarity is set to text-sm in component */
+
+  /* Vendor Station - Rotate insufficient funds text on web only */
+  .insufficient-funds-text {
+    transform: rotate(-8deg);
+  }
+}
+
