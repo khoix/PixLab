@@ -1,4 +1,4 @@
-# PixLab
+# Pixel Labyrinth
 
 A pixel-art cyberpunk mythology roguelike maze crawler. Navigate procedurally generated mazes, battle mythological bosses like Zeus, Hades, and Ares, collect legendary weapons and armor, and progress through endless levels. Features mobile-friendly touch controls, inventory management, and a compendium system to track defeated enemies.
 
