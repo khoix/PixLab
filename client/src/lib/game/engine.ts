@@ -1,8 +1,15 @@
-import { Level, TileType, Position, Entity, Item, MobSubtype } from './types';
+import { Level, TileType, Position, Entity, Item, MobSubtype, PlayerStats, GameState } from './types';
 import { SHOP_INTERVAL, BOSS_INTERVAL, MOB_TYPES } from './constants';
 import { generateItem } from './items';
+import { calculateScaling, calculatePlayerPower } from './scaling';
 
-export const generateLevel = (levelNum: number, width: number, height: number): Level => {
+export const generateLevel = (
+  levelNum: number,
+  width: number,
+  height: number,
+  playerStats?: PlayerStats,
+  loadout?: GameState['loadout']
+): Level => {
   // Determine level type
   const isBoss = levelNum % BOSS_INTERVAL === 0 && levelNum > 0;
   const isShop = levelNum % SHOP_INTERVAL === 0 && !isBoss;
@@ -170,10 +177,73 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
     return validPositions[Math.floor(Math.random() * validPositions.length)];
   };
   
+  // Helper function to get available mobs based on progressive introduction
+  // Introduces one new mob every 4 normal levels (excluding shops and bosses)
+  // Mobs introduced in difficulty order: swarm/drone → phase → moth → sniper → charger → tracker → turret → guardian
+  function getAvailableMobsForLevel(levelNum: number, isBoss: boolean, isShop: boolean): typeof MOB_TYPES[0][] {
+    // Cerberus is boss-only, exclude from normal progression
+    const normalMobs = MOB_TYPES.filter(mob => mob.subtype !== 'cerberus');
+    
+    // Count only normal combat levels (exclude shops and bosses)
+    let normalLevelCount = 0;
+    for (let i = 1; i <= levelNum; i++) {
+      const isBossLevel = i % BOSS_INTERVAL === 0 && i > 0;
+      const isShopLevel = i % SHOP_INTERVAL === 0 && !isBossLevel;
+      if (!isBossLevel && !isShopLevel) {
+        normalLevelCount++;
+      }
+    }
+    
+    // Determine which mobs should be available based on progression
+    // Level 1: swarm, drone (starter mobs)
+    // Every 4 normal levels introduces a new mob in difficulty order
+    const availableMobs: typeof MOB_TYPES[0][] = [];
+    
+    // Always available from start
+    if (normalLevelCount >= 1) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'swarm' || m.subtype === 'drone'));
+    }
+    
+    // Progressive introduction every 4 normal levels
+    // Level 5 (normal level 4): phase
+    if (normalLevelCount >= 4) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'phase'));
+    }
+    // Level 9 (normal level 7): moth
+    if (normalLevelCount >= 7) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'moth'));
+    }
+    // Level 13 (normal level 10): sniper
+    if (normalLevelCount >= 10) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'sniper'));
+    }
+    // Level 17 (normal level 13): charger
+    if (normalLevelCount >= 13) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'charger'));
+    }
+    // Level 21 (normal level 16): tracker
+    if (normalLevelCount >= 16) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'tracker'));
+    }
+    // Level 25 (normal level 19): turret
+    if (normalLevelCount >= 19) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'turret'));
+    }
+    // Level 29 (normal level 22): guardian
+    if (normalLevelCount >= 22) {
+      availableMobs.push(...normalMobs.filter(m => m.subtype === 'guardian'));
+    }
+    
+    // Remove duplicates
+    const uniqueMobs = Array.from(new Map(availableMobs.map(m => [m.subtype, m])).values());
+    
+    return uniqueMobs;
+  }
+  
   // Helper function to select mob type based on level and weights
-  const selectMobType = (levelNum: number): typeof MOB_TYPES[0] | null => {
-    // Filter mobs that can spawn at this level
-    const availableMobs = MOB_TYPES.filter((mob: typeof MOB_TYPES[0]) => levelNum >= mob.minLevel);
+  const selectMobType = (levelNum: number, isBoss: boolean, isShop: boolean): typeof MOB_TYPES[0] | null => {
+    // Get available mobs based on progressive introduction
+    const availableMobs = getAvailableMobsForLevel(levelNum, isBoss, isShop);
     if (availableMobs.length === 0) return null;
     
     // Calculate total weight
@@ -198,13 +268,25 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
       const bossTypes: MobSubtype[] = ['boss_zeus', 'boss_hades', 'boss_ares'];
       const bossType = bossTypes[(Math.floor(levelNum / BOSS_INTERVAL) - 1) % bossTypes.length];
       
+      // Calculate boss scaling
+      const bossScaling = calculateScaling({
+        level: levelNum,
+        sectorType: 'boss',
+        mobArchetype: 'boss',
+        playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
+        useAdaptive: !!(playerStats && loadout)
+      });
+      
+      const baseHp = 150 + levelNum * 15;
+      const baseDamage = 20 + levelNum * 2;
+      
       entities.push({
         id: 'boss-1',
         type: 'boss_enemy',
         pos: bossPos,
-        hp: 150 + levelNum * 15,
-        maxHp: 150 + levelNum * 15,
-        damage: 20 + levelNum * 2,
+        hp: Math.floor(baseHp * bossScaling.hpMultiplier),
+        maxHp: Math.floor(baseHp * bossScaling.hpMultiplier),
+        damage: Math.floor(baseDamage * bossScaling.dmgMultiplier),
         isBoss: true,
         mobSubtype: bossType,
         moveSpeed: 0.8,
@@ -217,6 +299,62 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
         chargeDirection: bossType === 'boss_ares' ? null : undefined, // Initialize for Ares boss
       });
     }
+    
+    // Spawn Cerberus alongside boss (1-2 entities) at levels 8+
+    if (levelNum >= 8) {
+      const cerberusMob = MOB_TYPES.find(m => m.subtype === 'cerberus');
+      if (cerberusMob) {
+        const numCerberus = Math.floor(Math.random() * 2) + 1; // 1-2 Cerberus
+        let cerberusCounter = 0;
+        
+        for (let i = 0; i < numCerberus; i++) {
+          // Find position near boss but not too close
+          const cerberusPos = findValidFloorTile(width / 2, height / 2, 8);
+          if (cerberusPos) {
+            // Calculate Cerberus scaling (boss sector, cerberus archetype)
+            const cerberusScaling = calculateScaling({
+              level: levelNum,
+              sectorType: 'boss',
+              mobArchetype: 'cerberus',
+              playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
+              useAdaptive: !!(playerStats && loadout)
+            });
+            
+            const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
+            const baseHp = cerberusMob.baseHp + levelNum * cerberusMob.hpPerLevel;
+            const baseDamage = cerberusMob.baseDamage + levelNum * cerberusMob.damagePerLevel;
+            const hp = Math.floor(baseHp * cerberusScaling.hpMultiplier * modifiers.enemyHp);
+            const damage = Math.floor(baseDamage * cerberusScaling.dmgMultiplier);
+            
+            // Scale speed: 1.05 + 0.02/level
+            const moveSpeed = 1.05 + (levelNum * 0.02);
+            // Scale attack cooldown: 2.2s - 0.02s/level (min 1.4s) = 2200ms - 20ms/level (min 1400ms)
+            const attackCooldown = Math.max(1400, 2200 - (levelNum * 20));
+            
+            const cerberusEntity: Entity = {
+              id: `cerberus-${cerberusCounter++}`,
+              type: 'enemy',
+              pos: cerberusPos,
+              hp: hp,
+              maxHp: hp,
+              damage: damage,
+              mobSubtype: 'cerberus',
+              moveSpeed: moveSpeed,
+              attackCooldown: attackCooldown,
+              lastAttackTime: 0,
+              canPhase: false,
+              isRanged: false,
+              range: 1,
+              isStationary: false,
+              biteComboCount: 0,
+              lastBiteTime: 0,
+            };
+            
+            entities.push(cerberusEntity);
+          }
+        }
+      }
+    }
   } else if (!isShop) {
     // Normal enemies - prevent infinite loop with max attempts
     // Number of enemies scales with level, with more variety at higher levels
@@ -226,7 +364,7 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
     let enemyCounter = 0;
     
     for (let i = 0; i < numEnemies && attempts < maxAttempts; i++) {
-      const mobType = selectMobType(levelNum);
+      const mobType = selectMobType(levelNum, isBoss, isShop);
       if (!mobType) break; // No valid mob types available
       
       // For swarm mobs, spawn 2-3 at once
@@ -243,11 +381,22 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
         }
         
         if (enemyPos) {
-          const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
-          const hp = Math.floor((mobType.baseHp + levelNum * mobType.hpPerLevel) * modifiers.enemyHp);
-          const damage = Math.floor(mobType.baseDamage + levelNum * mobType.damagePerLevel);
+          // Calculate scaling for this mob
+          const scaling = calculateScaling({
+            level: levelNum,
+            sectorType: 'normal',
+            mobArchetype: mobType.subtype,
+            playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
+            useAdaptive: !!(playerStats && loadout)
+          });
           
-          entities.push({
+          const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
+          const baseHp = mobType.baseHp + levelNum * mobType.hpPerLevel;
+          const baseDamage = mobType.baseDamage + levelNum * mobType.damagePerLevel;
+          const hp = Math.floor(baseHp * scaling.hpMultiplier * modifiers.enemyHp);
+          const damage = Math.floor(baseDamage * scaling.dmgMultiplier);
+          
+          const entity: Entity = {
             id: `enemy-${enemyCounter++}`,
             type: 'enemy',
             pos: enemyPos,
@@ -263,7 +412,35 @@ export const generateLevel = (levelNum: number, width: number, height: number): 
             range: mobType.range,
             isStationary: mobType.isStationary,
             chargeDirection: null,
-          });
+          };
+          
+          // Initialize phase mob roaming properties
+          if (mobType.subtype === 'phase') {
+            entity.roamDirection = null;
+            entity.lastRoamChange = 0;
+          }
+          
+          // Initialize tracker stalking properties
+          if (mobType.subtype === 'tracker') {
+            entity.isStalking = true;
+            entity.pounceDirection = null;
+            // Scale speed: 1.55 + 0.04/level
+            entity.moveSpeed = 1.55 + (levelNum * 0.04);
+            // Scale attack cooldown: 1.6s - 0.015s/level (min 1.05s) = 1600ms - 15ms/level (min 1050ms)
+            entity.attackCooldown = Math.max(1050, 1600 - (levelNum * 15));
+          }
+          
+          // Initialize moth orbiting properties
+          if (mobType.subtype === 'moth') {
+            entity.orbitAngle = 0; // Will be set by behavior code based on position
+            entity.blinkCooldown = 0;
+            // Scale speed: 1.35 + 0.03/level
+            entity.moveSpeed = 1.35 + (levelNum * 0.03);
+            // Scale attack cooldown: 1.25s - 0.01s/level (min 0.85s) = 1250ms - 10ms/level (min 850ms)
+            entity.attackCooldown = Math.max(850, 1250 - (levelNum * 10));
+          }
+          
+          entities.push(entity);
         }
         attempts++;
       }
@@ -414,8 +591,26 @@ export const getAttackablePositions = (pos: Position, weaponBaseName: string | n
         }
       }
     }
+  } else if (weaponName === 'axe') {
+    // Axe: adjacent tiles including diagonals
+    const adjacent = [
+      { x: baseX, y: baseY - 1 },      // North
+      { x: baseX, y: baseY + 1 },      // South
+      { x: baseX - 1, y: baseY },      // West
+      { x: baseX + 1, y: baseY },      // East
+      { x: baseX - 1, y: baseY - 1 }, // Northwest
+      { x: baseX + 1, y: baseY - 1 }, // Northeast
+      { x: baseX - 1, y: baseY + 1 }, // Southwest
+      { x: baseX + 1, y: baseY + 1 }, // Southeast
+    ];
+    
+    for (const adj of adjacent) {
+      if (adj.x >= 0 && adj.x < level.width && adj.y >= 0 && adj.y < level.height) {
+        positions.push({ x: adj.x, y: adj.y });
+      }
+    }
   } else {
-    // Melee weapons (Sword, Axe, Dagger, Mace): adjacent tiles only
+    // Melee weapons (Sword, Dagger, Mace): adjacent tiles only (no diagonals)
     const adjacent = [
       { x: baseX, y: baseY - 1 },
       { x: baseX, y: baseY + 1 },

@@ -20,6 +20,9 @@ export const COLORS = {
   mob_turret: '#06a77d',     // Teal - Hephaestus turret
   mob_swarm: '#ffb703',      // Yellow - Minion swarm
   mob_guardian: '#023e8a',   // Blue - Athena guardian
+  mob_tracker: '#A3FF12',    // Lunar Neon - Artemis Tracker
+  mob_moth: '#1B103A',       // Abyssal Indigo - Nyx Glitchmoth
+  mob_cerberus: '#FF4D00',   // Brimstone Vermillion - Cerberus Firewall
   projectile: '#ff006e',     // Magenta - Projectile color
   // Boss-specific colors
   boss_zeus: '#00ffff',      // Electric cyan - Zeus Mainframe
@@ -71,6 +74,7 @@ export interface MobTypeDef {
   isStationary: boolean;
   minLevel: number; // Minimum level to appear
   spawnWeight: number; // Higher = more common (relative to other mobs)
+  aggroRange?: number; // Distance at which mob starts chasing player (default: unlimited)
 }
 
 export const MOB_TYPES: MobTypeDef[] = [
@@ -105,7 +109,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isRanged: true,
     range: 5,
     isStationary: false,
-    minLevel: 3,
+    minLevel: 13,
     spawnWeight: 15,
   },
   {
@@ -122,8 +126,9 @@ export const MOB_TYPES: MobTypeDef[] = [
     isRanged: false,
     range: 1,
     isStationary: false,
-    minLevel: 2,
+    minLevel: 5,
     spawnWeight: 20,
+    aggroRange: 5, // Phase mobs aggro when player is within 5 tiles
   },
   {
     subtype: 'charger',
@@ -139,7 +144,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isRanged: false,
     range: 1,
     isStationary: false,
-    minLevel: 4,
+    minLevel: 17,
     spawnWeight: 12,
   },
   {
@@ -156,7 +161,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isRanged: true,
     range: 6,
     isStationary: true,
-    minLevel: 5,
+    minLevel: 25,
     spawnWeight: 8,
   },
   {
@@ -190,8 +195,59 @@ export const MOB_TYPES: MobTypeDef[] = [
     isRanged: false,
     range: 1,
     isStationary: false,
-    minLevel: 6,
+    minLevel: 29,
     spawnWeight: 5,
+  },
+  {
+    subtype: 'tracker',
+    name: 'Artemis Tracker',
+    baseHp: 14,
+    hpPerLevel: 3,
+    baseDamage: 9,
+    damagePerLevel: 1.4,
+    moveSpeed: 1.55, // Base speed, will be scaled in engine.ts
+    attackCooldown: 1600, // Base cooldown, will be scaled in engine.ts
+    coinReward: 4, // Base reward, may need scaling
+    canPhase: false,
+    isRanged: false,
+    range: 1,
+    isStationary: false,
+    minLevel: 21,
+    spawnWeight: 8,
+  },
+  {
+    subtype: 'moth',
+    name: 'Nyx Glitchmoth',
+    baseHp: 16,
+    hpPerLevel: 3,
+    baseDamage: 6,
+    damagePerLevel: 1,
+    moveSpeed: 1.35, // Base speed, will be scaled in engine.ts
+    attackCooldown: 1250, // Base cooldown, will be scaled in engine.ts
+    coinReward: 3, // Base reward, may need scaling
+    canPhase: false,
+    isRanged: true,
+    range: 4, // Shadow pulse range
+    isStationary: false,
+    minLevel: 9,
+    spawnWeight: 10,
+  },
+  {
+    subtype: 'cerberus',
+    name: 'Cerberus Firewall',
+    baseHp: 40,
+    hpPerLevel: 7,
+    baseDamage: 7,
+    damagePerLevel: 1.2,
+    moveSpeed: 1.05, // Base speed, will be scaled in engine.ts
+    attackCooldown: 2200, // Base cooldown, will be scaled in engine.ts
+    coinReward: 10, // Base reward, may need scaling
+    canPhase: false,
+    isRanged: false,
+    range: 1,
+    isStationary: false,
+    minLevel: 8,
+    spawnWeight: 4, // Not used in normal spawn (spawned separately in boss sectors)
   },
 ];
 

@@ -192,6 +192,40 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     return () => cancelAnimationFrame(animationFrameId);
   }, [inputDirection]);
 
+  // Helper function to check if a mob can move diagonally (flying mobs)
+  const canMoveDiagonally = (entity: Entity): boolean => {
+    // Phase mobs and moth mobs can move diagonally
+    if (entity.mobSubtype === 'phase' || entity.mobSubtype === 'moth') {
+      return true;
+    }
+    // Boss Hades can phase through walls, so it can move diagonally
+    if (entity.mobSubtype === 'boss_hades' || entity.canPhase) {
+      return true;
+    }
+    return false;
+  };
+
+  // Helper function to restrict movement to cardinal directions for non-flying mobs
+  const restrictToCardinal = (dx: number, dy: number): { x: number; y: number } => {
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    
+    // If both directions are non-zero (diagonal), choose the larger component
+    if (absDx > 0 && absDy > 0) {
+      if (absDx > absDy) {
+        return { x: Math.sign(dx), y: 0 };
+      } else if (absDy > absDx) {
+        return { x: 0, y: Math.sign(dy) };
+      } else {
+        // Equal distance, prefer horizontal (can be changed to random or vertical)
+        return { x: Math.sign(dx), y: 0 };
+      }
+    }
+    
+    // Already cardinal, return as-is
+    return { x: Math.sign(dx), y: Math.sign(dy) };
+  };
+
   const update = (deltaTime: number) => {
     if (!levelRef.current) return;
 
@@ -321,6 +355,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           });
           
           attackableEnemies.forEach(enemy => {
+            // Spear: Check if enemy is behind a wall (10% chance to pierce through)
+            if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
+              const hasLOS = hasLineOfSight(nextPos, enemy.pos, levelRef.current);
+              if (!hasLOS) {
+                // Enemy is behind a wall - only 10% chance to hit
+                if (Math.random() >= 0.10) {
+                  return; // Attack fails, don't damage enemy
+                }
+                // Attack succeeds through wall, but with reduced damage
+                audioManager.playSound('attack');
+                let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
+                enemy.hp -= damage;
+                return; // Skip other weapon mechanics for wall-piercing attacks
+              }
+            }
+            
             audioManager.playSound('attack');
             
             // Calculate base damage
@@ -742,19 +792,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               } else {
                 // Start new charge
                 if (distToPlayer > 2) {
-                  const dirX = Math.sign(dx);
-                  const dirY = Math.sign(dy);
-                  updatedEntity.chargeDirection = { x: dirX, y: dirY };
+                  // Restrict charge direction to cardinal only
+                  const dir = restrictToCardinal(dx, dy);
+                  updatedEntity.chargeDirection = { x: dir.x, y: dir.y };
                   nextPos = {
-                    x: entity.pos.x + dirX,
-                    y: entity.pos.y + dirY,
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
                   };
                   shouldMove = true;
                 } else {
-                  // Close enough, normal movement
+                  // Close enough, normal movement (restricted to cardinal)
+                  const dir = restrictToCardinal(dx, dy);
                   nextPos = {
-                    x: entity.pos.x + Math.sign(dx),
-                    y: entity.pos.y + Math.sign(dy),
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
                   };
                   shouldMove = true;
                 }
@@ -765,11 +816,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             case 'sniper': {
               // Apollo Sniper: Slow movement, ranged attacks
               if (entity.isRanged && entity.range && distToPlayer <= entity.range && distToPlayer > 1) {
-                // Try to maintain distance, move away if too close
+                // Try to maintain distance, move away if too close (restricted to cardinal)
                 if (distToPlayer < 3) {
+                  const dir = restrictToCardinal(-dx, -dy);
                   nextPos = {
-                    x: entity.pos.x - Math.sign(dx),
-                    y: entity.pos.y - Math.sign(dy),
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
                   };
                   shouldMove = true;
                 }
@@ -810,10 +862,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   audioManager.playSound('attack');
                 }
               } else {
-                // Move towards player slowly
+                // Move towards player slowly (restricted to cardinal)
+                const dir = restrictToCardinal(dx, dy);
                 nextPos = {
-                  x: entity.pos.x + Math.sign(dx),
-                  y: entity.pos.y + Math.sign(dy),
+                  x: entity.pos.x + dir.x,
+                  y: entity.pos.y + dir.y,
                 };
                 shouldMove = true;
               }
@@ -821,31 +874,69 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             }
             
             case 'phase': {
-              // Hades Phase: Can move through walls
-              nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
-              };
-              shouldMove = true;
+              // Hades Phase: Can move through walls, has aggro range
+              const mobType = MOB_TYPES.find(m => m.subtype === 'phase');
+              const aggroRange = mobType?.aggroRange ?? Infinity;
+              
+              if (distToPlayer <= aggroRange) {
+                // Aggro'd: Move toward player
+                nextPos = {
+                  x: entity.pos.x + Math.sign(dx),
+                  y: entity.pos.y + Math.sign(dy),
+                };
+                shouldMove = true;
+                // Clear roaming state when aggro'd
+                updatedEntity.roamDirection = null;
+              } else {
+                // Not aggro'd: Roam aimlessly
+                const ROAM_CHANGE_INTERVAL = 2000; // Change direction every 2 seconds
+                const lastRoamChange = entity.lastRoamChange || 0;
+                
+                // Initialize or change roam direction periodically
+                if (!entity.roamDirection || (now - lastRoamChange >= ROAM_CHANGE_INTERVAL)) {
+                  // Pick a random cardinal direction
+                  const directions = [
+                    { x: 1, y: 0 },   // Right
+                    { x: -1, y: 0 },  // Left
+                    { x: 0, y: 1 },   // Down
+                    { x: 0, y: -1 },  // Up
+                  ];
+                  const randomDir = directions[Math.floor(Math.random() * directions.length)];
+                  updatedEntity.roamDirection = randomDir;
+                  updatedEntity.lastRoamChange = now;
+                }
+                
+                // Move in roam direction
+                const currentRoamDir = updatedEntity.roamDirection || entity.roamDirection;
+                if (currentRoamDir) {
+                  nextPos = {
+                    x: entity.pos.x + currentRoamDir.x,
+                    y: entity.pos.y + currentRoamDir.y,
+                  };
+                  shouldMove = true;
+                }
+              }
               // Phase mobs ignore wall collision
               break;
             }
             
             case 'guardian': {
-              // Athena Guardian: Slow, tanky, direct path
+              // Athena Guardian: Slow, tanky, direct path (restricted to cardinal)
+              const dir = restrictToCardinal(dx, dy);
               nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
+                x: entity.pos.x + dir.x,
+                y: entity.pos.y + dir.y,
               };
               shouldMove = true;
               break;
             }
             
             case 'swarm': {
-              // Minion Swarm: Fast, direct movement
+              // Minion Swarm: Fast, direct movement (restricted to cardinal)
+              const dir = restrictToCardinal(dx, dy);
               nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
+                x: entity.pos.x + dir.x,
+                y: entity.pos.y + dir.y,
               };
               shouldMove = true;
               break;
@@ -964,14 +1055,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   }
                   
                   if (hasClearPath) {
-                    // Initiate pounce
+                    // Initiate pounce (restricted to cardinal)
                     updatedEntity.isStalking = false;
-                    const dirX = Math.sign(dx);
-                    const dirY = Math.sign(dy);
-                    updatedEntity.pounceDirection = { x: dirX, y: dirY };
+                    const dir = restrictToCardinal(dx, dy);
+                    updatedEntity.pounceDirection = { x: dir.x, y: dir.y };
                     nextPos = {
-                      x: entity.pos.x + dirX * 2,
-                      y: entity.pos.y + dirY * 2,
+                      x: entity.pos.x + dir.x * 2,
+                      y: entity.pos.y + dir.y * 2,
                     };
                     shouldMove = true;
                     
@@ -983,8 +1073,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       const pounceDistance = Math.min(3, Math.floor(distToPlayer));
                       for (let i = 1; i <= pounceDistance; i++) {
                         const trailPos = {
-                          x: entity.pos.x + (dirX * i),
-                          y: entity.pos.y + (dirY * i),
+                          x: entity.pos.x + (dir.x * i),
+                          y: entity.pos.y + (dir.y * i),
                         };
                         levelRef.current.afterimages.push({
                           id: `afterimage-${afterimageIdCounterRef.current++}`,
@@ -996,27 +1086,40 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       }
                     }
                   } else {
-                    // No clear path, continue stalking
+                    // No clear path, continue stalking (restricted to cardinal)
+                    const dir = restrictToCardinal(dx, dy);
                     nextPos = {
-                      x: entity.pos.x + Math.sign(dx) * 0.5,
-                      y: entity.pos.y + Math.sign(dy) * 0.5,
+                      x: entity.pos.x + dir.x * 0.5,
+                      y: entity.pos.y + dir.y * 0.5,
                     };
                     shouldMove = true;
                   }
                 } else if (distToPlayer > 5) {
-                  // Too far, move closer slowly
+                  // Too far, move closer slowly (restricted to cardinal)
+                  const dir = restrictToCardinal(dx, dy);
                   nextPos = {
-                    x: entity.pos.x + Math.sign(dx) * 0.5,
-                    y: entity.pos.y + Math.sign(dy) * 0.5,
+                    x: entity.pos.x + dir.x * 0.5,
+                    y: entity.pos.y + dir.y * 0.5,
                   };
                   shouldMove = true;
                 }
               } else if (entity.pounceDirection) {
-                // Continue pounce
-                nextPos = {
-                  x: entity.pos.x + entity.pounceDirection.x,
-                  y: entity.pos.y + entity.pounceDirection.y,
-                };
+                // Continue pounce (pounce direction already set, but restrict if diagonal)
+                const pounceDir = entity.pounceDirection;
+                // Check if pounce is diagonal and restrict if needed
+                if (pounceDir.x !== 0 && pounceDir.y !== 0) {
+                  const restrictedDir = restrictToCardinal(pounceDir.x, pounceDir.y);
+                  updatedEntity.pounceDirection = restrictedDir;
+                  nextPos = {
+                    x: entity.pos.x + restrictedDir.x,
+                    y: entity.pos.y + restrictedDir.y,
+                  };
+                } else {
+                  nextPos = {
+                    x: entity.pos.x + pounceDir.x,
+                    y: entity.pos.y + pounceDir.y,
+                  };
+                }
                 shouldMove = true;
                 
                 // Stop pounce if reached player or hit wall
@@ -1029,11 +1132,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   shouldMove = false;
                 }
               } else {
-                // Return to stalking
+                // Return to stalking (restricted to cardinal)
                 updatedEntity.isStalking = true;
+                const dir = restrictToCardinal(dx, dy);
                 nextPos = {
-                  x: entity.pos.x + Math.sign(dx) * 0.5,
-                  y: entity.pos.y + Math.sign(dy) * 0.5,
+                  x: entity.pos.x + dir.x * 0.5,
+                  y: entity.pos.y + dir.y * 0.5,
                 };
                 shouldMove = true;
               }
@@ -1063,17 +1167,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               }
               
               if (hasStraightLane && distToPlayer > 1.5) {
-                // Triple-lunge
+                // Triple-lunge (restricted to cardinal)
+                const dir = restrictToCardinal(dx, dy);
                 nextPos = {
-                  x: entity.pos.x + Math.sign(dx) * 3,
-                  y: entity.pos.y + Math.sign(dy) * 3,
+                  x: entity.pos.x + dir.x * 3,
+                  y: entity.pos.y + dir.y * 3,
                 };
                 shouldMove = true;
               } else {
-                // Normal slow walk
+                // Normal slow walk (restricted to cardinal)
+                const dir = restrictToCardinal(dx, dy);
                 nextPos = {
-                  x: entity.pos.x + Math.sign(dx),
-                  y: entity.pos.y + Math.sign(dy),
+                  x: entity.pos.x + dir.x,
+                  y: entity.pos.y + dir.y,
                 };
                 shouldMove = true;
               }
@@ -1152,17 +1258,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 }
               }
               
-              // Move towards player
+              // Move towards player (restricted to cardinal)
+              const dir = restrictToCardinal(dx, dy);
               nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
+                x: entity.pos.x + dir.x,
+                y: entity.pos.y + dir.y,
               };
               shouldMove = true;
               break;
             }
             
             case 'boss_hades': {
-              // Hades Boss: Can phase through walls
+              // Hades Boss: Can phase through walls (can move diagonally)
               nextPos = {
                 x: entity.pos.x + Math.sign(dx),
                 y: entity.pos.y + Math.sign(dy),
@@ -1175,10 +1282,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               // Ares Boss: Powerful charge attacks
               if (entity.chargeDirection) {
                 // Continue charging - boss charges faster and further
-                nextPos = {
-                  x: entity.pos.x + entity.chargeDirection.x,
-                  y: entity.pos.y + entity.chargeDirection.y,
-                };
+                // Check if charge direction is diagonal and restrict if needed
+                const chargeDir = entity.chargeDirection;
+                if (chargeDir.x !== 0 && chargeDir.y !== 0) {
+                  const restrictedDir = restrictToCardinal(chargeDir.x, chargeDir.y);
+                  updatedEntity.chargeDirection = restrictedDir;
+                  nextPos = {
+                    x: entity.pos.x + restrictedDir.x,
+                    y: entity.pos.y + restrictedDir.y,
+                  };
+                } else {
+                  nextPos = {
+                    x: entity.pos.x + chargeDir.x,
+                    y: entity.pos.y + chargeDir.y,
+                  };
+                }
                 shouldMove = true;
                 
                 // Stop charging if hit wall (Ares can't phase) or reached player
@@ -1189,21 +1307,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   updatedEntity.chargeDirection = null;
                 }
               } else {
-                // Start new charge - Ares charges from further away and more frequently
+                // Start new charge - Ares charges from further away and more frequently (restricted to cardinal)
                 if (distToPlayer > 3) {
-                  const dirX = Math.sign(dx);
-                  const dirY = Math.sign(dy);
-                  updatedEntity.chargeDirection = { x: dirX, y: dirY };
+                  const dir = restrictToCardinal(dx, dy);
+                  updatedEntity.chargeDirection = { x: dir.x, y: dir.y };
                   nextPos = {
-                    x: entity.pos.x + dirX,
-                    y: entity.pos.y + dirY,
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
                   };
                   shouldMove = true;
                 } else {
-                  // Close enough, normal movement
+                  // Close enough, normal movement (restricted to cardinal)
+                  const dir = restrictToCardinal(dx, dy);
                   nextPos = {
-                    x: entity.pos.x + Math.sign(dx),
-                    y: entity.pos.y + Math.sign(dy),
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
                   };
                   shouldMove = true;
                 }
@@ -1212,10 +1330,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             }
             
             default: {
-              // Default: Basic drone movement (Hermes)
+              // Default: Basic drone movement (Hermes) (restricted to cardinal)
+              const dir = restrictToCardinal(dx, dy);
               nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
+                x: entity.pos.x + dir.x,
+                y: entity.pos.y + dir.y,
               };
               shouldMove = true;
               break;
@@ -1444,9 +1563,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           ctx.fillStyle = COLORS.floor;
           ctx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
           
+          // Check if the tile above is a wall
+          const tileAbove = y > 0 ? levelRef.current.tiles[y - 1][x] : null;
+          const shouldRotate = tileAbove === 'wall';
+          
           // Always use stairs.png image - never draw programmatic stairs
           if (stairsImageCache.img) {
-            ctx.drawImage(stairsImageCache.img, tileX, tileY, TILE_SIZE, TILE_SIZE);
+            if (shouldRotate) {
+              // Rotate 90 degrees to the left (counterclockwise)
+              ctx.save();
+              const centerX = tileX + TILE_SIZE / 2;
+              const centerY = tileY + TILE_SIZE / 2;
+              ctx.translate(centerX, centerY);
+              ctx.rotate(-Math.PI / 2); // -90 degrees
+              ctx.drawImage(stairsImageCache.img, -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
+              ctx.restore();
+            } else {
+              ctx.drawImage(stairsImageCache.img, tileX, tileY, TILE_SIZE, TILE_SIZE);
+            }
           } else {
             // Temporary placeholder only while image loads (should be very brief)
             const holePadding = 4;

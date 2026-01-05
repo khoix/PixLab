@@ -26,6 +26,7 @@ import { Item } from '../lib/game/types';
 import { Plus, Sword, Shield, Wrench, FlaskConical, Settings } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
+import { useIsMobile } from '../hooks/use-mobile';
 
 // Component for inventory item with hover comparison
 const InventoryItemWithHover: React.FC<{
@@ -122,7 +123,8 @@ const SHOP_ITEMS = [
 
 export default function Game() {
   const { state, dispatch, resetGame } = useGame();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const isMobile = useIsMobile();
   const [inputDir, setInputDir] = useState({ x: 0, y: 0 });
   const [levelStartTime, setLevelStartTime] = useState(Date.now());
   const [showMenu, setShowMenu] = useState(false);
@@ -133,6 +135,31 @@ export default function Game() {
   const [vendorItems, setVendorItems] = useState<Item[]>([]);
   const [soldItems, setSoldItems] = useState<Item[]>([]);
   const { toast } = useToast();
+  const hasHandledRefresh = useRef(false);
+
+  // Handle page refresh - clean up game state and navigate to Home (no UI prompt)
+  useEffect(() => {
+    // Only handle refresh once on mount
+    if (hasHandledRefresh.current) return;
+    hasHandledRefresh.current = true;
+
+    // Check if this is a page refresh (no navigation flag) vs normal navigation
+    const wasNavigated = sessionStorage.getItem('navigated_to_play');
+    
+    // If we're on /play and the game state shows an active game (not title screen)
+    if (location === '/play' && (state.screen === 'run' || state.screen === 'lobby' || state.screen === 'shop')) {
+      // Only treat as refresh if there's no navigation flag (page was refreshed)
+      if (!wasNavigated) {
+        // Reset game state (this cleans up everything)
+        resetGame();
+        // Navigate to Home immediately (no game over UI shown)
+        setLocation('/');
+      } else {
+        // Clear the flag for next time (normal navigation, not a refresh)
+        sessionStorage.removeItem('navigated_to_play');
+      }
+    }
+  }, [location, state.screen, resetGame, setLocation]);
 
   const handleCopyCode = async () => {
     try {
@@ -230,6 +257,9 @@ export default function Game() {
       // Both death and timeout should fully reset the game state
       resetGame();
     }
+    
+    // Navigate to Home
+    setLocation('/');
   };
 
   const handleLevelComplete = () => {
@@ -1277,7 +1307,7 @@ export default function Game() {
           onTimeOut={handleTimeOut}
           gameOverState={gameOverState}
         />
-        {!gameOverState && (
+        {!gameOverState && isMobile && (
           (() => {
             const controlType = state.settings.mobileControlType || 'joystick';
             if (controlType === 'touchpad') {

@@ -93,5 +93,13 @@
   .insufficient-funds-text {
     transform: rotate(-8deg);
   }
-}
 
+  /* Home page - pixlab3.png image centered behind title, 5 times larger on web only */
+  .home-title-bg {
+    width: 100%  !important;
+    height: 500% !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(calc(-50% - 25px), -50%) !important;
+  }
+}

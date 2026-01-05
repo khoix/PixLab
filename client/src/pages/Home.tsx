@@ -15,10 +15,14 @@ export default function Home() {
   const handleStart = () => {
     // If no code is inputted, start a new game from Sector 1
     if (codeInput.length === 0) {
-      // resetGame now clears mods and boss drops automatically
       resetGame();
+      // Clear mods and boss drops for a fresh start
+      dispatch({ type: 'SET_MODS', payload: [] });
+      dispatch({ type: 'CLEAR_BOSS_DROPS' });
     }
     dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
+    // Mark that we're intentionally navigating to /play (not a page refresh)
+    sessionStorage.setItem('navigated_to_play', 'true');
     setLocation('/play');
   };
 
@@ -32,6 +36,8 @@ export default function Home() {
           className: "bg-green-900 border-green-500 text-green-100" 
         });
         dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
+        // Mark that we're intentionally navigating to /play (not a page refresh)
+        sessionStorage.setItem('navigated_to_play', 'true');
         setLocation('/play');
       } else {
         toast({ 
@@ -57,22 +63,25 @@ export default function Home() {
       <div className="crt absolute inset-0 pointer-events-none z-50" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
-        <div className="text-center space-y-4 relative py-8 px-4 home-title-container">
-            <div 
-              className="absolute inset-0 flex items-center justify-center md:opacity-70 opacity-40 -z-10 home-title-bg"
+        <div className="home-title-container text-center space-y-4 relative">
+            <div className="home-title-bg absolute -z-10" 
               style={{
                 backgroundImage: `url(${pixlabImage})`,
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
-                width: '200px',
-                height: '200px',
+                width: '100%',
+                height: '100%',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                opacity: 0.4,
               }}
             />
-            <h1 className="text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight relative z-10 home-title">
+            <h1 className="text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
                 PIXEL<br/><span className="text-secondary" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8)' }}>LABYRINTH</span>
             </h1>
-            <p className="text-muted-foreground font-mono text-lg tracking-widest relative z-10">ROGUE PROTOCOL // V.1.0</p>
+            <p className="text-muted-foreground font-mono text-lg tracking-widest">ROGUE PROTOCOL // V.1.0</p>
         </div>
 
         <div className="w-full space-y-4 mt-8">

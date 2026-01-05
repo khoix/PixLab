@@ -40,7 +40,7 @@ export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
 
   return (
     <>
-      <div className="absolute top-0 left-0 w-full p-4 pointer-events-none z-40 flex justify-between items-start">
+      <div className="absolute top-0 left-0 w-full p-4 pointer-events-none z-40 flex items-start">
         {/* Top Left: Stats */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -54,9 +54,9 @@ export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
           </div>
         </div>
 
-        {/* Top Center: Level & Timer (Desktop only) */}
+        {/* Top Center: Level & Timer (Desktop only) - Absolutely centered */}
         {!isMobile && (
-          <div className="flex flex-col items-center gap-2">
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
             <Badge variant="outline" className="bg-black/50 border-primary text-primary font-pixel text-xs px-4 py-2">
               LEVEL {state.currentLevel}
             </Badge>

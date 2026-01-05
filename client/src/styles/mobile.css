@@ -160,7 +160,6 @@
   /* Mobile text sizing adjustments */
   /* Ensure text is readable but not too large on small screens */
   h1 {
-    font-size: 1.5rem;
     line-height: 1.2;
   }
 
@@ -723,12 +722,18 @@
 
   /* Home page title background image - mobile styles */
   .home-title-bg {
-    width: 300px !important;
+    width: 100vw !important;
     height: 300px !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
     margin: 0 !important;
+  }
+
+  /* Home page title container - full width on mobile */
+  .home-title-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
 
   /* Home page title - mobile text size */
