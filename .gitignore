@@ -6,4 +6,3 @@ vite.config.ts.*
 *.tar.gz
 Thumbs.db
 .cache/
-.gitignore
