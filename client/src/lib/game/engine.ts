@@ -484,6 +484,7 @@ export const generateLevel = (
     entities,
     projectiles: [], // Initialize empty projectiles array
     afterimages: [], // Initialize empty afterimages array
+    particles: [], // Initialize empty particles array
     items,
     exitPos,
     startPos,
@@ -494,8 +495,14 @@ export const generateLevel = (
 };
 
 export const checkCollision = (pos: Position, level: Level): boolean => {
-  if (pos.y < 0 || pos.y >= level.height || pos.x < 0 || pos.x >= level.width) return true;
-  return level.tiles[pos.y][pos.x] === 'wall';
+  // Convert floating point position to integer tile coordinates
+  const tileX = Math.floor(pos.x);
+  const tileY = Math.floor(pos.y);
+  
+  if (tileY < 0 || tileY >= level.height || tileX < 0 || tileX >= level.width) return true;
+  // Safety check: ensure the row exists before accessing column
+  if (!level.tiles || !level.tiles[tileY]) return true;
+  return level.tiles[tileY][tileX] === 'wall';
 };
 
 export const getEntitiesInRadius = (pos: Position, radius: number, entities: Entity[]): Entity[] => {

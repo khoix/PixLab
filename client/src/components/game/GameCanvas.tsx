@@ -3,7 +3,7 @@ import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getEntitiesInRadius, hasLineOfSight, getAttackablePositions } from '../../lib/game/engine';
 import { TILE_SIZE, COLORS, LEVEL_TIME_LIMIT, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL } from '../../lib/game/constants';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
-import { Level, Position, Entity, Projectile, MobSubtype, Afterimage } from '../../lib/game/types';
+import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
 import { getItemBaseName } from '../../lib/game/compendium-image-map';
@@ -67,6 +67,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const enemyMoveTimersRef = useRef<Map<string, number>>(new Map()); // Track individual mob move timers
   const projectileIdCounterRef = useRef<number>(0);
   const afterimageIdCounterRef = useRef<number>(0);
+  const particleIdCounterRef = useRef<number>(0);
   const visionDebuffLevelRef = useRef<number>(0); // Track vision debuff level (0-1.0, where 1.0 = complete blindness)
   // Use refs to track current stats to avoid race conditions with async state updates
   const statsRef = useRef<typeof state.stats>(state.stats);
@@ -138,10 +139,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     previousEnemyIdsRef.current = new Set(level.entities.map(e => e.id));
     projectileIdCounterRef.current = 0;
     afterimageIdCounterRef.current = 0;
+    particleIdCounterRef.current = 0;
     visionDebuffLevelRef.current = 0;
     // Initialize afterimages array if not present
     if (!level.afterimages) {
       level.afterimages = [];
+    }
+    // Initialize particles array if not present
+    if (!level.particles) {
+      level.particles = [];
     }
     // Reset bonus selection when level changes
     bonusSelectionRef.current = null;
@@ -235,18 +241,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     return dx === 0 || dy === 0;
   };
 
+  // Helper function to calculate wall phase chance based on base chance and level
+  const calculateWallPhaseChance = (baseChance: number): number => {
+    const phaseChancePerLevel = 0.005; // 0.5% per level
+    return Math.min(1.0, baseChance + (state.currentLevel * phaseChancePerLevel));
+  };
+
   const update = (deltaTime: number) => {
     if (!levelRef.current) return;
 
     // Pause/freeze sector state on gameover - stop all mobs, projectiles, and afterimages
     // Check both gameOverState prop and gameOverTriggeredRef to catch timeouts immediately
     if (gameOverState || gameOverTriggeredRef.current) {
-      // Clear all projectiles and afterimages to prevent them from continuing to move
+      // Clear all projectiles, afterimages, and particles to prevent them from continuing to move
       if (levelRef.current.projectiles) {
         levelRef.current.projectiles = [];
       }
       if (levelRef.current.afterimages) {
         levelRef.current.afterimages = [];
+      }
+      if (levelRef.current.particles) {
+        levelRef.current.particles = [];
       }
       return;
     }
@@ -638,7 +653,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           
           // Check wall collision
           if (levelRef.current && checkCollision(newPos, levelRef.current)) {
-            continue; // Skip this projectile (hit wall)
+            // Check if projectile can phase through walls (Zeus projectiles)
+            if (projectile.wallPhaseChance !== undefined && projectile.wallPhaseChance > 0) {
+              // Roll for phase chance - if successful, projectile passes through
+              if (Math.random() < projectile.wallPhaseChance) {
+                // Projectile phases through wall - continue movement
+              } else {
+                // Projectile hits wall - remove it
+                continue;
+              }
+            } else {
+              // No phase chance - projectile hits wall
+              continue; // Skip this projectile (hit wall)
+            }
           }
           
           // Keep projectile with updated position
@@ -704,6 +731,33 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     }
 
+    // Update particles
+    try {
+      if (!levelRef.current.particles) {
+        levelRef.current.particles = [];
+      }
+      
+      const updatedParticles: Particle[] = [];
+      for (let i = 0; i < levelRef.current.particles.length; i++) {
+        const particle = levelRef.current.particles[i];
+        
+        // Check lifetime
+        if (now - particle.createdAt > particle.lifetime) {
+          continue; // Skip expired particles
+        }
+        
+        updatedParticles.push(particle);
+      }
+      
+      levelRef.current.particles = updatedParticles;
+      
+    } catch (error) {
+      console.error('Error updating particles:', error);
+      if (!levelRef.current.particles) {
+        levelRef.current.particles = [];
+      }
+    }
+
     // Advanced enemy AI with unique behaviors per mob type
     const updatedEntities = levelRef.current.entities.map(entity => {
       if (entity.type === 'enemy' || entity.type === 'boss_enemy') {
@@ -754,6 +808,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   if (!levelRef.current.projectiles) {
                     levelRef.current.projectiles = [];
                   }
+                  
+                  // Calculate wall phase chance for turret projectiles (25% base)
+                  let wallPhaseChance: number | undefined;
+                  if (mobSubtype === 'turret') {
+                    wallPhaseChance = calculateWallPhaseChance(0.25);
+                  }
+                  
                   levelRef.current.projectiles.push({
                     id: `projectile-${projectileIdCounterRef.current++}`,
                     pos: { ...entity.pos },
@@ -762,6 +823,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     ownerId: entity.id,
                     lifetime: PROJECTILE_LIFETIME,
                     createdAt: now,
+                    ...(wallPhaseChance !== undefined && { wallPhaseChance }),
                   });
                 }
                 
@@ -901,6 +963,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     if (!levelRef.current.projectiles) {
                       levelRef.current.projectiles = [];
                     }
+                    
+                    // Calculate wall phase chance for sniper projectiles (10% base)
+                    const wallPhaseChance = calculateWallPhaseChance(0.10);
+                    
                     levelRef.current.projectiles.push({
                       id: `projectile-${projectileIdCounterRef.current++}`,
                       pos: { ...entity.pos },
@@ -909,6 +975,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       ownerId: entity.id,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
+                      wallPhaseChance,
                     });
                   }
                   
@@ -1017,6 +1084,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 shouldMove = true;
               }
               
+              // Create particle trail when moth moves
+              if (shouldMove && levelRef.current) {
+                if (!levelRef.current.particles) {
+                  levelRef.current.particles = [];
+                }
+                // Create small particles at previous position
+                const particleCount = 2; // Create 2 particles per movement
+                for (let i = 0; i < particleCount; i++) {
+                  const offsetX = (Math.random() - 0.5) * 0.3;
+                  const offsetY = (Math.random() - 0.5) * 0.3;
+                  levelRef.current.particles.push({
+                    id: `particle-${particleIdCounterRef.current++}`,
+                    pos: {
+                      x: entity.pos.x + offsetX,
+                      y: entity.pos.y + offsetY,
+                    },
+                    createdAt: now,
+                    lifetime: 800, // Fade out over 800ms
+                  });
+                }
+              }
+              
               // Shadow pulse attack
               if (distToPlayer >= 3 && distToPlayer <= 4 && entity.isRanged) {
                 const lastAttack = entity.lastAttackTime || 0;
@@ -1037,6 +1126,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     if (!levelRef.current.projectiles) {
                       levelRef.current.projectiles = [];
                     }
+                    
+                    // Calculate wall phase chance for moth (nyx) projectiles (5% base)
+                    const wallPhaseChance = calculateWallPhaseChance(0.05);
+                    
                     levelRef.current.projectiles.push({
                       id: `projectile-${projectileIdCounterRef.current++}`,
                       pos: { ...entity.pos },
@@ -1046,6 +1139,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
                       isShadowPulse: true,
+                      wallPhaseChance,
                     });
                   }
                   
@@ -1263,6 +1357,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     if (!levelRef.current.projectiles) {
                       levelRef.current.projectiles = [];
                     }
+                    
+                    // Calculate wall phase chance for Zeus projectiles (50% base + 0.5% per level, capped at 100%)
+                    const basePhaseChance = 0.5; // 50% base
+                    const phaseChancePerLevel = 0.005; // 0.5% per level
+                    const wallPhaseChance = Math.min(1.0, basePhaseChance + (state.currentLevel * phaseChancePerLevel));
+                    
                     levelRef.current.projectiles.push({
                       id: `projectile-${projectileIdCounterRef.current++}`,
                       pos: { ...entity.pos },
@@ -1271,6 +1371,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       ownerId: entity.id,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
+                      wallPhaseChance, // Zeus projectiles can phase through walls
                     });
                   }
                   
@@ -1627,6 +1728,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     }
 
+    // Draw Particles (fading pixie trail for moth)
+    try {
+      if (levelRef.current.particles && levelRef.current.particles.length > 0) {
+        levelRef.current.particles.forEach((particle: Particle) => {
+          const age = Date.now() - particle.createdAt;
+          const lifetime = particle.lifetime;
+          const alpha = 1 - (age / lifetime); // Fade out over lifetime
+          
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, Math.min(1, alpha * 0.7)); // Max 70% opacity, fading
+          ctx.fillStyle = COLORS.mob_moth;
+          ctx.shadowColor = COLORS.mob_moth;
+          ctx.shadowBlur = 6;
+          const particleSize = 3; // Small pixie-like particles
+          ctx.beginPath();
+          ctx.arc(
+            particle.pos.x * TILE_SIZE + TILE_SIZE / 2,
+            particle.pos.y * TILE_SIZE + TILE_SIZE / 2,
+            particleSize,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.restore();
+        });
+      }
+    } catch (error) {
+      console.error('Error drawing particles:', error);
+    }
+
     // Draw Afterimages (fading trails)
     try {
       if (levelRef.current.afterimages && levelRef.current.afterimages.length > 0) {
@@ -1706,8 +1838,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         color = COLORS[subtypeKey] || COLORS.enemy;
         
         // Adjust size based on mob type
-        if (entity.mobSubtype === 'swarm' || entity.mobSubtype === 'moth') {
+        if (entity.mobSubtype === 'swarm') {
           size = TILE_SIZE - 12; // Smaller
+        } else if (entity.mobSubtype === 'moth') {
+          size = TILE_SIZE - 18; // Even smaller for moth
         } else if (entity.mobSubtype === 'guardian' || entity.mobSubtype === 'turret' || entity.mobSubtype === 'cerberus') {
           size = TILE_SIZE - 6; // Larger
         }
@@ -2026,18 +2160,62 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         ctx.arc(centerX, centerY, reticleThickness, 0, Math.PI * 2);
         ctx.fill();
       } else if (entity.mobSubtype === 'moth') {
-        // Nyx Glitchmoth: Abyssal Indigo with glow, smaller size
+        // Nyx Glitchmoth: Smaller body with transparent wings and pixie trail
+        const centerX = entity.pos.x * TILE_SIZE + TILE_SIZE / 2;
+        const centerY = entity.pos.y * TILE_SIZE + TILE_SIZE / 2;
+        const bodySize = size / 3; // Smaller body (was size / 2)
+        
+        // Draw transparent wings first (behind body)
+        ctx.save();
+        ctx.globalAlpha = 0.3; // Transparent wings
+        ctx.strokeStyle = color;
         ctx.fillStyle = color;
+        ctx.lineWidth = 1.5;
         ctx.shadowColor = color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 8;
+        
+        // Left wing
         ctx.beginPath();
-        ctx.arc(
-          entity.pos.x * TILE_SIZE + TILE_SIZE / 2,
-          entity.pos.y * TILE_SIZE + TILE_SIZE / 2,
-          size / 2,
+        ctx.ellipse(
+          centerX - bodySize * 0.8,
+          centerY,
+          bodySize * 1.2,
+          bodySize * 0.8,
+          -0.3,
           0,
           Math.PI * 2
         );
+        ctx.fill();
+        
+        // Right wing
+        ctx.beginPath();
+        ctx.ellipse(
+          centerX + bodySize * 0.8,
+          centerY,
+          bodySize * 1.2,
+          bodySize * 0.8,
+          0.3,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        
+        // Draw main body - smaller
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bodySize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner glow
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#2d1a5a';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, bodySize / 1.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       } else if (entity.mobSubtype === 'tracker') {

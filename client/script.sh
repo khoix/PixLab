@@ -1,1 +1,0 @@
-node -e 'const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789-_!@#\$%^&*()=+[]{}|;:,.<>?~\`\"\'\\\\/§©®°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"; console.log("Length:", chars.length, "Unique:", new Set(chars).size);'

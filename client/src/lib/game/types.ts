@@ -74,6 +74,7 @@ export interface Projectile {
   lifetime: number; // ms
   createdAt: number;
   isShadowPulse?: boolean; // For moth shadow pulse attack
+  wallPhaseChance?: number; // Chance (0-1) to phase through walls per encounter
 }
 
 export interface Afterimage {
@@ -84,6 +85,13 @@ export interface Afterimage {
   damage: number;
 }
 
+export interface Particle {
+  id: string;
+  pos: Position;
+  createdAt: number;
+  lifetime: number; // ms
+}
+
 export interface Level {
   width: number;
   height: number;
@@ -91,6 +99,7 @@ export interface Level {
   entities: Entity[];
   projectiles: Projectile[];
   afterimages: Afterimage[];
+  particles: Particle[];
   items: { pos: Position; item: Item }[];
   exitPos: Position;
   startPos: Position;

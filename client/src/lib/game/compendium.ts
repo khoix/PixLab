@@ -835,33 +835,60 @@ function renderMobMoth(canvas: HTMLCanvasElement): void {
 
   const centerX = COMPENDIUM_SIZE / 2;
   const centerY = COMPENDIUM_SIZE / 2;
-  const size = COMPENDIUM_SIZE * 0.4;
+  const bodySize = COMPENDIUM_SIZE * 0.15; // Smaller body (was 0.4 * COMPENDIUM_SIZE / 2)
+  const wingSize = COMPENDIUM_SIZE * 0.25; // Wing size
 
-  // Main body - Abyssal Indigo
+  // Draw transparent wings first (behind body)
+  ctx.save();
+  ctx.globalAlpha = 0.3; // Transparent wings
+  ctx.fillStyle = COLORS.mob_moth;
+  ctx.shadowColor = COLORS.mob_moth;
+  ctx.shadowBlur = 20;
+  
+  // Left wing
+  ctx.beginPath();
+  ctx.ellipse(
+    centerX - bodySize * 1.5,
+    centerY,
+    wingSize,
+    wingSize * 0.7,
+    -0.3,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+  
+  // Right wing
+  ctx.beginPath();
+  ctx.ellipse(
+    centerX + bodySize * 1.5,
+    centerY,
+    wingSize,
+    wingSize * 0.7,
+    0.3,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+  
+  ctx.shadowBlur = 0;
+  ctx.restore();
+  
+  // Main body - smaller
   ctx.fillStyle = COLORS.mob_moth;
   ctx.shadowColor = COLORS.mob_moth;
   ctx.shadowBlur = 15;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, bodySize, 0, Math.PI * 2);
   ctx.fill();
   
   // Inner glow
   ctx.shadowBlur = 8;
   ctx.fillStyle = '#2d1a5a';
   ctx.beginPath();
-  ctx.arc(centerX, centerY, size / 3, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, bodySize / 1.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
-
-  // Wing details
-  ctx.strokeStyle = '#3d2a6a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(centerX - size / 2, centerY, size / 3, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(centerX + size / 2, centerY, size / 3, 0, Math.PI * 2);
-  ctx.stroke();
 }
 
 function renderMobTracker(canvas: HTMLCanvasElement): void {
