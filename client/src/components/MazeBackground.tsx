@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { generateLevel } from '../lib/game/engine';
 import { TILE_SIZE, COLORS } from '../lib/game/constants';
+import { getThemeForLevel } from '../lib/game/colorThemes';
 
 export const MazeBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,6 +27,9 @@ export const MazeBackground: React.FC = () => {
     // Animation loop - pan the maze slowly
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Get color theme for level 1 (background uses default theme)
+      const theme = getThemeForLevel(1);
 
       // Update offset for panning animation
       offsetRef.current.x += 0.2;
@@ -58,12 +62,12 @@ export const MazeBackground: React.FC = () => {
           const screenY = y * TILE_SIZE + offsetRef.current.y;
 
           if (tile === 'wall') {
-            ctx.fillStyle = COLORS.wall;
+            ctx.fillStyle = theme.wall;
             ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.fillRect(screenX + 4, screenY + 4, TILE_SIZE - 8, TILE_SIZE - 8);
           } else if (tile === 'floor') {
-            ctx.fillStyle = COLORS.floor;
+            ctx.fillStyle = theme.floor;
             ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);

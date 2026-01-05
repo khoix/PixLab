@@ -414,8 +414,8 @@ export const generateLevel = (
             chargeDirection: null,
           };
           
-          // Initialize phase mob roaming properties
-          if (mobType.subtype === 'phase') {
+          // Initialize roaming properties for all non-stationary mobs
+          if (!mobType.isStationary) {
             entity.roamDirection = null;
             entity.lastRoamChange = 0;
           }

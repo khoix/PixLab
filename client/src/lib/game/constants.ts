@@ -94,6 +94,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 1,
     spawnWeight: 30, // Most common
+    aggroRange: 7, // Basic mob, medium detection range
   },
   {
     subtype: 'sniper',
@@ -111,6 +112,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 13,
     spawnWeight: 15,
+    aggroRange: 8, // Ranged attacker, should detect from far (aggro > attack range)
   },
   {
     subtype: 'phase',
@@ -146,6 +148,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 17,
     spawnWeight: 12,
+    aggroRange: 6, // Fast aggressive mob, detects before charging
   },
   {
     subtype: 'turret',
@@ -163,6 +166,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: true,
     minLevel: 25,
     spawnWeight: 8,
+    aggroRange: 6, // Stationary, aggro matches attack range
   },
   {
     subtype: 'swarm',
@@ -180,6 +184,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 1,
     spawnWeight: 25,
+    aggroRange: 5, // Weak mobs, shorter detection range
   },
   {
     subtype: 'guardian',
@@ -197,6 +202,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 29,
     spawnWeight: 5,
+    aggroRange: 6, // Slow tank, medium detection range
   },
   {
     subtype: 'tracker',
@@ -214,6 +220,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 21,
     spawnWeight: 8,
+    aggroRange: 9, // Stalker, should have long detection (aggro >> attack range)
   },
   {
     subtype: 'moth',
@@ -231,6 +238,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 9,
     spawnWeight: 10,
+    aggroRange: 6, // Orbiter, detects before entering orbit range
   },
   {
     subtype: 'cerberus',
@@ -248,6 +256,10 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 8,
     spawnWeight: 4, // Not used in normal spawn (spawned separately in boss sectors)
+    aggroRange: 7, // Boss-like, medium-long detection range
   },
 ];
+
+// Re-export color theme utilities
+export { getThemeForLevel, generateColorPalette, type ColorPalette } from './colorThemes';
 

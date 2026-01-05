@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getEntitiesInRadius, hasLineOfSight, getAttackablePositions } from '../../lib/game/engine';
 import { TILE_SIZE, COLORS, LEVEL_TIME_LIMIT, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL } from '../../lib/game/constants';
+import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { Level, Position, Entity, Projectile, MobSubtype, Afterimage } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
@@ -224,6 +225,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     
     // Already cardinal, return as-is
     return { x: Math.sign(dx), y: Math.sign(dy) };
+  };
+
+  // Helper function to check if a position is in a cardinal direction (reachable by non-flying mobs)
+  const isInCardinalDirection = (fromPos: Position, toPos: Position): boolean => {
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+    // Cardinal direction means either dx or dy is zero (or both, meaning same position)
+    return dx === 0 || dy === 0;
   };
 
   const update = (deltaTime: number) => {
@@ -716,7 +725,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               Math.pow(entity.pos.y - playerPosRef.current.y, 2)
             );
             
-            if (distToPlayer <= entity.range) {
+            // Check aggro range first
+            const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
+            const aggroRange = mobType?.aggroRange ?? Infinity;
+            
+            // Only attack if player is within aggro range and attack range
+            if (distToPlayer <= aggroRange && distToPlayer <= entity.range) {
               const lastAttack = entity.lastAttackTime || 0;
               const cooldown = entity.attackCooldown || 1500;
               
@@ -770,8 +784,48 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const dy = playerPosRef.current.y - entity.pos.y;
           const distToPlayer = Math.sqrt(dx * dx + dy * dy);
           
+          // Get mob type and aggro range
+          const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
+          const aggroRange = mobType?.aggroRange ?? Infinity;
+          
+          // Helper function for idle roaming behavior
+          const performIdleRoaming = (): { x: number; y: number } | null => {
+            const ROAM_CHANGE_INTERVAL = 2000; // Change direction every 2 seconds
+            const lastRoamChange = entity.lastRoamChange || 0;
+            
+            // Initialize or change roam direction periodically
+            if (!entity.roamDirection || (now - lastRoamChange >= ROAM_CHANGE_INTERVAL)) {
+              // Pick a random cardinal direction
+              const directions = [
+                { x: 1, y: 0 },   // Right
+                { x: -1, y: 0 },  // Left
+                { x: 0, y: 1 },   // Down
+                { x: 0, y: -1 },  // Up
+              ];
+              const randomDir = directions[Math.floor(Math.random() * directions.length)];
+              updatedEntity.roamDirection = randomDir;
+              updatedEntity.lastRoamChange = now;
+            }
+            
+            return updatedEntity.roamDirection || entity.roamDirection || null;
+          };
+          
           // Unique AI behaviors based on mob subtype
-          switch (mobSubtype) {
+          // Check aggro range: if player is outside aggro range, mobs should idle roam
+          if (distToPlayer > aggroRange) {
+            // Player is outside aggro range - perform idle roaming
+            const roamDir = performIdleRoaming();
+            if (roamDir) {
+              nextPos = {
+                x: entity.pos.x + roamDir.x,
+                y: entity.pos.y + roamDir.y,
+              };
+              shouldMove = true;
+            }
+          } else {
+            // Player is within aggro range - clear roaming state and execute mob-specific behavior
+            updatedEntity.roamDirection = null;
+            switch (mobSubtype) {
             case 'charger': {
               // Ares Charger: Fast charge in straight line
               if (entity.chargeDirection) {
@@ -874,48 +928,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             }
             
             case 'phase': {
-              // Hades Phase: Can move through walls, has aggro range
-              const mobType = MOB_TYPES.find(m => m.subtype === 'phase');
-              const aggroRange = mobType?.aggroRange ?? Infinity;
-              
-              if (distToPlayer <= aggroRange) {
-                // Aggro'd: Move toward player
-                nextPos = {
-                  x: entity.pos.x + Math.sign(dx),
-                  y: entity.pos.y + Math.sign(dy),
-                };
-                shouldMove = true;
-                // Clear roaming state when aggro'd
-                updatedEntity.roamDirection = null;
-              } else {
-                // Not aggro'd: Roam aimlessly
-                const ROAM_CHANGE_INTERVAL = 2000; // Change direction every 2 seconds
-                const lastRoamChange = entity.lastRoamChange || 0;
-                
-                // Initialize or change roam direction periodically
-                if (!entity.roamDirection || (now - lastRoamChange >= ROAM_CHANGE_INTERVAL)) {
-                  // Pick a random cardinal direction
-                  const directions = [
-                    { x: 1, y: 0 },   // Right
-                    { x: -1, y: 0 },  // Left
-                    { x: 0, y: 1 },   // Down
-                    { x: 0, y: -1 },  // Up
-                  ];
-                  const randomDir = directions[Math.floor(Math.random() * directions.length)];
-                  updatedEntity.roamDirection = randomDir;
-                  updatedEntity.lastRoamChange = now;
-                }
-                
-                // Move in roam direction
-                const currentRoamDir = updatedEntity.roamDirection || entity.roamDirection;
-                if (currentRoamDir) {
-                  nextPos = {
-                    x: entity.pos.x + currentRoamDir.x,
-                    y: entity.pos.y + currentRoamDir.y,
-                  };
-                  shouldMove = true;
-                }
-              }
+              // Hades Phase: Can move through walls
+              // Aggro'd: Move toward player
+              nextPos = {
+                x: entity.pos.x + Math.sign(dx),
+                y: entity.pos.y + Math.sign(dy),
+              };
+              shouldMove = true;
+              // Clear roaming state when aggro'd
+              updatedEntity.roamDirection = null;
               // Phase mobs ignore wall collision
               break;
             }
@@ -1340,6 +1361,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               break;
             }
           }
+          }
           
           // Apply movement if valid
           if (shouldMove && levelRef.current) {
@@ -1388,7 +1410,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         const isInMeleeRange = finalDistToPlayer <= meleeRange;
         const isExactPosition = updatedEntity.pos.x === playerPosRef.current.x && updatedEntity.pos.y === playerPosRef.current.y;
         
-        if (isExactPosition || (!entity.isRanged && isInMeleeRange)) {
+        // For non-flying mobs, only allow attacks in cardinal directions
+        const canAttack = canMoveDiagonally(updatedEntity) || isInCardinalDirection(updatedEntity.pos, playerPosRef.current);
+        
+        if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack) {
           if (!entity.isRanged || finalDistToPlayer <= 1) {
             // Special handling for Cerberus tri-bite combo
             if (mobSubtype === 'cerberus') {
@@ -1525,6 +1550,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+    // Get color theme for current level (changes every 4 sectors)
+    const theme = getThemeForLevel(state.currentLevel);
+
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1546,12 +1574,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         const tile = levelRef.current.tiles[y][x];
         
         if (tile === 'wall') {
-          ctx.fillStyle = COLORS.wall;
+          ctx.fillStyle = theme.wall;
           ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
           ctx.fillStyle = 'rgba(0,0,0,0.3)';
           ctx.fillRect(x * TILE_SIZE + 4, y * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
         } else if (tile === 'floor') {
-          ctx.fillStyle = COLORS.floor;
+          ctx.fillStyle = theme.floor;
           ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
           ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -1560,7 +1588,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const tileY = y * TILE_SIZE;
           
           // Draw floor background
-          ctx.fillStyle = COLORS.floor;
+          ctx.fillStyle = theme.floor;
           ctx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
           
           // Check if the tile above is a wall

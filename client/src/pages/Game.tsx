@@ -258,8 +258,11 @@ export default function Game() {
       resetGame();
     }
     
-    // Navigate to Home
-    setLocation('/');
+    // Navigate to lobby instead of Home
+    dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
+    // Mark that we're intentionally navigating to /play (not a page refresh)
+    sessionStorage.setItem('navigated_to_play', 'true');
+    setLocation('/play');
   };
 
   const handleLevelComplete = () => {
