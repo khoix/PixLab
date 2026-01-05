@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useGame } from '../lib/store';
 import { useLocation } from '../lib/router';
 import { GameCanvas } from '../components/game/GameCanvas';
@@ -19,7 +20,7 @@ import { MODS, RARITY_COLORS } from '../lib/game/constants';
 import { cn } from '../lib/utils';
 import { useToast } from '../hooks/use-toast';
 import { generateLevel } from '../lib/game/engine';
-import { generateBossDrop, calculateSellValue, generateItem } from '../lib/game/items';
+import { generateBossDrop, calculateSellValue, generateItem, generateCommerceVendorItems } from '../lib/game/items';
 import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
@@ -34,12 +35,52 @@ const InventoryItemWithHover: React.FC<{
   itemContent: React.ReactNode;
   equippedItem: Item | null;
   canEquip: boolean;
-}> = ({ item, itemContent, equippedItem, canEquip }) => {
+  isMobile?: boolean;
+}> = ({ item, itemContent, equippedItem, canEquip, isMobile = false }) => {
   const [mousePos, setMousePos] = useState<{ x: number; y: number; showBelow: boolean } | null>(null);
   const [isHovering, setIsHovering] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (canEquip && equippedItem) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Only show hover on web (not mobile)
+  if (canEquip && equippedItem && !isMobile) {
     const equippedRarityColor = RARITY_COLORS[equippedItem.rarity];
+    
+    const tooltipContent = isHovering && mousePos && mounted ? (
+      <div
+        className="fixed z-[100] w-80 bg-black/95 border border-primary/50 rounded-md p-4 shadow-lg pointer-events-none"
+        style={{
+          left: `${mousePos.x}px`,
+          top: `${mousePos.y}px`,
+          transform: mousePos.showBelow ? 'translate(-50%, 10px)' : 'translate(-50%, calc(-100% - 10px))',
+        }}
+      >
+        <div className="space-y-3">
+          <div className="border-b border-primary/30 pb-2">
+            <div className="text-xs font-mono text-muted-foreground mb-1">CURRENTLY EQUIPPED</div>
+            <div className="font-pixel text-sm" style={{ color: equippedRarityColor }}>
+              {equippedItem.name}
+            </div>
+          </div>
+          {equippedItem.stats && (
+            <div className="space-y-1">
+              <div className="text-xs font-mono text-muted-foreground mb-1">STATS:</div>
+              <div className="text-sm font-mono text-muted-foreground space-y-0.5">
+                {equippedItem.stats.damage && <div>DMG: +{equippedItem.stats.damage}</div>}
+                {equippedItem.stats.defense && <div>DEF: +{equippedItem.stats.defense}</div>}
+                {equippedItem.stats.speed && <div>SPD: +{equippedItem.stats.speed}</div>}
+                {equippedItem.stats.vision && <div>VIS: +{equippedItem.stats.vision}</div>}
+                {equippedItem.stats.heal && <div>HEAL: +{equippedItem.stats.heal}</div>}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    ) : null;
+
     return (
       <div
         key={item.id}
@@ -76,37 +117,7 @@ const InventoryItemWithHover: React.FC<{
         className="relative"
       >
         {itemContent}
-        {isHovering && mousePos && (
-          <div
-            className="fixed z-50 w-80 bg-black/95 border border-primary/50 rounded-md p-4 shadow-lg pointer-events-none"
-            style={{
-              left: `${mousePos.x}px`,
-              top: `${mousePos.y}px`,
-              transform: mousePos.showBelow ? 'translate(-50%, 10px)' : 'translate(-50%, calc(-100% - 10px))',
-            }}
-          >
-            <div className="space-y-3">
-              <div className="border-b border-primary/30 pb-2">
-                <div className="text-xs font-mono text-muted-foreground mb-1">CURRENTLY EQUIPPED</div>
-                <div className="font-pixel text-sm" style={{ color: equippedRarityColor }}>
-                  {equippedItem.name}
-                </div>
-              </div>
-              {equippedItem.stats && (
-                <div className="space-y-1">
-                  <div className="text-xs font-mono text-muted-foreground mb-1">STATS:</div>
-                  <div className="text-sm font-mono text-muted-foreground space-y-0.5">
-                    {equippedItem.stats.damage && <div>DMG: +{equippedItem.stats.damage}</div>}
-                    {equippedItem.stats.defense && <div>DEF: +{equippedItem.stats.defense}</div>}
-                    {equippedItem.stats.speed && <div>SPD: +{equippedItem.stats.speed}</div>}
-                    {equippedItem.stats.vision && <div>VIS: +{equippedItem.stats.vision}</div>}
-                    {equippedItem.stats.heal && <div>HEAL: +{equippedItem.stats.heal}</div>}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {mounted && tooltipContent && createPortal(tooltipContent, document.body)}
       </div>
     );
   }
@@ -134,6 +145,9 @@ export default function Game() {
   const [inventoryFilter, setInventoryFilter] = useState<Item['type'] | 'all'>('all');
   const [vendorItems, setVendorItems] = useState<Item[]>([]);
   const [soldItems, setSoldItems] = useState<Item[]>([]);
+  const [showCommerceVendor, setShowCommerceVendor] = useState(false);
+  const [commerceVendorItems, setCommerceVendorItems] = useState<Item[]>([]);
+  const [commerceScrollRarity, setCommerceScrollRarity] = useState<Item['rarity'] | null>(null);
   const { toast } = useToast();
   const hasHandledRefresh = useRef(false);
 
@@ -882,6 +896,7 @@ export default function Game() {
                               itemContent={itemContent}
                               equippedItem={equippedItem}
                               canEquip={canEquip}
+                              isMobile={isMobile}
                             />
                           );
                         })}
@@ -1090,11 +1105,19 @@ export default function Game() {
                         const rarityColor = RARITY_COLORS[item.rarity];
                         const canAfford = state.stats.coins >= item.price;
                         const isSoldItem = soldItems.some(si => si.id === item.id);
-                        return (
+                        const canEquip = item.type === 'weapon' || item.type === 'armor' || item.type === 'utility';
+                        
+                        // Get equipped item of the same type
+                        const equippedItem = canEquip
+                          ? (item.type === 'weapon' ? state.loadout.weapon :
+                             item.type === 'armor' ? state.loadout.armor :
+                             item.type === 'utility' ? state.loadout.utility : null)
+                          : null;
+                        
+                        const itemContent = (
                           <button
-                            key={item.id}
                             className={cn(
-                              "p-4 border transition-all text-left relative overflow-hidden",
+                              "p-4 border transition-all text-left relative overflow-hidden w-full",
                               canAfford 
                                 ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105" 
                                 : "border-gray-700/50 opacity-60 cursor-not-allowed"
@@ -1167,6 +1190,17 @@ export default function Game() {
                             )}
                           </button>
                         );
+                        
+                        return (
+                          <InventoryItemWithHover
+                            key={item.id}
+                            item={item}
+                            itemContent={itemContent}
+                            equippedItem={equippedItem}
+                            canEquip={canEquip}
+                            isMobile={isMobile}
+                          />
+                        );
                       })}
                     </div>
                   </div>
@@ -1187,10 +1221,17 @@ export default function Game() {
                       const isEquipped = state.loadout.weapon?.id === item.id || 
                                        state.loadout.armor?.id === item.id || 
                                        state.loadout.utility?.id === item.id;
+                      const canEquip = item.type === 'weapon' || item.type === 'armor' || item.type === 'utility';
                       
-                      return (
+                      // Get equipped item of the same type (if different from current item)
+                      const equippedItem = canEquip && !isEquipped
+                        ? (item.type === 'weapon' ? state.loadout.weapon :
+                           item.type === 'armor' ? state.loadout.armor :
+                           item.type === 'utility' ? state.loadout.utility : null)
+                        : null;
+                      
+                      const itemContent = (
                         <div
-                          key={item.id}
                           className={cn(
                             "p-4 border transition-all relative",
                             isEquipped ? "border-primary/50 bg-primary/10" : "border-white/20 bg-black/20"
@@ -1275,6 +1316,17 @@ export default function Game() {
                             </div>
                           </div>
                         </div>
+                      );
+                      
+                      return (
+                        <InventoryItemWithHover
+                          key={item.id}
+                          item={item}
+                          itemContent={itemContent}
+                          equippedItem={equippedItem}
+                          canEquip={canEquip}
+                          isMobile={isMobile}
+                        />
                       );
                     })}
                   </div>
@@ -1536,9 +1588,15 @@ export default function Game() {
                                        state.loadout.utility?.id === item.id;
                       const canEquip = item.type === 'weapon' || item.type === 'armor' || item.type === 'utility';
                       
-                      return (
+                      // Get equipped item of the same type (if different from current item)
+                      const equippedItem = canEquip && !isEquipped
+                        ? (item.type === 'weapon' ? state.loadout.weapon :
+                           item.type === 'armor' ? state.loadout.armor :
+                           item.type === 'utility' ? state.loadout.utility : null)
+                        : null;
+                      
+                      const itemContent = (
                         <div
-                          key={item.id}
                           className={cn(
                             "p-3 border transition-all",
                             isEquipped ? "border-primary bg-primary/10" : "border-white/10"
@@ -1597,6 +1655,17 @@ export default function Game() {
                             <div className="text-lg text-cyan-400 font-mono mt-1">[CONSUMABLE]</div>
                           )}
                         </div>
+                      );
+                      
+                      return (
+                        <InventoryItemWithHover
+                          key={item.id}
+                          item={item}
+                          itemContent={itemContent}
+                          equippedItem={equippedItem}
+                          canEquip={canEquip}
+                          isMobile={isMobile}
+                        />
                       );
                     })}
                   </div>
@@ -1669,6 +1738,96 @@ export default function Game() {
             })}
           </div>
         )}
+
+        {/* Commerce Scroll Vendor Modal */}
+        <Dialog open={showCommerceVendor} onOpenChange={setShowCommerceVendor}>
+          <DialogContent className="bg-card/95 border-primary/20 pixel-corners max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-pixel text-primary text-2xl">SCROLL VENDOR STATION</DialogTitle>
+              <p className="text-xs font-mono text-muted-foreground mt-2">SPECIAL VENDOR • 6 ITEMS AVAILABLE</p>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded">
+                <p className="text-2xl font-mono text-muted-foreground text-right">
+                  COINS: <span className="text-yellow-400 font-bold">${state.stats.coins}</span>
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-pixel text-sm text-primary mb-2">ITEMS</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {commerceVendorItems && commerceVendorItems.length > 0 && commerceVendorItems.map(item => {
+                    const rarityColor = RARITY_COLORS[item.rarity];
+                    const canAfford = state.stats.coins >= item.price;
+                    return (
+                      <button
+                        key={item.id}
+                        className={cn(
+                          "p-4 border transition-all text-left relative overflow-hidden",
+                          canAfford 
+                            ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105" 
+                            : "border-gray-700/50 opacity-60 cursor-not-allowed"
+                        )}
+                        disabled={!canAfford}
+                        onClick={() => {
+                          if (canAfford) {
+                            audioManager.playSound('purchase');
+                            dispatch({ type: 'UPDATE_STATS', payload: { coins: state.stats.coins - item.price } });
+                            dispatch({ type: 'ADD_ITEM', payload: item });
+                            toast({ 
+                              title: "PURCHASED", 
+                              description: item.name, 
+                              className: "bg-green-900 border-green-500 text-green-100" 
+                            });
+                            
+                            // Remove purchased item from vendor
+                            setCommerceVendorItems(prev => prev.filter(i => i.id !== item.id));
+                          }
+                        }}
+                      >
+                        <div className="absolute top-0 right-0 w-2 h-2 bg-primary/20" />
+                        <p className="absolute top-2 right-2 text-2xl text-yellow-400 font-mono font-bold">${item.price}</p>
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="font-pixel text-sm" style={{ color: rarityColor }}>
+                            {item.name}{'  '}
+                            <span 
+                              className="px-2 py-0.5 font-pixel uppercase"
+                              style={{ 
+                                backgroundColor: rarityColor,
+                                color: 'hsl(240, 20%, 8%)',
+                                fontSize: '6px',
+                                verticalAlign: 'super'
+                              }}
+                            >
+                              {item.rarity}
+                            </span>
+                          </h4>
+                        </div>
+                        {item.stats && (
+                          <div className="font-mono text-muted-foreground space-y-0 mb-2" style={{ fontSize: '1.25rem' }}>
+                            {item.stats.damage && <div>DMG: +{item.stats.damage}</div>}
+                            {item.stats.defense && <div>DEF: +{item.stats.defense}</div>}
+                            {item.stats.speed && <div>SPD: +{item.stats.speed}</div>}
+                            {item.stats.vision && <div>VIS: +{item.stats.vision}</div>}
+                            {item.stats.heal && <div>HEAL: +{item.stats.heal}</div>}
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 right-2 text-xs font-mono text-muted-foreground/60">
+                          {item.type.toUpperCase()}
+                        </div>
+                        {!canAfford && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+                            <p className="insufficient-funds-text text-3xl text-red-400 font-mono">INSUFFICIENT FUNDS</p>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

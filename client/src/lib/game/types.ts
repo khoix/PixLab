@@ -61,6 +61,7 @@ export interface Entity {
   afterimageTrail?: Position[]; // For tracker afterimage
   biteComboCount?: number;   // For cerberus tri-bite
   lastBiteTime?: number;    // For cerberus combo timing
+  lastDamageComboCount?: number; // For cerberus - tracks which combo count has already dealt damage
   roamDirection?: { x: number; y: number } | null; // For phase mob roaming
   lastRoamChange?: number; // Timestamp of last roam direction change
 }
@@ -92,6 +93,28 @@ export interface Particle {
   lifetime: number; // ms
 }
 
+export interface Portal {
+  id: string;
+  pos: Position;
+  exitPos: Position;
+}
+
+export interface Lightswitch {
+  id: string;
+  pos: Position;
+  activated: boolean;
+}
+
+// Scroll type identifiers
+export type ScrollType = 
+  | 'scroll_fortune' 
+  | 'scroll_pathfinding' 
+  | 'scroll_commerce' 
+  | 'scroll_ending' 
+  | 'scroll_threatsense' 
+  | 'scroll_lootsense' 
+  | 'scroll_phasing';
+
 export interface Level {
   width: number;
   height: number;
@@ -101,6 +124,8 @@ export interface Level {
   afterimages: Afterimage[];
   particles: Particle[];
   items: { pos: Position; item: Item }[];
+  portals: Portal[];
+  lightswitches: Lightswitch[];
   exitPos: Position;
   startPos: Position;
   levelNumber: number;
@@ -133,6 +158,13 @@ export interface GameState {
   activeMods: string[];
   bossDrops: Item[]; // Persistent legendary items
   compendium: MobSubtype[]; // Unlocked mob cards (stored as array for serialization)
+  activeScrollEffects: {
+    threatSense: boolean;
+    lootSense: boolean;
+    phasing: { active: boolean; endTime: number | 'entire_level' } | null;
+  };
+  temporaryVisionBoost: { amount: number; endTime: number } | null;
+  pendingScrollAction: { type: ScrollType; scrollId: string } | null;
   settings: {
     musicVolume: number;
     sfxVolume: number;

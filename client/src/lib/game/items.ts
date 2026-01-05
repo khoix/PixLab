@@ -41,6 +41,7 @@ const CONSUMABLE_TEMPLATES: ItemTemplate[] = [
   { name: 'Potion', type: 'consumable', baseStats: { heal: 50 }, description: 'Restores health' },
   { name: 'Elixir', type: 'consumable', baseStats: { heal: 100 }, description: 'Major healing' },
   { name: 'Stim', type: 'consumable', baseStats: { speed: 1.0 }, description: 'Temporary speed boost' },
+  { name: 'Potion of Light', type: 'consumable', baseStats: { vision: 1.0 }, description: 'Temporarily increases vision radius' },
 ];
 
 // Rarity multipliers
@@ -124,6 +125,11 @@ const DUAL_STAT_MODIFIERS: { [key: string]: string[] } = {
 function generateItemName(baseName: string, stats: Item['stats'], rarity: Item['rarity']): string {
   if (!stats) return baseName;
   
+  // Skip adding modifiers if the base name already contains "of" (indicating it already has a descriptive modifier)
+  if (baseName.includes(' of ')) {
+    return baseName;
+  }
+  
   const statKeys = Object.keys(stats).filter(key => stats[key as keyof typeof stats] !== undefined && stats[key as keyof typeof stats] !== 0) as Array<keyof typeof stats>;
   
   if (statKeys.length === 0) return baseName;
@@ -193,12 +199,68 @@ function generateItemName(baseName: string, stats: Item['stats'], rarity: Item['
   return `${rarityPrefix}${baseName}`;
 }
 
+// Generate a scroll with specific rarity
+export function generateScroll(scrollType: import('./types').ScrollType, rarity: Item['rarity']): Item {
+  const scrollNames: Record<import('./types').ScrollType, string> = {
+    scroll_fortune: 'Scroll of Fortune',
+    scroll_pathfinding: 'Scroll of Pathfinding',
+    scroll_commerce: 'Scroll of Commerce',
+    scroll_ending: 'Scroll of Ending',
+    scroll_threatsense: 'Scroll of Threat-sense',
+    scroll_lootsense: 'Scroll of Loot-sense',
+    scroll_phasing: 'Scroll of Phasing',
+  };
+  
+  const scrollDescriptions: Record<import('./types').ScrollType, string> = {
+    scroll_fortune: 'Teleports you near the nearest item',
+    scroll_pathfinding: 'Teleports you near the exit',
+    scroll_commerce: 'Opens a special vendor station',
+    scroll_ending: 'Teleports you to the next boss sector',
+    scroll_threatsense: 'Reveals all enemies in the maze',
+    scroll_lootsense: 'Reveals all items in the maze',
+    scroll_phasing: 'Allows you to walk through walls',
+  };
+  
+  return {
+    id: `scroll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: scrollNames[scrollType],
+    type: 'consumable',
+    rarity,
+    stats: {}, // Scrolls don't have stats
+    price: 0,
+    description: scrollDescriptions[scrollType],
+  };
+}
+
+// Generate a random scroll (for item drops)
+export function generateRandomScroll(level: number): Item {
+  // Scroll rarity distribution based on scroll type
+  // Threat-sense: Common, Loot-sense/Pathfinding: Rare, Fortune/Ending: Epic, Commerce/Phasing: variable
+  const scrollTypes: Array<{ type: import('./types').ScrollType; rarity: Item['rarity'] }> = [
+    { type: 'scroll_threatsense', rarity: 'common' },
+    { type: 'scroll_lootsense', rarity: 'rare' },
+    { type: 'scroll_pathfinding', rarity: 'rare' },
+    { type: 'scroll_fortune', rarity: 'epic' },
+    { type: 'scroll_ending', rarity: 'epic' },
+    { type: 'scroll_commerce', rarity: selectRarity(level) }, // Variable rarity
+    { type: 'scroll_phasing', rarity: selectRarity(level) }, // Variable rarity
+  ];
+  
+  const selected = scrollTypes[Math.floor(Math.random() * scrollTypes.length)];
+  return generateScroll(selected.type, selected.rarity);
+}
+
 // Generate a random item
 export function generateItem(level: number, rarity?: Item['rarity']): Item {
   const selectedRarity = rarity || selectRarity(level);
   const multiplier = RARITY_MULTIPLIERS[selectedRarity];
   
   // Select item type (weighted)
+  // 5% chance to generate a scroll instead of regular item
+  if (Math.random() < 0.05) {
+    return generateRandomScroll(level);
+  }
+  
   const typeRoll = Math.random();
   let template: ItemTemplate;
   let templates: ItemTemplate[];
@@ -459,6 +521,39 @@ const BOSS_DROP_POOL: Array<Omit<Item, 'id'>> = [
     description: 'Woven from the fabric of space',
   },
 ];
+
+// Generate items for Commerce scroll vendor
+// Guarantees at least one item of the scroll's rarity, high likelihood of at least one healing potion
+export function generateCommerceVendorItems(scrollRarity: Item['rarity'], level: number): Item[] {
+  const items: Item[] = [];
+  const numItems = 6;
+  
+  // Generate at least one item of the scroll's rarity
+  const guaranteedItem = generateItem(level, scrollRarity);
+  items.push(guaranteedItem);
+  
+  // High likelihood (70%) of at least one healing potion
+  if (Math.random() < 0.7) {
+    // Try to generate a healing potion (Potion or Elixir)
+    let attempts = 0;
+    while (attempts < 20) {
+      const potion = generateItem(level);
+      if (potion.type === 'consumable' && (potion.name.includes('Potion') || potion.name.includes('Elixir'))) {
+        items.push(potion);
+        break;
+      }
+      attempts++;
+    }
+  }
+  
+  // Fill remaining slots with random items
+  while (items.length < numItems) {
+    items.push(generateItem(level));
+  }
+  
+  // Trim to exactly 6 items
+  return items.slice(0, numItems);
+}
 
 // Generate a boss drop from the fixed pool
 export function generateBossDrop(level: number): Item {

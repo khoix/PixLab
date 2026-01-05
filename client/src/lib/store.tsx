@@ -54,7 +54,8 @@ export type GameAction =
   | { type: 'ADD_BOSS_DROP'; payload: Item }
   | { type: 'CLEAR_BOSS_DROPS' }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<GameState['settings']> }
-  | { type: 'UNLOCK_COMPENDIUM_CARD'; payload: import('./game/types').MobSubtype };
+  | { type: 'UNLOCK_COMPENDIUM_CARD'; payload: import('./game/types').MobSubtype }
+  | { type: 'CLEAR_PENDING_SCROLL_ACTION' };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -100,6 +101,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
             activeMods: Array.isArray(parsed.activeMods) ? parsed.activeMods : [],
             bossDrops: Array.isArray(parsed.bossDrops) ? parsed.bossDrops : [],
             compendium: Array.isArray(parsed.compendium) ? parsed.compendium : [],
+            activeScrollEffects: parsed.activeScrollEffects || { threatSense: false, lootSense: false, phasing: null },
+            temporaryVisionBoost: parsed.temporaryVisionBoost || null,
+            pendingScrollAction: parsed.pendingScrollAction || null,
             settings: {
               musicVolume: parsed.settings?.musicVolume ?? 0.5,
               sfxVolume: parsed.settings?.sfxVolume ?? 0.5,
@@ -133,6 +137,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeMods: [],
       bossDrops: [],
       compendium: [],
+      activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
+      temporaryVisionBoost: null,
+      pendingScrollAction: null,
       settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'joystick' },
     };
     // Generate code from the default state
@@ -187,18 +194,78 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
         case 'USE_CONSUMABLE':
           const consumable = prev.inventory.find(item => item.id === action.payload.itemId);
-          if (consumable && consumable.type === 'consumable' && consumable.stats) {
-            // Apply consumable effects
-            const updates: Partial<PlayerStats> = {};
-            if (consumable.stats.heal) {
-              updates.hp = Math.min(prev.stats.maxHp, prev.stats.hp + consumable.stats.heal);
-            }
-            if (consumable.stats.speed) {
-              // Speed boost is temporary - could be implemented as a temporary effect
-              // For now, we'll just remove the item after use
-            }
-            if (Object.keys(updates).length > 0) {
-              newState.stats = { ...prev.stats, ...updates };
+          if (consumable && consumable.type === 'consumable') {
+            // Check for Scrolls
+            if (consumable.name.includes('Scroll of')) {
+              // Identify scroll type
+              const scrollTypeMap: Record<string, import('./game/types').ScrollType> = {
+                'Scroll of Fortune': 'scroll_fortune',
+                'Scroll of Pathfinding': 'scroll_pathfinding',
+                'Scroll of Commerce': 'scroll_commerce',
+                'Scroll of Ending': 'scroll_ending',
+                'Scroll of Threat-sense': 'scroll_threatsense',
+                'Scroll of Loot-sense': 'scroll_lootsense',
+                'Scroll of Phasing': 'scroll_phasing',
+              };
+              
+              const scrollType = scrollTypeMap[consumable.name];
+              if (scrollType) {
+                // Set pending scroll action for GameCanvas to handle
+                newState.pendingScrollAction = { type: scrollType, scrollId: consumable.id };
+                
+                // Handle scroll effects that don't need level data
+                if (scrollType === 'scroll_threatsense') {
+                  newState.activeScrollEffects.threatSense = true;
+                } else if (scrollType === 'scroll_lootsense') {
+                  newState.activeScrollEffects.lootSense = true;
+                } else if (scrollType === 'scroll_phasing') {
+                  const now = Date.now();
+                  let endTime: number | 'entire_level';
+                  if (consumable.rarity === 'legendary') {
+                    endTime = 'entire_level';
+                  } else {
+                    const durationMap = { common: 5000, rare: 10000, epic: 20000 };
+                    endTime = now + (durationMap[consumable.rarity] || 5000);
+                  }
+                  newState.activeScrollEffects.phasing = { active: true, endTime };
+                } else if (scrollType === 'scroll_ending') {
+                  // Advance to next boss sector (same as clearing a maze)
+                  // This will be handled in GameCanvas by checking pendingScrollAction
+                }
+                // scroll_fortune, scroll_pathfinding, scroll_commerce, scroll_ending are handled in GameCanvas
+              }
+            } else if (consumable.name.includes('Potion of Light')) {
+              // Check for Potion of Light
+              const now = Date.now();
+              const duration = 10000; // 10 seconds
+              let visionBoost: number;
+              
+              if (consumable.rarity === 'legendary') {
+                // Legendary: Full maze reveal (use very large number)
+                visionBoost = 9999;
+              } else {
+                // Common: +1.0, Rare: +1.5, Epic: +2.0
+                const boostMap = { common: 1.0, rare: 1.5, epic: 2.0 };
+                visionBoost = boostMap[consumable.rarity] || 1.0;
+              }
+              
+              newState.temporaryVisionBoost = {
+                amount: visionBoost,
+                endTime: now + duration,
+              };
+            } else if (consumable.stats) {
+              // Apply other consumable effects
+              const updates: Partial<PlayerStats> = {};
+              if (consumable.stats.heal) {
+                updates.hp = Math.min(prev.stats.maxHp, prev.stats.hp + consumable.stats.heal);
+              }
+              if (consumable.stats.speed) {
+                // Speed boost is temporary - could be implemented as a temporary effect
+                // For now, we'll just remove the item after use
+              }
+              if (Object.keys(updates).length > 0) {
+                newState.stats = { ...prev.stats, ...updates };
+              }
             }
             // Remove consumable from inventory
             newState.inventory = prev.inventory.filter(item => item.id !== action.payload.itemId);
@@ -233,6 +300,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case 'NEXT_LEVEL':
           // Clear vendor items for the previous level when moving to a new sector
           clearVendorItems(prev.currentLevel);
+          // Clear scroll effects when level changes
+          newState.activeScrollEffects = { threatSense: false, lootSense: false, phasing: null };
+          newState.temporaryVisionBoost = null;
           newState.currentLevel += 1;
           newState.uid = encodeGameState(newState);
           // Save immediately on level changes
@@ -313,6 +383,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
           break;
+        case 'CLEAR_PENDING_SCROLL_ACTION':
+          newState.pendingScrollAction = null;
+          newState.uid = encodeGameState(newState);
+          debouncedSave(newState);
+          break;
       }
       return newState;
     });
@@ -331,6 +406,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeMods: state.activeMods,
       bossDrops: state.bossDrops,
       compendium: state.compendium, // Preserve compendium across resets
+      activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
+      temporaryVisionBoost: null,
+      pendingScrollAction: null,
       settings: state.settings,
     };
     newState.uid = encodeGameState(newState);

@@ -13,7 +13,7 @@ export const SCALING_CONFIG = {
   
   // Adaptive scaling: S(L) = (1 + a*L + b*L^2) * (ratio^p)
   linearCoeff: 0.06,       // a - linear scaling coefficient
-  quadraticCoeff: 0.002,   // b - quadratic scaling coefficient
+  quadraticCoeff: 0.007,   // b - quadratic scaling coefficient (increased for better exponential scaling)
   powerExponent: 0.35,      // p - power exponent for ratio adjustment
   ratioClamp: [0.8, 1.25] as [number, number], // Clamp for player power ratio
   
@@ -24,7 +24,7 @@ export const SCALING_CONFIG = {
   bossDmgExponent: 0.90,   // DMG multiplier exponent for boss sectors
   
   // Tier bumps
-  shopTierMultiplier: 1.10, // Multiplier applied after each shop tier (every 4 levels)
+  shopTierMultiplier: 1.15, // Multiplier applied after each shop tier (every 4 levels)
   bossHpMultiplier: [1.6, 2.2] as [number, number],  // Boss HP multiplier range
   bossDmgMultiplier: [1.25, 1.6] as [number, number], // Boss DMG multiplier range
   
@@ -38,7 +38,7 @@ export const SCALING_CONFIG = {
   
   // Player power calculation
   baseAttackRate: 2.0,     // Base attacks per second (movement-based)
-  defenseEhpFactor: 100,   // Factor for converting flat defense to EHP multiplier
+  defenseEhpFactor: 150,   // Factor for converting flat defense to EHP multiplier (increased to make defense less powerful)
 };
 
 /**
@@ -145,7 +145,7 @@ export function calculatePlayerPower(
   // Calculate EHP: maxHp adjusted by defense
   // Defense is flat reduction, convert to EHP multiplier
   // Formula: EHP = maxHp * (1 + defense / factor)
-  // This means 100 defense = 2x EHP, 200 defense = 3x EHP, etc.
+  // With factor=150: 150 defense = 2x EHP, 300 defense = 3x EHP, etc.
   const ehp = effectiveStats.maxHp * (1 + defense / SCALING_CONFIG.defenseEhpFactor);
   
   // Power index: geometric mean of DPS and EHP
@@ -251,17 +251,8 @@ function calculateTierMultiplier(level: number, sectorType: 'normal' | 'boss' | 
     multiplier *= Math.pow(SCALING_CONFIG.shopTierMultiplier, shopTiers);
   }
   
-  // Boss multipliers (every 8 levels)
-  if (sectorType === 'boss') {
-    const bossTier = Math.floor(level / 8);
-    if (bossTier > 0) {
-      // Use average of boss multiplier range
-      const avgBossHpMult = (SCALING_CONFIG.bossHpMultiplier[0] + SCALING_CONFIG.bossHpMultiplier[1]) / 2;
-      const avgBossDmgMult = (SCALING_CONFIG.bossDmgMultiplier[0] + SCALING_CONFIG.bossDmgMultiplier[1]) / 2;
-      // Apply boss multipliers (will be further adjusted in sector modifiers)
-      multiplier *= Math.sqrt(avgBossHpMult * avgBossDmgMult);
-    }
-  }
+  // Note: Boss multipliers are applied separately in calculateScaling() for boss mobs
+  // to avoid double application. Only shop tier bumps are applied here.
   
   return multiplier;
 }
@@ -328,16 +319,17 @@ export function calculateScaling(params: ScalingParams): ScalingResult {
   let dmgMultiplier = Math.pow(baseScaling, dmgExponent) * tierMult * archetype.dmg;
   
   // Apply boss-specific multipliers if this is a boss
+  // Boss multipliers scale with tier (every 8 levels) and are applied only once here
   if (sectorType === 'boss' && mobArchetype === 'boss') {
     const bossTier = Math.floor(level / 8);
     if (bossTier > 0) {
-      // Use tier-based boss multipliers (scaled by tier)
+      // Use tier-based boss multipliers (scaled by tier, capped at tier 5)
+      // Interpolate between min and max based on tier progression
+      const tierProgress = Math.min(bossTier / 5, 1.0); // Scale up to tier 5, then cap
       const bossHpMult = SCALING_CONFIG.bossHpMultiplier[0] + 
-        (SCALING_CONFIG.bossHpMultiplier[1] - SCALING_CONFIG.bossHpMultiplier[0]) * 
-        Math.min(bossTier / 5, 1.0); // Scale up to tier 5, then cap
+        (SCALING_CONFIG.bossHpMultiplier[1] - SCALING_CONFIG.bossHpMultiplier[0]) * tierProgress;
       const bossDmgMult = SCALING_CONFIG.bossDmgMultiplier[0] + 
-        (SCALING_CONFIG.bossDmgMultiplier[1] - SCALING_CONFIG.bossDmgMultiplier[0]) * 
-        Math.min(bossTier / 5, 1.0);
+        (SCALING_CONFIG.bossDmgMultiplier[1] - SCALING_CONFIG.bossDmgMultiplier[0]) * tierProgress;
       
       hpMultiplier *= bossHpMult;
       dmgMultiplier *= bossDmgMult;

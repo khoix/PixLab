@@ -69,10 +69,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const afterimageIdCounterRef = useRef<number>(0);
   const particleIdCounterRef = useRef<number>(0);
   const visionDebuffLevelRef = useRef<number>(0); // Track vision debuff level (0-1.0, where 1.0 = complete blindness)
+  const lightswitchRevealEndTimeRef = useRef<number | null>(null); // Track when lightswitch reveal ends
   // Use refs to track current stats to avoid race conditions with async state updates
   const statsRef = useRef<typeof state.stats>(state.stats);
   const loadoutRef = useRef<typeof state.loadout>(state.loadout);
   const activeModsRef = useRef<string[]>(state.activeMods);
+  const temporaryVisionBoostRef = useRef<typeof state.temporaryVisionBoost>(state.temporaryVisionBoost);
+  const activeScrollEffectsRef = useRef<typeof state.activeScrollEffects>(state.activeScrollEffects);
   const canvasSizeRef = useRef({ width: window.innerWidth, height: window.innerHeight });
   const lastPlayerPosRef = useRef<Position>({ x: 0, y: 0 });
   const previousEnemyIdsRef = useRef<Set<string>>(new Set());
@@ -108,7 +111,102 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     statsRef.current = state.stats;
     loadoutRef.current = state.loadout;
     activeModsRef.current = state.activeMods;
-  }, [state.stats, state.loadout, state.activeMods]);
+    temporaryVisionBoostRef.current = state.temporaryVisionBoost;
+    activeScrollEffectsRef.current = state.activeScrollEffects;
+  }, [state.stats, state.loadout, state.activeMods, state.temporaryVisionBoost, state.activeScrollEffects]);
+
+  // Handle pending scroll actions (excluding Commerce, which is handled in Game.tsx)
+  useEffect(() => {
+    if (state.pendingScrollAction && levelRef.current && state.pendingScrollAction.type !== 'scroll_commerce') {
+      const { type, scrollId } = state.pendingScrollAction;
+      
+      if (type === 'scroll_fortune') {
+        // Teleport near nearest item
+        if (levelRef.current.items.length > 0) {
+          // Find nearest item
+          let nearestItem = levelRef.current.items[0];
+          let minDist = Infinity;
+          for (const item of levelRef.current.items) {
+            const dist = Math.abs(item.pos.x - playerPosRef.current.x) + Math.abs(item.pos.y - playerPosRef.current.y);
+            if (dist < minDist) {
+              minDist = dist;
+              nearestItem = item;
+            }
+          }
+          
+          // Find nearby floor tile (2-3 tiles away, not on item tile)
+          const nearbyPositions: Position[] = [];
+          for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+              const dist = Math.abs(dx) + Math.abs(dy);
+              if (dist >= 2 && dist <= 3) {
+                const x = nearestItem.pos.x + dx;
+                const y = nearestItem.pos.y + dy;
+                if (x >= 0 && x < levelRef.current.width && y >= 0 && y < levelRef.current.height &&
+                    levelRef.current.tiles[y][x] === 'floor' &&
+                    (x !== nearestItem.pos.x || y !== nearestItem.pos.y)) {
+                  nearbyPositions.push({ x, y });
+                }
+              }
+            }
+          }
+          
+          if (nearbyPositions.length > 0) {
+            const targetPos = nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)];
+            playerPosRef.current = { ...targetPos };
+            visualPosRef.current = { ...targetPos };
+            moveStartPosRef.current = { ...targetPos };
+            moveProgressRef.current = 1;
+            lastPlayerPosRef.current = { ...targetPos };
+            audioManager.playSound('itemPickup');
+          }
+        }
+      } else if (type === 'scroll_pathfinding') {
+        // Teleport near exit
+        const exitPos = levelRef.current.exitPos;
+        const nearbyPositions: Position[] = [];
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            const dist = Math.abs(dx) + Math.abs(dy);
+            if (dist >= 2 && dist <= 3) {
+              const x = exitPos.x + dx;
+              const y = exitPos.y + dy;
+              if (x >= 0 && x < levelRef.current.width && y >= 0 && y < levelRef.current.height &&
+                  levelRef.current.tiles[y][x] === 'floor' &&
+                  (x !== exitPos.x || y !== exitPos.y)) {
+                nearbyPositions.push({ x, y });
+              }
+            }
+          }
+        }
+        
+        if (nearbyPositions.length > 0) {
+          const targetPos = nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)];
+          playerPosRef.current = { ...targetPos };
+          visualPosRef.current = { ...targetPos };
+          moveStartPosRef.current = { ...targetPos };
+          moveProgressRef.current = 1;
+          lastPlayerPosRef.current = { ...targetPos };
+          audioManager.playSound('itemPickup');
+        }
+      } else if (type === 'scroll_ending') {
+        // Advance to next boss sector
+        let nextBossLevel = state.currentLevel;
+        // Find the next boss level (must be greater than current level)
+        while (true) {
+          nextBossLevel++;
+          const isBoss = nextBossLevel % BOSS_INTERVAL === 0 && nextBossLevel > 0;
+          if (isBoss) break;
+        }
+        // Set to one level before target, then complete to reach target
+        dispatch({ type: 'SET_CURRENT_LEVEL', payload: nextBossLevel - 1 });
+        onLevelComplete();
+      }
+      
+      // Clear pending scroll action
+      dispatch({ type: 'CLEAR_PENDING_SCROLL_ACTION' });
+    }
+  }, [state.pendingScrollAction, dispatch, state]);
 
   // Update audio volumes when settings change
   useEffect(() => {
@@ -141,6 +239,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     afterimageIdCounterRef.current = 0;
     particleIdCounterRef.current = 0;
     visionDebuffLevelRef.current = 0;
+    lightswitchRevealEndTimeRef.current = null;
     // Initialize afterimages array if not present
     if (!level.afterimages) {
       level.afterimages = [];
@@ -185,10 +284,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   // Game Loop
   useEffect(() => {
     let animationFrameId: number;
+    let isFirstFrame = true;
 
     const loop = (time: number) => {
-      const deltaTime = time - lastTimeRef.current;
+      // Initialize lastTimeRef on first frame to prevent huge deltaTime
+      if (isFirstFrame) {
+        lastTimeRef.current = time;
+        isFirstFrame = false;
+        animationFrameId = requestAnimationFrame(loop);
+        return;
+      }
+      
+      let deltaTime = time - lastTimeRef.current;
       lastTimeRef.current = time;
+      
+      // Cap deltaTime to prevent frame rate spikes from affecting game logic
+      // This ensures mobs don't move/attack faster when player speed changes
+      const MAX_DELTA_TIME = 100; // Cap at 100ms (10 FPS minimum)
+      deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
 
       update(deltaTime);
       draw();
@@ -276,6 +389,34 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       visionDebuffLevelRef.current = Math.max(0, visionDebuffLevelRef.current - decayRate);
     }
 
+    // Check if temporary vision boost has expired
+    if (temporaryVisionBoostRef.current && now >= temporaryVisionBoostRef.current.endTime) {
+      temporaryVisionBoostRef.current = null;
+      // Clear from state (dispatch will trigger re-render and sync ref)
+      dispatch({ type: 'UPDATE_STATS', payload: {} });
+    }
+
+    // Check if lightswitch reveal has expired
+    if (lightswitchRevealEndTimeRef.current && now >= lightswitchRevealEndTimeRef.current) {
+      lightswitchRevealEndTimeRef.current = null;
+      // Remove activated lightswitches
+      if (levelRef.current && levelRef.current.lightswitches) {
+        levelRef.current.lightswitches = levelRef.current.lightswitches.filter(ls => !ls.activated);
+      }
+    }
+
+    // Check if phasing effect has expired
+    if (activeScrollEffectsRef.current.phasing) {
+      const phasingEffect = activeScrollEffectsRef.current.phasing;
+      if (phasingEffect.endTime !== 'entire_level') {
+        if (now >= phasingEffect.endTime) {
+          // Phasing expired
+          activeScrollEffectsRef.current.phasing = null;
+          dispatch({ type: 'UPDATE_STATS', payload: {} }); // Trigger state update
+        }
+      }
+    }
+
     // Check time limit
     // Don't check timer during bonus selection to prevent game over while player is choosing
     if (!levelRef.current.isShop && !levelRef.current.isBoss && !showBonusSelection) {
@@ -317,7 +458,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       if (moveTimerRef.current > moveDelay) {
         const nextPos = { x: playerPosRef.current.x + dx, y: playerPosRef.current.y + dy };
         
-        if (!checkCollision(nextPos, levelRef.current)) {
+        // Check if phasing is active
+        const isPhasing = activeScrollEffectsRef.current.phasing && activeScrollEffectsRef.current.phasing.active;
+        const canMove = isPhasing || !checkCollision(nextPos, levelRef.current);
+        
+        if (canMove) {
           // Play movement sound
           if (lastPlayerPosRef.current.x !== nextPos.x || lastPlayerPosRef.current.y !== nextPos.y) {
             audioManager.playSound('move');
@@ -337,6 +482,33 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           if (tile === 'exit') {
             audioManager.playSound('levelComplete');
             onLevelComplete();
+          }
+
+          // Check for portal collision
+          const portal = levelRef.current.portals.find(
+            p => Math.floor(p.pos.x) === nextPos.x && Math.floor(p.pos.y) === nextPos.y
+          );
+          if (portal) {
+            // Teleport player to portal exit position
+            audioManager.playSound('itemPickup'); // Reuse sound for portal activation
+            playerPosRef.current = { ...portal.exitPos };
+            visualPosRef.current = { ...portal.exitPos };
+            moveStartPosRef.current = { ...portal.exitPos };
+            moveProgressRef.current = 1;
+            lastPlayerPosRef.current = { ...portal.exitPos };
+          }
+
+          // Check for lightswitch collision
+          const lightswitch = levelRef.current.lightswitches.find(
+            ls => !ls.activated && Math.floor(ls.pos.x) === nextPos.x && Math.floor(ls.pos.y) === nextPos.y
+          );
+          if (lightswitch) {
+            // Activate lightswitch: full maze reveal for 5 seconds, clear vision debuff, then remove lightswitch
+            audioManager.playSound('itemPickup'); // Reuse sound for lightswitch activation
+            lightswitch.activated = true;
+            lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
+            visionDebuffLevelRef.current = 0; // Clear Nyx effect
+            // Remove lightswitch after reveal ends (handled in update loop)
           }
 
           // Check for item collection
@@ -1049,9 +1221,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 // Find dark area (tile with no nearby entities)
                 if (levelRef.current) {
                   const darkTiles: Position[] = [];
+                  const exitPos = levelRef.current.exitPos;
                   for (let y = 0; y < levelRef.current.height; y++) {
                     for (let x = 0; x < levelRef.current.width; x++) {
-                      if (levelRef.current.tiles[y][x] === 'floor') {
+                      if (levelRef.current.tiles[y][x] === 'floor' &&
+                          (x !== exitPos.x || y !== exitPos.y)) {
                         const tilePos = { x, y };
                         const distToPlayer = Math.sqrt(
                           Math.pow(tilePos.x - playerPosRef.current.x, 2) +
@@ -1284,11 +1458,34 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               if (hasStraightLane && distToPlayer > 1.5) {
                 // Triple-lunge (restricted to cardinal)
                 const dir = restrictToCardinal(dx, dy);
-                nextPos = {
-                  x: entity.pos.x + dir.x * 3,
-                  y: entity.pos.y + dir.y * 3,
-                };
-                shouldMove = true;
+                // Check each intermediate tile for collisions
+                let canLunge = true;
+                if (levelRef.current) {
+                  for (let i = 1; i <= 3; i++) {
+                    const checkPos = {
+                      x: entity.pos.x + dir.x * i,
+                      y: entity.pos.y + dir.y * i,
+                    };
+                    if (checkCollision(checkPos, levelRef.current)) {
+                      canLunge = false;
+                      break;
+                    }
+                  }
+                }
+                if (canLunge) {
+                  nextPos = {
+                    x: entity.pos.x + dir.x * 3,
+                    y: entity.pos.y + dir.y * 3,
+                  };
+                  shouldMove = true;
+                } else {
+                  // Fall back to normal walk if lunge path is blocked
+                  nextPos = {
+                    x: entity.pos.x + dir.x,
+                    y: entity.pos.y + dir.y,
+                  };
+                  shouldMove = true;
+                }
               } else {
                 // Normal slow walk (restricted to cardinal)
                 const dir = restrictToCardinal(dx, dy);
@@ -1307,6 +1504,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   // Start combo - first bite
                   updatedEntity.biteComboCount = 1;
                   updatedEntity.lastBiteTime = now;
+                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking for new combo
                 } else if (biteComboCount > 0 && biteComboCount < 3) {
                   // Continue combo - advance based on timing
                   if (biteComboCount === 1 && timeSinceLastBite >= 200) {
@@ -1319,16 +1517,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     // Combo complete, reset after all bites
                     updatedEntity.biteComboCount = 0;
                     updatedEntity.lastBiteTime = now;
+                    updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
                   }
                 } else if (biteComboCount === 3 && timeSinceLastBite >= 1000) {
                   // Reset combo after 1 second of completion
                   updatedEntity.biteComboCount = 0;
                   updatedEntity.lastBiteTime = now;
+                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
                 }
               } else {
                 // Reset combo if too far
                 if (timeSinceLastBite >= 1000) {
                   updatedEntity.biteComboCount = 0;
+                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
                 }
               }
               break;
@@ -1471,9 +1672,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               // Check bounds
               if (nextPos.x >= 0 && nextPos.x < levelRef.current.width &&
                   nextPos.y >= 0 && nextPos.y < levelRef.current.height) {
-                // Check for mob collision - prevent stacking unless one can phase or one is stationary
+                // Check if target tile is the exit - mobs cannot occupy exit tile
                 const tileX = Math.floor(nextPos.x);
                 const tileY = Math.floor(nextPos.y);
+                const exitPos = levelRef.current.exitPos;
+                if (tileX === exitPos.x && tileY === exitPos.y) {
+                  // Block movement onto exit tile
+                  return updatedEntity;
+                }
+                
+                // Check for mob collision - prevent stacking unless one can phase or one is stationary
                 const mobsAtTarget = levelRef.current.entities.filter(e => {
                   if (e.id === entity.id) return false; // Skip self
                   if (e.type !== 'enemy' && e.type !== 'boss_enemy') return false; // Only check other mobs
@@ -1521,23 +1729,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               const biteComboCount = updatedEntity.biteComboCount || 0;
               const lastBite = updatedEntity.lastBiteTime || 0;
               const timeSinceLastBite = now - lastBite;
+              const lastDamageComboCount = updatedEntity.lastDamageComboCount || 0;
               
               // Apply damage when combo count changes and timing is right
+              // Track which combo count has already dealt damage to prevent duplicates
               let shouldDamage = false;
-              if (biteComboCount === 1 && timeSinceLastBite < 100) {
+              if (biteComboCount === 1 && biteComboCount > lastDamageComboCount && timeSinceLastBite < 100) {
                 // First bite - immediate (within 100ms of combo start)
                 shouldDamage = true;
-              } else if (biteComboCount === 2 && timeSinceLastBite >= 200 && timeSinceLastBite < 300) {
+              } else if (biteComboCount === 2 && biteComboCount > lastDamageComboCount && timeSinceLastBite >= 200 && timeSinceLastBite < 300) {
                 // Second bite - around 200ms
                 shouldDamage = true;
-              } else if (biteComboCount === 3 && timeSinceLastBite >= 400 && timeSinceLastBite < 500) {
+              } else if (biteComboCount === 3 && biteComboCount > lastDamageComboCount && timeSinceLastBite >= 400 && timeSinceLastBite < 500) {
                 // Third bite - around 400ms
                 shouldDamage = true;
               }
               
-              // Also check if we just transitioned to a new combo count
+              // Also check if we just transitioned to a new combo count (fallback)
               const prevBiteComboCount = entity.biteComboCount || 0;
-              if (biteComboCount > prevBiteComboCount) {
+              if (biteComboCount > prevBiteComboCount && biteComboCount > lastDamageComboCount) {
                 shouldDamage = true;
               }
               
@@ -1551,6 +1761,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   const hpRatio = baseStats.hp / baseStats.maxHp;
                   const damage = Math.max(1, Math.floor(damageAfterDefense * (1 - hpRatio * 0.3)));
                   const newHp = Math.max(0, baseStats.hp - damage);
+                  
+                  // Mark this combo count as having dealt damage
+                  updatedEntity.lastDamageComboCount = biteComboCount;
                   
                   enemyDamageCooldownRef.current.set(entity.id, now);
                   audioManager.playSound('damage');
@@ -1698,18 +1911,38 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           
           // Always use stairs.png image - never draw programmatic stairs
           if (stairsImageCache.img) {
+            ctx.save();
+            
             if (shouldRotate) {
               // Rotate 90 degrees to the left (counterclockwise)
-              ctx.save();
               const centerX = tileX + TILE_SIZE / 2;
               const centerY = tileY + TILE_SIZE / 2;
               ctx.translate(centerX, centerY);
               ctx.rotate(-Math.PI / 2); // -90 degrees
               ctx.drawImage(stairsImageCache.img, -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
-              ctx.restore();
             } else {
               ctx.drawImage(stairsImageCache.img, tileX, tileY, TILE_SIZE, TILE_SIZE);
             }
+            
+            // Apply color filter to match theme
+            // Use 'color' blend mode to preserve luminance (brightness/contrast) while applying theme hue
+            ctx.globalCompositeOperation = 'color';
+            
+            // Create a tint color based on the theme (use floor color as base)
+            // Lighten it slightly to maintain better visibility
+            const tintColor = theme.floor;
+            ctx.fillStyle = tintColor;
+            
+            if (shouldRotate) {
+              // Already translated and rotated, so draw at origin
+              ctx.fillRect(-TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
+            } else {
+              ctx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
+            }
+            
+            // Reset composite operation
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.restore();
           } else {
             // Temporary placeholder only while image loads (should be very brief)
             const holePadding = 4;
@@ -2430,7 +2663,136 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     });
 
+    // Draw Portals (glow and particles)
+    if (levelRef.current && levelRef.current.portals) {
+      levelRef.current.portals.forEach(portal => {
+      const centerX = portal.pos.x * TILE_SIZE + TILE_SIZE / 2;
+      const centerY = portal.pos.y * TILE_SIZE + TILE_SIZE / 2;
+      const portalSize = TILE_SIZE * 0.8;
+      const time = Date.now() * 0.003; // Slow animation
+      
+      // Outer glow (pulsing)
+      const glowRadius = portalSize / 2 + Math.sin(time) * 3;
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowRadius);
+      gradient.addColorStop(0, 'rgba(100, 50, 255, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(150, 100, 255, 0.4)');
+      gradient.addColorStop(1, 'rgba(200, 150, 255, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner portal ring
+      ctx.strokeStyle = '#9B59FF';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, portalSize / 2 - 5, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Portal center (void effect)
+      ctx.fillStyle = '#6C3483';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, portalSize / 2 - 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Generate particles (bright fading particles)
+      if (levelRef.current) {
+        if (!levelRef.current.particles) {
+          levelRef.current.particles = [];
+        }
+        // Add new particles occasionally
+        if (Math.random() < 0.3) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 0.5 + Math.random() * 0.5;
+          const particle = {
+            id: `portal-particle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            pos: {
+              x: centerX + Math.cos(angle) * (portalSize / 2 - 5),
+              y: centerY + Math.sin(angle) * (portalSize / 2 - 5),
+            },
+            createdAt: Date.now(),
+            lifetime: 1000 + Math.random() * 500, // 1-1.5 seconds
+            velocity: {
+              x: Math.cos(angle) * speed,
+              y: Math.sin(angle) * speed,
+            },
+          };
+          levelRef.current.particles.push(particle as any);
+        }
+        
+        // Draw existing particles
+        if (levelRef.current.particles) {
+          const now = Date.now();
+          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
+          if (p.id && p.id.startsWith('portal-particle-')) {
+            const age = now - p.createdAt;
+            if (age > p.lifetime) return false;
+            
+            // Update particle position
+            if (p.velocity) {
+              p.pos.x += p.velocity.x;
+              p.pos.y += p.velocity.y;
+            }
+            
+            // Draw particle (bright, fading)
+            const alpha = 1 - (age / p.lifetime);
+            ctx.fillStyle = `rgba(255, 200, 255, ${alpha})`;
+            ctx.shadowColor = 'rgba(255, 200, 255, 0.8)';
+            ctx.shadowBlur = 5;
+            ctx.beginPath();
+            ctx.arc(p.pos.x, p.pos.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            return true;
+          }
+          return true;
+        });
+        }
+      }
+      });
+    }
+
+    // Draw Lightswitches
+    if (levelRef.current && levelRef.current.lightswitches) {
+      levelRef.current.lightswitches.forEach(lightswitch => {
+        if (!lightswitch.activated) {
+          const centerX = lightswitch.pos.x * TILE_SIZE + TILE_SIZE / 2;
+          const centerY = lightswitch.pos.y * TILE_SIZE + TILE_SIZE / 2;
+          const switchSize = TILE_SIZE * 0.6;
+          
+          // Lightswitch base (yellow/white glow)
+          ctx.fillStyle = '#FFD700';
+          ctx.shadowColor = '#FFD700';
+          ctx.shadowBlur = 10;
+          ctx.fillRect(
+            centerX - switchSize / 2,
+            centerY - switchSize / 2,
+            switchSize,
+            switchSize
+          );
+          ctx.shadowBlur = 0;
+          
+          // Lightswitch indicator (small circle)
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, switchSize / 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
     // Draw Player at visual position for smooth animation
+    const isPhasing = activeScrollEffectsRef.current.phasing && activeScrollEffectsRef.current.phasing.active;
+    
+    // Visual indicator for phasing (semi-transparent with glow)
+    if (isPhasing) {
+      ctx.globalAlpha = 0.7;
+      ctx.shadowColor = '#9B59FF';
+      ctx.shadowBlur = 20;
+    }
+    
     ctx.fillStyle = COLORS.player;
     ctx.fillRect(visualPosRef.current.x * TILE_SIZE + 6, visualPosRef.current.y * TILE_SIZE + 6, TILE_SIZE - 12, TILE_SIZE - 12);
     ctx.shadowColor = COLORS.player;
@@ -2438,6 +2800,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     ctx.fillStyle = 'white';
     ctx.fillRect(visualPosRef.current.x * TILE_SIZE + 10, visualPosRef.current.y * TILE_SIZE + 10, TILE_SIZE - 20, TILE_SIZE - 20);
     ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0;
 
     ctx.restore();
 
@@ -2452,7 +2815,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       // Debuff level 0 = no reduction, 1.0 = complete blindness (0 radius)
       visionMultiplier *= (1.0 - visionDebuffLevelRef.current);
     }
-    const radius = effectiveStats.visionRadius * visionMultiplier * TILE_SIZE;
+    // Apply temporary vision boost from Potion of Light
+    let visionBoost = 0;
+    if (temporaryVisionBoostRef.current) {
+      const now = Date.now();
+      if (now < temporaryVisionBoostRef.current.endTime) {
+        visionBoost = temporaryVisionBoostRef.current.amount;
+        // For Legendary (full maze reveal), use a very large radius
+        if (visionBoost >= 9999) {
+          visionBoost = Math.max(canvas.width, canvas.height) * 2; // Large enough to reveal entire maze
+        }
+      }
+    }
+    // Apply lightswitch full reveal effect
+    const now = Date.now();
+    if (lightswitchRevealEndTimeRef.current && now < lightswitchRevealEndTimeRef.current) {
+      // Full maze reveal (very large radius)
+      visionBoost = Math.max(canvas.width, canvas.height) * 2;
+    }
+    const radius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * TILE_SIZE;
 
     // Create radial gradient for smooth fade effect
     const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius);
@@ -2465,6 +2846,251 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Scroll Sense Effects (above spotlight overlay)
+    // Threat-sense: Show all enemies, Loot-sense: Show all items
+    if (levelRef.current && (activeScrollEffectsRef.current.threatSense || activeScrollEffectsRef.current.lootSense)) {
+      ctx.save();
+      
+      // Calculate player screen position
+      const playerScreenX = canvas.width / 2;
+      const playerScreenY = canvas.height / 2;
+      const effectiveStats = getEffectiveStats(statsRef.current, loadoutRef.current);
+      let visionMultiplier = modifiers.visionMult;
+      if (visionDebuffLevelRef.current > 0) {
+        visionMultiplier *= (1.0 - visionDebuffLevelRef.current);
+      }
+      let visionBoost = 0;
+      if (temporaryVisionBoostRef.current) {
+        if (now < temporaryVisionBoostRef.current.endTime) {
+          visionBoost = temporaryVisionBoostRef.current.amount;
+          if (visionBoost >= 9999) {
+            visionBoost = Math.max(canvas.width, canvas.height) * 2;
+          }
+        }
+      }
+      if (lightswitchRevealEndTimeRef.current && now < lightswitchRevealEndTimeRef.current) {
+        visionBoost = Math.max(canvas.width, canvas.height) * 2;
+      }
+      const visionRadius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * TILE_SIZE;
+      
+      // Draw Threat-sense: All enemies
+      if (activeScrollEffectsRef.current.threatSense) {
+        // Track entities that are in range to remove their particles
+        const entitiesInRange: Array<{ x: number; y: number }> = [];
+        
+        levelRef.current.entities.forEach(entity => {
+          if (entity.type === 'enemy' || entity.type === 'boss_enemy') {
+            const entityScreenX = (entity.pos.x - visualPosRef.current.x) * TILE_SIZE + playerScreenX;
+            const entityScreenY = (entity.pos.y - visualPosRef.current.y) * TILE_SIZE + playerScreenY;
+            const distFromPlayer = Math.sqrt(
+              Math.pow(entityScreenX - playerScreenX, 2) + Math.pow(entityScreenY - playerScreenY, 2)
+            );
+            
+            // Check if entity is outside visible range
+            const isOutsideRange = distFromPlayer > visionRadius;
+            
+            if (isOutsideRange) {
+              // Draw blurred entity with sparkling particles
+              ctx.save();
+              ctx.filter = 'blur(3px)';
+              ctx.globalAlpha = 0.6;
+              
+              // Draw entity (simplified representation)
+              const size = TILE_SIZE * 0.6;
+              ctx.fillStyle = '#ff4444';
+              ctx.beginPath();
+              ctx.arc(entityScreenX, entityScreenY, size / 2, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.restore();
+              
+              // Add sparkling particles
+              if (levelRef.current && !levelRef.current.particles) {
+                levelRef.current.particles = [];
+              }
+              if (Math.random() < 0.1 && levelRef.current) {
+                const angle = Math.random() * Math.PI * 2;
+                const sparkle = {
+                  id: `threatsense-sparkle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  pos: {
+                    x: entityScreenX + Math.cos(angle) * (size / 2),
+                    y: entityScreenY + Math.sin(angle) * (size / 2),
+                  },
+                  createdAt: Date.now(),
+                  lifetime: 500 + Math.random() * 300,
+                };
+                levelRef.current.particles.push(sparkle as any);
+              }
+            } else {
+              // Entity is in range - ensure it's fully visible with no blur
+              ctx.save();
+              ctx.filter = 'none'; // Explicitly clear blur
+              ctx.globalAlpha = 1.0; // Full opacity
+              
+              const size = TILE_SIZE * 0.6;
+              ctx.fillStyle = '#ff4444';
+              ctx.beginPath();
+              ctx.arc(entityScreenX, entityScreenY, size / 2, 0, Math.PI * 2);
+              ctx.fill();
+              
+              ctx.restore();
+              
+              // Track this entity's position to remove nearby particles
+              entitiesInRange.push({ x: entityScreenX, y: entityScreenY });
+            }
+          }
+        });
+        
+        // Remove particles near entities that are now in range
+        if (levelRef.current && levelRef.current.particles && entitiesInRange.length > 0) {
+          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
+            if (p.id && p.id.startsWith('threatsense-sparkle-')) {
+              // Check if this particle is near any entity that's in range
+              for (const entityPos of entitiesInRange) {
+                const dist = Math.sqrt(
+                  Math.pow(p.pos.x - entityPos.x, 2) + Math.pow(p.pos.y - entityPos.y, 2)
+                );
+                if (dist < TILE_SIZE * 1.5) {
+                  return false; // Remove particle
+                }
+              }
+            }
+            return true;
+          });
+        }
+      }
+      
+      // Draw Loot-sense: All items
+      if (activeScrollEffectsRef.current.lootSense) {
+        // Track items that are in range to remove their particles
+        const itemsInRange: Array<{ x: number; y: number }> = [];
+        
+        levelRef.current.items.forEach(({ pos, item }) => {
+          const itemScreenX = (pos.x - visualPosRef.current.x) * TILE_SIZE + playerScreenX;
+          const itemScreenY = (pos.y - visualPosRef.current.y) * TILE_SIZE + playerScreenY;
+          const distFromPlayer = Math.sqrt(
+            Math.pow(itemScreenX - playerScreenX, 2) + Math.pow(itemScreenY - playerScreenY, 2)
+          );
+          
+          // Check if item is outside visible range
+          const isOutsideRange = distFromPlayer > visionRadius;
+          
+          if (isOutsideRange) {
+            // Draw blurred item with sparkling particles
+            ctx.save();
+            ctx.filter = 'blur(3px)';
+            ctx.globalAlpha = 0.6;
+            
+            // Draw item icon using proper icon functions
+            const itemSize = TILE_SIZE - 12;
+            const offset = (TILE_SIZE - itemSize) / 2;
+            const iconX = itemScreenX - TILE_SIZE / 2 + offset;
+            const iconY = itemScreenY - TILE_SIZE / 2 + offset;
+            
+            if (item.type === 'weapon') {
+              drawWeaponIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'armor') {
+              drawArmorIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'utility') {
+              drawUtilityIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'consumable') {
+              drawConsumableIcon(ctx, iconX, iconY, itemSize, item);
+            }
+            
+            ctx.restore();
+            
+            // Add sparkling particles
+            if (levelRef.current && !levelRef.current.particles) {
+              levelRef.current.particles = [];
+            }
+            if (Math.random() < 0.1 && levelRef.current) {
+              const angle = Math.random() * Math.PI * 2;
+              const sparkle = {
+                id: `lootsense-sparkle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                pos: {
+                  x: itemScreenX + Math.cos(angle) * (itemSize / 2),
+                  y: itemScreenY + Math.sin(angle) * (itemSize / 2),
+                },
+                createdAt: Date.now(),
+                lifetime: 500 + Math.random() * 300,
+              };
+              levelRef.current.particles.push(sparkle as any);
+            }
+          } else {
+            // Item is in range - ensure it's fully visible with no blur
+            ctx.save();
+            ctx.filter = 'none'; // Explicitly clear blur
+            ctx.globalAlpha = 1.0; // Full opacity
+            
+            // Draw item icon using proper icon functions
+            const itemSize = TILE_SIZE - 12;
+            const offset = (TILE_SIZE - itemSize) / 2;
+            const iconX = itemScreenX - TILE_SIZE / 2 + offset;
+            const iconY = itemScreenY - TILE_SIZE / 2 + offset;
+            
+            if (item.type === 'weapon') {
+              drawWeaponIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'armor') {
+              drawArmorIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'utility') {
+              drawUtilityIcon(ctx, iconX, iconY, itemSize, item);
+            } else if (item.type === 'consumable') {
+              drawConsumableIcon(ctx, iconX, iconY, itemSize, item);
+            }
+            
+            ctx.restore();
+            
+            // Track this item's position to remove nearby particles
+            itemsInRange.push({ x: itemScreenX, y: itemScreenY });
+          }
+        });
+        
+        // Remove particles near items that are now in range
+        if (levelRef.current && levelRef.current.particles && itemsInRange.length > 0) {
+          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
+            if (p.id && p.id.startsWith('lootsense-sparkle-')) {
+              // Check if this particle is near any item that's in range
+              for (const itemPos of itemsInRange) {
+                const dist = Math.sqrt(
+                  Math.pow(p.pos.x - itemPos.x, 2) + Math.pow(p.pos.y - itemPos.y, 2)
+                );
+                if (dist < TILE_SIZE * 1.5) {
+                  return false; // Remove particle
+                }
+              }
+            }
+            return true;
+          });
+        }
+      }
+      
+      // Draw sparkling particles for sense effects
+      if (levelRef.current && levelRef.current.particles) {
+        const particleNow = Date.now();
+        levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
+          if (p.id && (p.id.startsWith('threatsense-sparkle-') || p.id.startsWith('lootsense-sparkle-'))) {
+            const age = particleNow - p.createdAt;
+            if (age > p.lifetime) return false;
+            
+            // Draw sparkling particle
+            const alpha = 1 - (age / p.lifetime);
+            ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
+            ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(p.pos.x, p.pos.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            return true;
+          }
+          return true;
+        });
+      }
+      
+      ctx.restore();
+    }
 
     // Draw mobile time progress bar at the bottom
     // Check window width directly for immediate detection (mobile breakpoint is 768px)

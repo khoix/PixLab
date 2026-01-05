@@ -112,13 +112,20 @@ export const generateLevel = (
     }
   }
   
-  // Set exit tile
-  if (exitPos && tiles[exitPos.y][exitPos.x] === 'floor') {
-    tiles[exitPos.y][exitPos.x] = 'exit';
+  // Set exit tile (skip for boss sectors - exit will spawn when boss is defeated)
+  if (!isBoss) {
+    if (exitPos && tiles[exitPos.y][exitPos.x] === 'floor') {
+      tiles[exitPos.y][exitPos.x] = 'exit';
+    } else {
+      // Last resort: use default position
+      exitPos = { x: width - 2, y: height - 2 };
+      tiles[exitPos.y][exitPos.x] = 'exit';
+    }
   } else {
-    // Last resort: use default position
-    exitPos = { x: width - 2, y: height - 2 };
-    tiles[exitPos.y][exitPos.x] = 'exit';
+    // For boss sectors, set a placeholder exitPos (will be updated when boss dies)
+    if (!exitPos) {
+      exitPos = { x: width - 2, y: height - 2 };
+    }
   }
 
   // Add random loops
@@ -146,16 +153,18 @@ export const generateLevel = (
       const py = Math.floor(preferredY);
       if (px >= 0 && px < width && py >= 0 && py < height && 
           tiles[py][px] === 'floor' &&
+          (px !== exitPos.x || py !== exitPos.y) &&
           (Math.abs(px - startPos.x) >= minDistanceFromStart || Math.abs(py - startPos.y) >= minDistanceFromStart)) {
         return { x: px, y: py };
       }
     }
     
-    // Collect all valid floor positions
+    // Collect all valid floor positions (excluding exit)
     const validPositions: Position[] = [];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (tiles[y][x] === 'floor' &&
+            (x !== exitPos.x || y !== exitPos.y) &&
             (Math.abs(x - startPos.x) >= minDistanceFromStart || Math.abs(y - startPos.y) >= minDistanceFromStart)) {
           validPositions.push({ x, y });
         }
@@ -163,10 +172,10 @@ export const generateLevel = (
     }
     
     if (validPositions.length === 0) {
-      // Fallback: any floor tile if no valid positions found
+      // Fallback: any floor tile if no valid positions found (still excluding exit)
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (tiles[y][x] === 'floor') {
+          if (tiles[y][x] === 'floor' && (x !== exitPos.x || y !== exitPos.y)) {
             return { x, y };
           }
         }
@@ -300,11 +309,11 @@ export const generateLevel = (
       });
     }
     
-    // Spawn Cerberus alongside boss (1-2 entities) at levels 8+
+    // Spawn Cerberus alongside boss (2-4 entities) at levels 8+
     if (levelNum >= 8) {
       const cerberusMob = MOB_TYPES.find(m => m.subtype === 'cerberus');
       if (cerberusMob) {
-        const numCerberus = Math.floor(Math.random() * 2) + 1; // 1-2 Cerberus
+        const numCerberus = Math.floor(Math.random() * 3) + 2; // 2-4 Cerberus
         let cerberusCounter = 0;
         
         for (let i = 0; i < numCerberus; i++) {
@@ -358,7 +367,8 @@ export const generateLevel = (
   } else if (!isShop) {
     // Normal enemies - prevent infinite loop with max attempts
     // Number of enemies scales with level, with more variety at higher levels
-    const numEnemies = Math.floor(levelNum * 1.5) + 3;
+    // Cap at 50 enemies to prevent performance issues and overwhelming gameplay
+    const numEnemies = Math.min(Math.floor(levelNum * 1.5) + 3, 50);
     const maxAttempts = 1000; // Safety limit
     let attempts = 0;
     let enemyCounter = 0;
@@ -477,6 +487,148 @@ export const generateLevel = (
     }
   }
 
+  // Generate Portals (50% chance, only in normal combat levels, not shops or bosses)
+  const portals: import('./types').Portal[] = [];
+  if (!isShop && !isBoss && Math.random() < 0.5) {
+    // Find valid floor positions for portal entrance (excluding start, exit, and item positions)
+    const validPortalPositions: Position[] = [];
+    const itemPosSet = new Set(items.map(item => `${item.pos.x},${item.pos.y}`));
+    
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (tiles[y][x] === 'floor' &&
+            (x !== startPos.x || y !== startPos.y) &&
+            (x !== exitPos.x || y !== exitPos.y) &&
+            !itemPosSet.has(`${x},${y}`) &&
+            (Math.abs(x - startPos.x) >= 2 || Math.abs(y - startPos.y) >= 2)) {
+          validPortalPositions.push({ x, y });
+        }
+      }
+    }
+    
+    if (validPortalPositions.length > 0) {
+      // Select random portal entrance position
+      const portalPos = validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
+      
+      // Determine portal exit position based on probabilities
+      let portalExitPos: Position;
+      const exitRoll = Math.random();
+      
+      if (exitRoll < 0.30 && items.length > 0) {
+        // 30% chance: near an item (2-3 tiles away, not on item tile)
+        const targetItem = items[Math.floor(Math.random() * items.length)];
+        const nearbyPositions: Position[] = [];
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            const dist = Math.abs(dx) + Math.abs(dy);
+            if (dist >= 2 && dist <= 3) {
+              const x = targetItem.pos.x + dx;
+              const y = targetItem.pos.y + dy;
+              if (x >= 0 && x < width && y >= 0 && y < height && 
+                  tiles[y][x] === 'floor' &&
+                  (x !== targetItem.pos.x || y !== targetItem.pos.y) &&
+                  (x !== portalPos.x || y !== portalPos.y)) {
+                nearbyPositions.push({ x, y });
+              }
+            }
+          }
+        }
+        portalExitPos = nearbyPositions.length > 0 
+          ? nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)]
+          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
+      } else if (exitRoll < 0.35) {
+        // 5% chance: near the level exit (2-3 tiles away, not on exit tile)
+        const nearbyPositions: Position[] = [];
+        for (let dy = -3; dy <= 3; dy++) {
+          for (let dx = -3; dx <= 3; dx++) {
+            const dist = Math.abs(dx) + Math.abs(dy);
+            if (dist >= 2 && dist <= 3) {
+              const x = exitPos.x + dx;
+              const y = exitPos.y + dy;
+              if (x >= 0 && x < width && y >= 0 && y < height && 
+                  tiles[y][x] === 'floor' &&
+                  (x !== exitPos.x || y !== exitPos.y) &&
+                  (x !== portalPos.x || y !== portalPos.y)) {
+                nearbyPositions.push({ x, y });
+              }
+            }
+          }
+        }
+        portalExitPos = nearbyPositions.length > 0 
+          ? nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)]
+          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
+      } else {
+        // 65% chance: random floor position
+        const randomPositions = validPortalPositions.filter(
+          pos => pos.x !== portalPos.x || pos.y !== portalPos.y
+        );
+        portalExitPos = randomPositions.length > 0
+          ? randomPositions[Math.floor(Math.random() * randomPositions.length)]
+          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
+      }
+      
+      portals.push({
+        id: `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        pos: portalPos,
+        exitPos: portalExitPos,
+      });
+    }
+  }
+
+  // Generate Lightswitches
+  // 50% chance in non-vendor/non-boss sectors, 70% chance in non-vendor sectors (includes bosses)
+  // Max 4 per maze
+  const lightswitches: import('./types').Lightswitch[] = [];
+  if (!isShop) {
+    const spawnChance = isBoss ? 0.7 : 0.5;
+    if (Math.random() < spawnChance) {
+      // Find valid floor positions for lightswitches (excluding start, exit, item positions, and portal positions)
+      const validLightswitchPositions: Position[] = [];
+      const itemPosSet = new Set(items.map(item => `${item.pos.x},${item.pos.y}`));
+      const portalPosSet = new Set(portals.map(portal => `${portal.pos.x},${portal.pos.y}`));
+      
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (tiles[y][x] === 'floor' &&
+              (x !== startPos.x || y !== startPos.y) &&
+              (x !== exitPos.x || y !== exitPos.y) &&
+              !itemPosSet.has(`${x},${y}`) &&
+              !portalPosSet.has(`${x},${y}`) &&
+              (Math.abs(x - startPos.x) >= 2 || Math.abs(y - startPos.y) >= 2)) {
+            validLightswitchPositions.push({ x, y });
+          }
+        }
+      }
+      
+      // Spawn up to 4 lightswitches, ensuring they're not too close together
+      const numLightswitches = Math.min(4, validLightswitchPositions.length);
+      const shuffled = [...validLightswitchPositions].sort(() => Math.random() - 0.5);
+      const positionsToUse: Position[] = [];
+      const MIN_DISTANCE = 5; // Minimum Manhattan distance between lightswitches
+      
+      for (const pos of shuffled) {
+        // Check if this position is far enough from all already placed lightswitches
+        const tooClose = positionsToUse.some(placed => {
+          const distance = Math.abs(pos.x - placed.x) + Math.abs(pos.y - placed.y);
+          return distance < MIN_DISTANCE;
+        });
+        
+        if (!tooClose) {
+          positionsToUse.push(pos);
+          if (positionsToUse.length >= numLightswitches) break;
+        }
+      }
+      
+      for (const pos of positionsToUse) {
+        lightswitches.push({
+          id: `lightswitch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          pos,
+          activated: false,
+        });
+      }
+    }
+  }
+
   return {
     width,
     height,
@@ -486,6 +638,8 @@ export const generateLevel = (
     afterimages: [], // Initialize empty afterimages array
     particles: [], // Initialize empty particles array
     items,
+    portals,
+    lightswitches,
     exitPos,
     startPos,
     levelNumber: levelNum,

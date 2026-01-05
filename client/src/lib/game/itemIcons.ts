@@ -48,6 +48,12 @@ export function preloadItemIcons(): Promise<void> {
     }
   }
   
+  // Also preload scroll icons
+  for (const rarity of RARITIES) {
+    const scrollPath = `${BASE_URL}imgs/icons/scroll_${rarity}.png`;
+    loadPromises.push(loadImage(scrollPath));
+  }
+  
   return Promise.all(loadPromises).then(() => {
     console.log('[itemIcons] Preloaded all item icons');
   });
@@ -55,6 +61,10 @@ export function preloadItemIcons(): Promise<void> {
 
 // Get image path for an item
 function getItemIconPath(item: Item): string {
+  // Check if item is a scroll
+  if (item.name.includes('Scroll of')) {
+    return `${BASE_URL}imgs/icons/scroll_${item.rarity}.png`;
+  }
   return `${BASE_URL}imgs/icons/${item.type}_${item.rarity}.png`;
 }
 
