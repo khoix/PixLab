@@ -1,6 +1,11 @@
 import { PlayerStats, GameState } from './types';
 import { INITIAL_STATS } from './constants';
 import { getEffectiveStats, getTotalDefense } from './stats';
+import { 
+  getOfferPowerMetrics, 
+  ECONOMY_CONFIG,
+  logOfferMetrics
+} from './itemEconomy';
 
 /**
  * Configuration for the dynamic difficulty scaling system.
@@ -59,6 +64,8 @@ export interface ScalingParams {
   mobArchetype?: string;
   playerPower?: PlayerPowerMetrics;
   useAdaptive?: boolean;
+  loadout?: GameState['loadout'];      // For economy index
+  useEconomyIndex?: boolean;           // Enable availability-aware economy
 }
 
 /**
@@ -284,10 +291,37 @@ function getArchetypeConstants(archetype?: string): { hp: number; dmg: number } 
  * @returns HP and damage multipliers
  */
 export function calculateScaling(params: ScalingParams): ScalingResult {
-  const { level, sectorType, mobArchetype, playerPower, useAdaptive = false } = params;
+  const { 
+    level, 
+    sectorType, 
+    mobArchetype, 
+    playerPower, 
+    useAdaptive = false,
+    loadout,
+    useEconomyIndex = false
+  } = params;
   
   // Calculate base scaling
-  const baseScaling = calculateBaseScaling(level, playerPower, useAdaptive);
+  let baseScaling = calculateBaseScaling(level, playerPower, useAdaptive);
+  
+  // Apply availability-aware economy index if enabled
+  if (useEconomyIndex && loadout) {
+    const metrics = getOfferPowerMetrics(level, loadout);
+    const economyRatio = metrics.economyRatio;
+    
+    // Apply economy ratio as mild exponent term
+    const economyAdjustment = Math.pow(
+      economyRatio, 
+      ECONOMY_CONFIG.economyExponent
+    );
+    baseScaling *= economyAdjustment;
+    
+    // Log comprehensive metrics for tuning (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      logOfferMetrics(metrics);
+      console.log(`[EconomyIndex] Level ${level}: ratio=${economyRatio.toFixed(3)}, adjustment=${economyAdjustment.toFixed(3)}, baseScaling=${baseScaling.toFixed(3)}`);
+    }
+  }
   
   // Apply tier multipliers
   const tierMult = calculateTierMultiplier(level, sectorType);

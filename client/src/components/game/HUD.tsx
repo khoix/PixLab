@@ -58,7 +58,7 @@ export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
         {!isMobile && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2">
             <Badge variant="outline" className="bg-black/50 border-primary text-primary font-pixel text-xs px-4 py-2">
-              LEVEL {state.currentLevel}
+              SECTOR {state.currentLevel}
             </Badge>
             {!isShop && !isBoss && (
               <div className={`font-pixel text-lg drop-shadow-md transition-colors ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
@@ -77,7 +77,7 @@ export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
         <div className="absolute bottom-[100px] left-0 w-full p-4 pointer-events-none z-40 flex justify-center items-end">
           <div className="flex flex-col items-center gap-2">
             <Badge variant="outline" className="bg-black/50 border-primary text-primary font-pixel text-xs px-4 py-2">
-              LEVEL {state.currentLevel}
+              SECTOR {state.currentLevel}
             </Badge>
             {isShop && <Badge className="bg-green-900 border-green-500 text-green-100">SHOP SECTOR</Badge>}
             {isBoss && <Badge className="bg-yellow-900 border-yellow-500 text-yellow-100">BOSS SECTOR</Badge>}

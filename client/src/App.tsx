@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Game from "@/pages/Game";
+import Decode from "@/pages/Decode";
 import { GameProvider } from "@/lib/store";
 
 // Wouter Router expects base without trailing slash
@@ -18,6 +19,7 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/play" component={Game} />
+        <Route path="/decode" component={Decode} />
         <Route component={NotFound} />
       </Switch>
     </Router>

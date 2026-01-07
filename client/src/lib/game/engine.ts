@@ -2,6 +2,7 @@ import { Level, TileType, Position, Entity, Item, MobSubtype, PlayerStats, GameS
 import { SHOP_INTERVAL, BOSS_INTERVAL, MOB_TYPES } from './constants';
 import { generateItem } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
+import { recordItemOffer } from './itemEconomy';
 
 export const generateLevel = (
   levelNum: number,
@@ -283,7 +284,9 @@ export const generateLevel = (
         sectorType: 'boss',
         mobArchetype: 'boss',
         playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
-        useAdaptive: !!(playerStats && loadout)
+        useAdaptive: !!(playerStats && loadout),
+        loadout: loadout,
+        useEconomyIndex: !!(playerStats && loadout)
       });
       
       const baseHp = 150 + levelNum * 15;
@@ -326,7 +329,9 @@ export const generateLevel = (
               sectorType: 'boss',
               mobArchetype: 'cerberus',
               playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
-              useAdaptive: !!(playerStats && loadout)
+              useAdaptive: !!(playerStats && loadout),
+              loadout: loadout,
+              useEconomyIndex: !!(playerStats && loadout)
             });
             
             const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
@@ -397,7 +402,9 @@ export const generateLevel = (
             sectorType: 'normal',
             mobArchetype: mobType.subtype,
             playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
-            useAdaptive: !!(playerStats && loadout)
+            useAdaptive: !!(playerStats && loadout),
+            loadout: loadout,
+            useEconomyIndex: !!(playerStats && loadout)
           });
           
           const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
@@ -484,6 +491,15 @@ export const generateLevel = (
     for (const itemPos of positionsToUse) {
       const item = generateItem(levelNum);
       items.push({ pos: itemPos, item });
+      
+      // Record offer (item is available to player)
+      recordItemOffer(
+        item,
+        levelNum,
+        'drop',
+        playerStats?.coins || 0,
+        false // Not purchased yet
+      );
     }
   }
 

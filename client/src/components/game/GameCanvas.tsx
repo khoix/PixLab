@@ -6,6 +6,7 @@ import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
+import { recordItemOffer, getSoftAssistAdjustments, getOfferPowerMetrics } from '../../lib/game/itemEconomy';
 import { getItemBaseName } from '../../lib/game/compendium-image-map';
 import { audioManager } from '../../lib/audio';
 import { GameOverlay } from './GameOverlay';
@@ -542,12 +543,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const attackableEnemies = levelRef.current.entities.filter(enemy => {
             if (enemy.type !== 'enemy' && enemy.type !== 'boss_enemy') return false;
             
-            // Check if enemy is in any attackable position
-            return attackablePositions.some(pos => {
-              const enemyTileX = Math.floor(enemy.pos.x);
-              const enemyTileY = Math.floor(enemy.pos.y);
-              return Math.floor(pos.x) === enemyTileX && Math.floor(pos.y) === enemyTileY;
+            // Check if enemy is in any attackable position using distance-based check
+            // This matches mob attack logic (1.5 tile range for melee, 2.0 for spear)
+            const meleeRange = 1.5;
+            const isInRange = attackablePositions.some(pos => {
+              const dx = enemy.pos.x - pos.x;
+              const dy = enemy.pos.y - pos.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              // For spear, use 2-tile range (spear attacks 2 tiles in each direction)
+              if (weaponBaseName?.toLowerCase() === 'spear') {
+                return distance <= 2.0;
+              }
+              
+              // Default melee range: 1.5 tiles (matching mob attack range)
+              return distance <= meleeRange;
             });
+            
+            if (!isInRange) return false;
+            
+            // Check line of sight - prevent attacks through walls
+            // Spear has special wall-piercing logic handled later, but still check LOS here
+            if (levelRef.current) {
+              const hasLOS = hasLineOfSight(nextPos, enemy.pos, levelRef.current);
+              // For non-spear weapons, require line of sight
+              // For spear, allow it through (wall-piercing logic handles it later)
+              if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
+                return false;
+              }
+            }
+            
+            return true;
           });
           
           attackableEnemies.forEach(enemy => {
@@ -654,6 +680,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 }
                 
                 coinReward *= getModifiers().coinMult;
+                
+                // Apply soft assist multiplier if economy ratio is low
+                const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+                const assists = getSoftAssistAdjustments(metrics.economyRatio);
+                coinReward = Math.floor(coinReward * assists.coinRewardMultiplier);
+                
                 // Use base stats from ref to ensure we have latest coins value
                 dispatch({ type: 'UPDATE_STATS', payload: { coins: baseStats.coins + coinReward } });
                 
@@ -3171,6 +3203,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
       case 'mystery_box': {
         const randomItem = generateItem(state.currentLevel);
+        // Record mystery box offer
+        recordItemOffer(
+          randomItem,
+          state.currentLevel,
+          'bonus',
+          state.stats.coins,
+          false // Not purchased, it's a bonus
+        );
         dispatch({ type: 'ADD_ITEM', payload: randomItem });
         break;
       }

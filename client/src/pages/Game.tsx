@@ -19,8 +19,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MODS, RARITY_COLORS } from '../lib/game/constants';
 import { cn } from '../lib/utils';
 import { useToast } from '../hooks/use-toast';
+import { ToastAction } from '../components/ui/toast';
 import { generateLevel } from '../lib/game/engine';
 import { generateBossDrop, calculateSellValue, generateItem, generateCommerceVendorItems } from '../lib/game/items';
+import { recordItemOffer, markOfferPurchased, getSoftAssistAdjustments, getOfferPowerMetrics } from '../lib/game/itemEconomy';
 import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
@@ -164,6 +166,14 @@ export default function Game() {
     if (location === '/play' && (state.screen === 'run' || state.screen === 'lobby' || state.screen === 'shop')) {
       // Only treat as refresh if there's no navigation flag (page was refreshed)
       if (!wasNavigated) {
+        // Check if player has 0 HP (game over state) - redirect to Home
+        if (state.stats.hp <= 0) {
+          // Reset game state (this cleans up everything)
+          resetGame();
+          // Navigate to Home immediately (no game over UI shown)
+          setLocation('/');
+          return;
+        }
         // Reset game state (this cleans up everything)
         resetGame();
         // Navigate to Home immediately (no game over UI shown)
@@ -173,7 +183,7 @@ export default function Game() {
         sessionStorage.removeItem('navigated_to_play');
       }
     }
-  }, [location, state.screen, resetGame, setLocation]);
+  }, [location, state.screen, resetGame, setLocation, state.stats.hp]);
 
   const handleCopyCode = async () => {
     try {
@@ -206,21 +216,46 @@ export default function Game() {
       
       // Use inline style for rarity-based colors since Tailwind doesn't support dynamic classes
       const rarityStyles = {
-        legendary: { bg: 'bg-yellow-900/90', border: 'border-yellow-500', text: 'text-yellow-100' },
-        epic: { bg: 'bg-purple-900/90', border: 'border-purple-500', text: 'text-purple-100' },
-        rare: { bg: 'bg-blue-900/90', border: 'border-blue-500', text: 'text-blue-100' },
-        common: { bg: 'bg-gray-900/90', border: 'border-gray-500', text: 'text-gray-100' },
+        legendary: { bg: 'bg-yellow-900/90', border: 'border-yellow-500', text: 'text-yellow-100', button: 'bg-yellow-950 hover:bg-yellow-900 border-yellow-600' },
+        epic: { bg: 'bg-purple-900/90', border: 'border-purple-500', text: 'text-purple-100', button: 'bg-purple-950 hover:bg-purple-900 border-purple-600' },
+        rare: { bg: 'bg-blue-900/90', border: 'border-blue-500', text: 'text-blue-100', button: 'bg-blue-950 hover:bg-blue-900 border-blue-600' },
+        common: { bg: 'bg-gray-900/90', border: 'border-gray-500', text: 'text-gray-100', button: 'bg-gray-950 hover:bg-gray-900 border-gray-600' },
       };
       const style = rarityStyles[newItem.rarity] || rarityStyles.common;
+      
+      // Add quick-equip button for weapons and armor
+      const action = (newItem.type === 'weapon' || newItem.type === 'armor') ? (
+        <ToastAction
+          altText="Equip"
+          onClick={() => {
+            dispatch({ 
+              type: 'EQUIP_ITEM', 
+              payload: { 
+                slot: newItem.type as 'weapon' | 'armor', 
+                item: newItem 
+              } 
+            });
+            toast({ 
+              title: "EQUIPPED", 
+              description: newItem.name,
+              className: "bg-green-900 border-green-500 text-green-100" 
+            });
+          }}
+          className={`${style.button} text-white focus:ring-0 focus:ring-offset-0 active:ring-0 outline-none`}
+        >
+          EQUIP
+        </ToastAction>
+      ) : undefined;
       
       toast({ 
         title: `OBTAINED: ${newItem.name}`, 
         description: statsText || newItem.description,
-        className: `${style.bg} ${style.border} ${style.text}`
+        className: `${style.bg} ${style.border} ${style.text}`,
+        action
       });
     }
     setLastItemCount(state.inventory.length);
-  }, [state.inventory.length, toast]);
+  }, [state.inventory.length, toast, dispatch]);
 
   const handleMove = (dir: { x: number; y: number }) => {
     setInputDir(dir);
@@ -285,6 +320,14 @@ export default function Game() {
     if (level.isBoss) {
       toast({ title: "BOSS DEFEATED", description: "Securing legendary loot...", className: "bg-yellow-900 border-yellow-500 text-yellow-100" });
       const bossLoot = generateBossDrop(state.currentLevel);
+      // Record boss drop offer
+      recordItemOffer(
+        bossLoot,
+        state.currentLevel,
+        'boss',
+        state.stats.coins,
+        false // Not purchased, it's a drop
+      );
       dispatch({ type: 'ADD_BOSS_DROP', payload: bossLoot });
       dispatch({ type: 'NEXT_LEVEL' });
       dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
@@ -306,6 +349,13 @@ export default function Game() {
       setGameOverState(null);
     }
   }, [state.currentLevel, state.screen, gameOverState]);
+
+  // Reset input direction when a new level loads to prevent unwanted movement
+  useEffect(() => {
+    if (state.screen === 'run') {
+      setInputDir({ x: 0, y: 0 });
+    }
+  }, [state.currentLevel, state.screen]);
 
   // Close inventory dialog when game over occurs
   useEffect(() => {
@@ -336,6 +386,51 @@ export default function Game() {
     audioManager.setSfxVolume(state.settings.sfxVolume);
   }, [state.settings.musicVolume, state.settings.sfxVolume]);
 
+  // Handle Commerce Scroll - open vendor station
+  useEffect(() => {
+    if (state.pendingScrollAction?.type === 'scroll_commerce') {
+      // Use the stored rarity from pendingScrollAction (scroll is already removed from inventory)
+      const scrollRarity = state.pendingScrollAction.rarity;
+      
+      if (scrollRarity) {
+        // Generate vendor items based on scroll rarity
+        const vendorItems = generateCommerceVendorItems(scrollRarity, state.currentLevel);
+        // Record commerce vendor offers
+        vendorItems.forEach(item => {
+          recordItemOffer(
+            item,
+            state.currentLevel,
+            'shop',
+            state.stats.coins,
+            false // Not purchased yet
+          );
+        });
+        setCommerceVendorItems(vendorItems);
+        setCommerceScrollRarity(scrollRarity);
+        setShowCommerceVendor(true);
+        
+        // Clear pending scroll action
+        dispatch({ type: 'CLEAR_PENDING_SCROLL_ACTION' });
+      } else {
+        // Fallback: if rarity not found, use common rarity
+        const vendorItems = generateCommerceVendorItems('common', state.currentLevel);
+        vendorItems.forEach(item => {
+          recordItemOffer(
+            item,
+            state.currentLevel,
+            'shop',
+            state.stats.coins,
+            false
+          );
+        });
+        setCommerceVendorItems(vendorItems);
+        setCommerceScrollRarity('common');
+        setShowCommerceVendor(true);
+        dispatch({ type: 'CLEAR_PENDING_SCROLL_ACTION' });
+      }
+    }
+  }, [state.pendingScrollAction, state.currentLevel, dispatch]);
+
   // Generate random vendor items when entering shop
   useEffect(() => {
     if (state.screen === 'shop') {
@@ -360,6 +455,18 @@ export default function Game() {
       const item1 = generateItem(state.currentLevel);
       const item2 = generateItem(state.currentLevel);
       const newItems = [item1, item2];
+      
+      // Record shop offers
+      newItems.forEach(item => {
+        recordItemOffer(
+          item,
+          state.currentLevel,
+          'shop',
+          state.stats.coins,
+          false // Not purchased yet
+        );
+      });
+      
       setVendorItems(newItems);
       
       // Save to localStorage
@@ -1083,7 +1190,19 @@ export default function Game() {
                           }}
                         >
                           <div className="absolute top-0 right-0 w-2 h-2 bg-primary/20" />
-                          <p className="absolute top-2 right-2 text-2xl text-yellow-400 font-mono font-bold">${item.price}</p>
+                          <p className="absolute top-2 right-2 text-2xl text-yellow-400 font-mono font-bold">
+                            {(() => {
+                              const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+                              const assists = getSoftAssistAdjustments(metrics.economyRatio);
+                              const adjustedPrice = Math.floor(item.price * assists.shopPriceMultiplier);
+                              return adjustedPrice !== item.price ? (
+                                <span>
+                                  <span className="line-through text-gray-500">${item.price}</span>{' '}
+                                  <span className="text-green-400">${adjustedPrice}</span>
+                                </span>
+                              ) : `$${item.price}`;
+                            })()}
+                          </p>
                           <h4 className="font-pixel text-sm text-primary mb-1">{item.name}</h4>
                           {!canAfford && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
@@ -1126,8 +1245,14 @@ export default function Game() {
                             onClick={() => {
                               if (canAfford) {
                                 audioManager.playSound('purchase');
-                                dispatch({ type: 'UPDATE_STATS', payload: { coins: state.stats.coins - item.price } });
+                                // Use adjusted price for purchase
+                                const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+                                const assists = getSoftAssistAdjustments(metrics.economyRatio);
+                                const adjustedPrice = Math.floor(item.price * assists.shopPriceMultiplier);
+                                dispatch({ type: 'UPDATE_STATS', payload: { coins: state.stats.coins - adjustedPrice } });
                                 dispatch({ type: 'ADD_ITEM', payload: item });
+                                // Mark offer as purchased
+                                markOfferPurchased(item.id);
                                 toast({ 
                                   title: isSoldItem ? "RE-PURCHASED" : "PURCHASED", 
                                   description: item.name, 
@@ -1758,7 +1883,11 @@ export default function Game() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {commerceVendorItems && commerceVendorItems.length > 0 && commerceVendorItems.map(item => {
                     const rarityColor = RARITY_COLORS[item.rarity];
-                    const canAfford = state.stats.coins >= item.price;
+                    // Apply soft assist price reduction if economy ratio is low
+                    const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+                    const assists = getSoftAssistAdjustments(metrics.economyRatio);
+                    const adjustedPrice = Math.floor(item.price * assists.shopPriceMultiplier);
+                    const canAfford = state.stats.coins >= adjustedPrice;
                     return (
                       <button
                         key={item.id}
@@ -1772,8 +1901,14 @@ export default function Game() {
                         onClick={() => {
                           if (canAfford) {
                             audioManager.playSound('purchase');
-                            dispatch({ type: 'UPDATE_STATS', payload: { coins: state.stats.coins - item.price } });
+                            // Use adjusted price for purchase
+                            const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+                            const assists = getSoftAssistAdjustments(metrics.economyRatio);
+                            const adjustedPrice = Math.floor(item.price * assists.shopPriceMultiplier);
+                            dispatch({ type: 'UPDATE_STATS', payload: { coins: state.stats.coins - adjustedPrice } });
                             dispatch({ type: 'ADD_ITEM', payload: item });
+                            // Mark offer as purchased
+                            markOfferPurchased(item.id);
                             toast({ 
                               title: "PURCHASED", 
                               description: item.name, 
