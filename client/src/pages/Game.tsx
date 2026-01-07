@@ -9,6 +9,9 @@ import { DirectionalPadControl } from '../components/game/DirectionalPadControl'
 import { HUD } from '../components/game/HUD';
 import { Compendium } from '../components/game/Compendium';
 import { GameOverlay } from '../components/game/GameOverlay';
+import { GameEventLogViewer } from '../components/game/GameEventLogViewer';
+import { eventLogger } from '../lib/game/eventLogger';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../components/ui/resizable';
 import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -316,6 +319,12 @@ export default function Game() {
 
   const handleLevelComplete = () => {
     const level = generateLevel(state.currentLevel, 30, 30, state.stats, state.loadout);
+    
+    // Log sector complete event
+    eventLogger.logEvent('progression', `Sector ${state.currentLevel} completed`, {
+      levelNum: state.currentLevel,
+      isBoss: level.isBoss
+    });
     
     if (level.isBoss) {
       toast({ title: "BOSS DEFEATED", description: "Securing legendary loot...", className: "bg-yellow-900 border-yellow-500 text-yellow-100" });
@@ -1253,6 +1262,13 @@ export default function Game() {
                                 dispatch({ type: 'ADD_ITEM', payload: item });
                                 // Mark offer as purchased
                                 markOfferPurchased(item.id);
+                                
+                                // Log shop purchase event
+                                eventLogger.logEvent('shop', `Purchased ${item.name} for $${adjustedPrice}`, {
+                                  item,
+                                  price: adjustedPrice
+                                });
+                                
                                 toast({ 
                                   title: isSoldItem ? "RE-PURCHASED" : "PURCHASED", 
                                   description: item.name, 
@@ -1479,30 +1495,32 @@ export default function Game() {
     
     return (
       <div className={`relative w-full h-screen overflow-hidden bg-black touch-none ${gameOverState ? 'pointer-events-none' : ''}`}>
-        <HUD levelStartTime={levelStartTime} isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
-        <GameCanvas 
-          inputDirection={inputDir} 
-          onGameOver={handleGameOver}
-          onLevelComplete={handleLevelComplete}
-          onTimeOut={handleTimeOut}
-          gameOverState={gameOverState}
-        />
-        {!gameOverState && isMobile && (
-          (() => {
-            const controlType = state.settings.mobileControlType || 'joystick';
-            if (controlType === 'touchpad') {
-              return <TouchpadControl onMove={handleMove} />;
-            } else if (controlType === 'dpad') {
-              return <DirectionalPadControl onMove={handleMove} />;
-            } else {
-              return <VirtualJoystick onMove={handleMove} />;
-            }
-          })()
-        )}
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
-        
-        {/* Menu Button - hidden during game over */}
-        {!gameOverState && (
+        <ResizablePanelGroup direction="vertical" className="h-full">
+          <ResizablePanel defaultSize={85} minSize={50}>
+            <div className="relative w-full h-full">
+              <HUD levelStartTime={levelStartTime} isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
+              <GameCanvas 
+                inputDirection={inputDir} 
+                onGameOver={handleGameOver}
+                onLevelComplete={handleLevelComplete}
+                onTimeOut={handleTimeOut}
+                gameOverState={gameOverState}
+              />
+              {!gameOverState && isMobile && (
+                (() => {
+                  const controlType = state.settings.mobileControlType || 'joystick';
+                  if (controlType === 'touchpad') {
+                    return <TouchpadControl onMove={handleMove} />;
+                  } else if (controlType === 'dpad') {
+                    return <DirectionalPadControl onMove={handleMove} />;
+                  } else {
+                    return <VirtualJoystick onMove={handleMove} />;
+                  }
+                })()
+              )}
+
+              {/* Menu Button - hidden during game over */}
+              {!gameOverState && (
         <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -1532,34 +1550,39 @@ export default function Game() {
               EXIT
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
-        )}
+              </DropdownMenu>
+              )}
 
-        {/* Inventory Dialog - Combined with Equipment */}
-        <Dialog open={showInventory} onOpenChange={setShowInventory}>
+              {/* Inventory Dialog - Combined with Equipment */}
+              <Dialog open={showInventory} onOpenChange={setShowInventory}>
           <DialogContent className="bg-card/95 border-primary/20 pixel-corners max-w-md max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-pixel text-primary">INVENTORY</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Stats Display */}
-              <div className="border border-primary/30 p-3 bg-primary/5">
+              <div className="border border-primary/30 p-2.5 bg-primary/5">
                 <h4 className="font-pixel text-lg text-primary mb-2">STATS</h4>
                 {(() => {
                   const effectiveStats = getEffectiveStats(state.stats, state.loadout);
+                  const totalDefense = getTotalDefense(state.loadout);
                   return (
-                    <div className="text-lg font-mono space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">DMG:</span>
-                        <span className="text-destructive">{effectiveStats.damage}</span>
+                    <div className="flex flex-row gap-4 justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground mb-0.5">DMG</span>
+                        <span className="text-2xl font-mono font-bold text-destructive leading-tight">{effectiveStats.damage}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">SPD:</span>
-                        <span className="text-blue-400">{effectiveStats.speed.toFixed(1)}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground mb-0.5">DEF</span>
+                        <span className="text-2xl font-mono font-bold text-purple-400 leading-tight">{totalDefense}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">VIS:</span>
-                        <span className="text-cyan-400">{effectiveStats.visionRadius.toFixed(1)}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground mb-0.5">SPD</span>
+                        <span className="text-2xl font-mono font-bold text-blue-400 leading-tight">{effectiveStats.speed.toFixed(1)}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground mb-0.5">VIS</span>
+                        <span className="text-2xl font-mono font-bold text-cyan-400 leading-tight">{effectiveStats.visionRadius.toFixed(1)}</span>
                       </div>
                     </div>
                   );
@@ -1797,11 +1820,11 @@ export default function Game() {
                 )}
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+              </DialogContent>
+              </Dialog>
 
-        {/* Game Over Overlay */}
-        {gameOverState && (
+              {/* Game Over Overlay */}
+              {gameOverState && (
           <div className="absolute inset-0 z-[199] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto">
             <div className="bg-card/95 border-2 border-primary/50 pixel-corners p-8 max-w-md w-full mx-4 text-center space-y-6 pointer-events-auto">
               <h2 className="text-4xl font-pixel text-destructive mb-2">
@@ -1819,12 +1842,12 @@ export default function Game() {
               >
                 RETURN HOME
               </Button>
-            </div>
-          </div>
-        )}
+              </div>
+              </div>
+              )}
 
-        {/* Consumables Panel - hidden during game over */}
-        {!gameOverState && consumables.length > 0 && (
+              {/* Consumables Panel - hidden during game over */}
+              {!gameOverState && consumables.length > 0 && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 pointer-events-auto consumables-panel">
             <div className="text-xs font-pixel text-white mb-1 text-right">CONSUMABLES</div>
             {consumables.map(consumable => {
@@ -1860,12 +1883,12 @@ export default function Game() {
                   </div>
                 </button>
               );
-            })}
-          </div>
-        )}
+              })}
+              </div>
+              )}
 
-        {/* Commerce Scroll Vendor Modal */}
-        <Dialog open={showCommerceVendor} onOpenChange={setShowCommerceVendor}>
+              {/* Commerce Scroll Vendor Modal */}
+              <Dialog open={showCommerceVendor} onOpenChange={setShowCommerceVendor}>
           <DialogContent className="bg-card/95 border-primary/20 pixel-corners max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-pixel text-primary text-2xl">SCROLL VENDOR STATION</DialogTitle>
@@ -1961,8 +1984,15 @@ export default function Game() {
                 </div>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+              </DialogContent>
+              </Dialog>
+            </div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
+            <GameEventLogViewer />
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     );
   }

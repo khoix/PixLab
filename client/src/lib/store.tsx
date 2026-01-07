@@ -3,6 +3,7 @@ import { GameState, Item, PlayerStats } from './game/types';
 import { INITIAL_STATS } from './game/constants';
 import { calculateSellValue } from './game/items';
 import { encodeGameState, decodeGameState } from './game/codec';
+import { eventLogger } from './game/eventLogger';
 
 const STORAGE_KEY = 'pixel_labyrinth_save';
 const SAVE_DEBOUNCE_MS = 500; // Debounce localStorage writes by 500ms
@@ -184,11 +185,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
         case 'EQUIP_ITEM':
           newState.loadout = { ...prev.loadout, [action.payload.slot]: action.payload.item };
+          eventLogger.logEvent('event', `Equipped ${action.payload.item.name} (${action.payload.slot})`, {
+            slot: action.payload.slot,
+            item: action.payload.item
+          });
           newState.uid = encodeGameState(newState);
           debouncedSave(newState);
           break;
         case 'UNEQUIP_ITEM':
+          const unequippedItem = prev.loadout[action.payload.slot];
           newState.loadout = { ...prev.loadout, [action.payload.slot]: null };
+          if (unequippedItem) {
+            eventLogger.logEvent('event', `Unequipped ${unequippedItem.name} (${action.payload.slot})`, {
+              slot: action.payload.slot,
+              item: unequippedItem
+            });
+          }
           newState.uid = encodeGameState(newState);
           debouncedSave(newState);
           break;
@@ -216,8 +228,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Handle scroll effects that don't need level data
                 if (scrollType === 'scroll_threatsense') {
                   newState.activeScrollEffects.threatSense = true;
+                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Enemy detection active`, {
+                    type: 'scroll',
+                    scrollType: 'scroll_threatsense',
+                    item: consumable
+                  });
                 } else if (scrollType === 'scroll_lootsense') {
                   newState.activeScrollEffects.lootSense = true;
+                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Item detection active`, {
+                    type: 'scroll',
+                    scrollType: 'scroll_lootsense',
+                    item: consumable
+                  });
                 } else if (scrollType === 'scroll_phasing') {
                   const now = Date.now();
                   let endTime: number | 'entire_level';
@@ -228,11 +250,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     endTime = now + (durationMap[consumable.rarity] || 5000);
                   }
                   newState.activeScrollEffects.phasing = { active: true, endTime };
+                  const duration = endTime === 'entire_level' ? 'entire level' : `${Math.floor((endTime - now) / 1000)}s`;
+                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Phasing active for ${duration}`, {
+                    type: 'scroll',
+                    scrollType: 'scroll_phasing',
+                    item: consumable,
+                    duration
+                  });
+                } else if (scrollType === 'scroll_commerce') {
+                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Commerce vendor opened`, {
+                    type: 'scroll',
+                    scrollType: 'scroll_commerce',
+                    item: consumable
+                  });
                 } else if (scrollType === 'scroll_ending') {
                   // Advance to next boss sector (same as clearing a maze)
                   // This will be handled in GameCanvas by checking pendingScrollAction
                 }
-                // scroll_fortune, scroll_pathfinding, scroll_commerce, scroll_ending are handled in GameCanvas
+                // scroll_fortune, scroll_pathfinding, scroll_ending are handled in GameCanvas
               }
             } else if (consumable.name.includes('Potion of Light')) {
               // Check for Potion of Light
@@ -253,15 +288,39 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 amount: visionBoost,
                 endTime: now + duration,
               };
+              
+              // Log potion usage event
+              const boostText = consumable.rarity === 'legendary' ? 'Full maze reveal' : `+${visionBoost} vision`;
+              eventLogger.logEvent('consumable', `Used ${consumable.name} - ${boostText} for 10s`, {
+                type: 'potion',
+                potionType: 'light',
+                item: consumable,
+                visionBoost,
+                duration: 10000
+              });
             } else if (consumable.stats) {
               // Apply other consumable effects
               const updates: Partial<PlayerStats> = {};
               if (consumable.stats.heal) {
                 updates.hp = Math.min(prev.stats.maxHp, prev.stats.hp + consumable.stats.heal);
+                // Log healing potion usage
+                eventLogger.logEvent('consumable', `Used ${consumable.name} - Healed ${consumable.stats.heal} HP`, {
+                  type: 'potion',
+                  potionType: 'heal',
+                  item: consumable,
+                  healAmount: consumable.stats.heal,
+                  newHp: updates.hp
+                });
               }
               if (consumable.stats.speed) {
                 // Speed boost is temporary - could be implemented as a temporary effect
                 // For now, we'll just remove the item after use
+                eventLogger.logEvent('consumable', `Used ${consumable.name} - Speed boost active`, {
+                  type: 'potion',
+                  potionType: 'speed',
+                  item: consumable,
+                  speedBoost: consumable.stats.speed
+                });
               }
               if (Object.keys(updates).length > 0) {
                 newState.stats = { ...prev.stats, ...updates };

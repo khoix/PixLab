@@ -5,12 +5,14 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { RARITY_COLORS } from '../lib/game/constants';
+import { useToast } from '../hooks/use-toast';
 
 export default function Decode() {
   const [codeInput, setCodeInput] = useState('');
   const [decodedState, setDecodedState] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const { toast } = useToast();
 
   const handleDecode = () => {
     if (!codeInput.trim()) {
@@ -43,6 +45,26 @@ export default function Decode() {
 
   const getRarityColor = (rarity: string) => {
     return RARITY_COLORS[rarity as keyof typeof RARITY_COLORS] || '#9e9e9e';
+  };
+
+  const handleCopyJson = async () => {
+    if (!decodedState) return;
+    
+    try {
+      const jsonString = JSON.stringify(decodedState, null, 2);
+      await navigator.clipboard.writeText(jsonString);
+      toast({
+        title: 'Copied!',
+        description: 'JSON copied to clipboard',
+        className: 'bg-green-900 border-green-500 text-green-100',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to copy JSON to clipboard',
+        className: 'bg-red-900 border-red-500 text-red-100',
+      });
+    }
   };
 
   return (
@@ -294,14 +316,24 @@ export default function Decode() {
 
                 {/* JSON Toggle */}
                 <div className="pt-4 border-t border-white/10">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowJson(!showJson)}
-                    className="font-mono text-xs border-white/20 hover:bg-white/10"
-                  >
-                    {showJson ? 'HIDE' : 'SHOW'} JSON
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowJson(!showJson)}
+                      className="font-mono text-xs border-white/20 hover:bg-white/10"
+                    >
+                      {showJson ? 'HIDE' : 'SHOW'} JSON
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyJson}
+                      className="font-mono text-xs border-white/20 hover:bg-white/10"
+                    >
+                      COPY JSON
+                    </Button>
+                  </div>
                   {showJson && (
                     <pre className="mt-4 p-4 bg-black/50 border border-white/10 rounded-lg overflow-auto text-xs font-mono text-muted-foreground">
                       {JSON.stringify(decodedState, null, 2)}

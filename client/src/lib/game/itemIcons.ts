@@ -10,6 +10,9 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 // Image cache to avoid reloading
 const imageCache = new Map<string, HTMLImageElement>();
 
+// Guard to prevent multiple preload calls
+let preloadPromise: Promise<void> | null = null;
+
 // Preload all item icons
 const ITEM_TYPES = ['weapon', 'armor', 'utility', 'consumable'] as const;
 const RARITIES = ['common', 'rare', 'epic', 'legendary'] as const;
@@ -39,24 +42,32 @@ function loadImage(path: string): Promise<HTMLImageElement | null> {
 
 // Preload all item icons on module load
 export function preloadItemIcons(): Promise<void> {
-  const loadPromises: Promise<HTMLImageElement | null>[] = [];
+  // Return existing promise if already loading
+  if (preloadPromise) {
+    return preloadPromise;
+  }
   
-  for (const type of ITEM_TYPES) {
-    for (const rarity of RARITIES) {
-      const imagePath = `${BASE_URL}imgs/icons/${type}_${rarity}.png`;
-      loadPromises.push(loadImage(imagePath));
+  preloadPromise = (async () => {
+    const loadPromises: Promise<HTMLImageElement | null>[] = [];
+    
+    for (const type of ITEM_TYPES) {
+      for (const rarity of RARITIES) {
+        const imagePath = `${BASE_URL}imgs/icons/${type}_${rarity}.png`;
+        loadPromises.push(loadImage(imagePath));
+      }
     }
-  }
-  
-  // Also preload scroll icons
-  for (const rarity of RARITIES) {
-    const scrollPath = `${BASE_URL}imgs/icons/scroll_${rarity}.png`;
-    loadPromises.push(loadImage(scrollPath));
-  }
-  
-  return Promise.all(loadPromises).then(() => {
+    
+    // Also preload scroll icons
+    for (const rarity of RARITIES) {
+      const scrollPath = `${BASE_URL}imgs/icons/scroll_${rarity}.png`;
+      loadPromises.push(loadImage(scrollPath));
+    }
+    
+    await Promise.all(loadPromises);
     console.log('[itemIcons] Preloaded all item icons');
-  });
+  })();
+  
+  return preloadPromise;
 }
 
 // Get image path for an item

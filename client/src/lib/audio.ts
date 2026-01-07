@@ -40,8 +40,8 @@ class AudioManager {
       // Don't auto-initialize here - wait for user gesture
       return;
     }
-    // Only attempt resume if we've had a user gesture or if context is already running
-    if (this.audioContext.state === 'suspended' && this.userActivated) {
+    // Try to resume if suspended (userActivated is set when init is called from user gesture)
+    if (this.audioContext.state === 'suspended') {
       try {
         await this.audioContext.resume();
       } catch (error) {

@@ -93,6 +93,15 @@ export interface Particle {
   lifetime: number; // ms
 }
 
+export interface Footprint {
+  id: string;
+  pos: Position;
+  direction: { x: number; y: number }; // Movement direction when footprint was created
+  isLeftFoot: boolean; // true for left foot, false for right foot
+  createdAt: number;
+  lifetime: number; // ms - how long the footprint lasts (e.g., 3000ms = 3 seconds)
+}
+
 export interface Portal {
   id: string;
   pos: Position;
@@ -123,6 +132,7 @@ export interface Level {
   projectiles: Projectile[];
   afterimages: Afterimage[];
   particles: Particle[];
+  footprints: Footprint[];
   items: { pos: Position; item: Item }[];
   portals: Portal[];
   lightswitches: Lightswitch[];

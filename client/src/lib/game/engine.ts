@@ -653,6 +653,7 @@ export const generateLevel = (
     projectiles: [], // Initialize empty projectiles array
     afterimages: [], // Initialize empty afterimages array
     particles: [], // Initialize empty particles array
+    footprints: [], // Initialize empty footprints array
     items,
     portals,
     lightswitches,

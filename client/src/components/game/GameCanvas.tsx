@@ -3,12 +3,13 @@ import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getEntitiesInRadius, hasLineOfSight, getAttackablePositions } from '../../lib/game/engine';
 import { TILE_SIZE, COLORS, LEVEL_TIME_LIMIT, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL } from '../../lib/game/constants';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
-import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle } from '../../lib/game/types';
+import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Footprint } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
 import { recordItemOffer, getSoftAssistAdjustments, getOfferPowerMetrics } from '../../lib/game/itemEconomy';
 import { getItemBaseName } from '../../lib/game/compendium-image-map';
 import { audioManager } from '../../lib/audio';
+import { eventLogger } from '../../lib/game/eventLogger';
 import { GameOverlay } from './GameOverlay';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
@@ -69,6 +70,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const projectileIdCounterRef = useRef<number>(0);
   const afterimageIdCounterRef = useRef<number>(0);
   const particleIdCounterRef = useRef<number>(0);
+  const footprintIdCounterRef = useRef<number>(0);
+  const lastFootprintPosRef = useRef<Position | null>(null); // Track last position where footprint was created
+  const nextFootIsLeftRef = useRef<boolean>(true); // Track which foot to place next (alternating)
   const visionDebuffLevelRef = useRef<number>(0); // Track vision debuff level (0-1.0, where 1.0 = complete blindness)
   const lightswitchRevealEndTimeRef = useRef<number | null>(null); // Track when lightswitch reveal ends
   // Use refs to track current stats to avoid race conditions with async state updates
@@ -160,6 +164,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             moveProgressRef.current = 1;
             lastPlayerPosRef.current = { ...targetPos };
             audioManager.playSound('itemPickup');
+            
+            // Log scroll usage event
+            eventLogger.logEvent('consumable', 'Used Scroll of Fortune - Teleported near item', {
+              type: 'scroll',
+              scrollType: 'scroll_fortune'
+            });
           }
         }
       } else if (type === 'scroll_pathfinding') {
@@ -189,6 +199,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           moveProgressRef.current = 1;
           lastPlayerPosRef.current = { ...targetPos };
           audioManager.playSound('itemPickup');
+          
+          // Log scroll usage event
+          eventLogger.logEvent('consumable', 'Used Scroll of Pathfinding - Teleported near exit', {
+            type: 'scroll',
+            scrollType: 'scroll_pathfinding'
+          });
         }
       } else if (type === 'scroll_ending') {
         // Advance to next boss sector
@@ -201,6 +217,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         }
         // Set to one level before target, then complete to reach target
         dispatch({ type: 'SET_CURRENT_LEVEL', payload: nextBossLevel - 1 });
+        
+        // Log scroll usage event
+        eventLogger.logEvent('consumable', 'Used Scroll of Ending - Advanced to next boss sector', {
+          type: 'scroll',
+          scrollType: 'scroll_ending',
+          targetLevel: nextBossLevel
+        });
+        
         onLevelComplete();
       }
       
@@ -249,6 +273,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     if (!level.particles) {
       level.particles = [];
     }
+    // Initialize footprints array if not present
+    if (!level.footprints) {
+      level.footprints = [];
+    }
+    // Reset footprint tracking
+    lastFootprintPosRef.current = null;
+    nextFootIsLeftRef.current = true; // Start with left foot
     // Reset bonus selection when level changes
     bonusSelectionRef.current = null;
     setShowBonusSelection(false);
@@ -260,6 +291,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         audioManager.playMusic('boss');
       } else {
         audioManager.playMusic('combat');
+      }
+      
+      // Log sector start event
+      eventLogger.logEvent('progression', `Sector ${state.currentLevel} started`, {
+        levelNum: state.currentLevel,
+        isBoss: level.isBoss,
+        isShop: level.isShop
+      });
+      
+      // Log boss spawn event if this is a boss level
+      if (level.isBoss) {
+        const bossEntity = level.entities.find(e => e.isBoss);
+        if (bossEntity && bossEntity.mobSubtype) {
+          eventLogger.logEvent('progression', `Boss ${bossEntity.mobSubtype} spawned`, {
+            bossType: bossEntity.mobSubtype
+          });
+        }
       }
     }
   }, [state.currentLevel, state.screen]);
@@ -367,7 +415,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Pause/freeze sector state on gameover - stop all mobs, projectiles, and afterimages
     // Check both gameOverState prop and gameOverTriggeredRef to catch timeouts immediately
     if (gameOverState || gameOverTriggeredRef.current) {
-      // Clear all projectiles, afterimages, and particles to prevent them from continuing to move
+      // Clear all projectiles, afterimages, particles, and footprints to prevent them from continuing to move
       if (levelRef.current.projectiles) {
         levelRef.current.projectiles = [];
       }
@@ -376,6 +424,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
       if (levelRef.current.particles) {
         levelRef.current.particles = [];
+      }
+      if (levelRef.current.footprints) {
+        levelRef.current.footprints = [];
       }
       return;
     }
@@ -469,6 +520,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             audioManager.playSound('move');
           }
           
+          // Create footprint if player moved to a new tile
+          const currentTileX = Math.floor(nextPos.x);
+          const currentTileY = Math.floor(nextPos.y);
+          const lastFootprintTile = lastFootprintPosRef.current 
+            ? { x: Math.floor(lastFootprintPosRef.current.x), y: Math.floor(lastFootprintPosRef.current.y) }
+            : null;
+          
+          // Create footprint when entering a new tile (not on the same tile)
+          if (!lastFootprintTile || lastFootprintTile.x !== currentTileX || lastFootprintTile.y !== currentTileY) {
+            if (levelRef.current && levelRef.current.footprints) {
+              const isLeftFoot = nextFootIsLeftRef.current;
+              const footprint: Footprint = {
+                id: `footprint-${footprintIdCounterRef.current++}`,
+                pos: { x: nextPos.x, y: nextPos.y },
+                direction: { x: dx, y: dy },
+                isLeftFoot: isLeftFoot,
+                createdAt: Date.now(),
+                lifetime: 3000, // 3 seconds (fade sooner)
+              };
+              levelRef.current.footprints.push(footprint);
+              lastFootprintPosRef.current = { x: nextPos.x, y: nextPos.y };
+              // Alternate between left and right foot
+              nextFootIsLeftRef.current = !nextFootIsLeftRef.current;
+            }
+          }
+          
           // Start smooth animation from current visual position (not actual position)
           // This ensures smooth transitions even when changing direction mid-movement
           moveStartPosRef.current = { ...visualPosRef.current };
@@ -497,6 +574,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             moveStartPosRef.current = { ...portal.exitPos };
             moveProgressRef.current = 1;
             lastPlayerPosRef.current = { ...portal.exitPos };
+            
+            // Log portal usage event
+            eventLogger.logEvent('environment', 'Used portal', {
+              type: 'portal',
+              fromPos: { x: nextPos.x, y: nextPos.y },
+              toPos: portal.exitPos
+            });
           }
 
           // Check for lightswitch collision
@@ -509,6 +593,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             lightswitch.activated = true;
             lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
             visionDebuffLevelRef.current = 0; // Clear Nyx effect
+            
+            // Log lightswitch activation event
+            eventLogger.logEvent('environment', 'Activated lightswitch - Full maze reveal for 5s', {
+              type: 'lightswitch',
+              duration: 5000
+            });
+            
             // Remove lightswitch after reveal ends (handled in update loop)
           }
 
@@ -521,6 +612,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             audioManager.playSound('itemPickup');
             dispatch({ type: 'ADD_ITEM', payload: collectedItem });
             levelRef.current.items = levelRef.current.items.filter((_, i) => i !== itemIndex);
+            
+            // Log item pickup event
+            eventLogger.logEvent('loot', `Picked up ${collectedItem.name} (${collectedItem.rarity})`, {
+              item: collectedItem
+            });
           }
 
           // Auto-attack nearby enemies with weapon-specific mechanics
@@ -589,6 +685,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 audioManager.playSound('attack');
                 let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
                 enemy.hp -= damage;
+                
+                // Log player attack event
+                const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+                eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
+                  damage: Math.floor(damage),
+                  enemyType: enemy.mobSubtype,
+                  isBoss: enemy.isBoss,
+                  enemyHp: Math.floor(enemy.hp)
+                });
+                
                 return; // Skip other weapon mechanics for wall-piercing attacks
               }
             }
@@ -600,15 +706,30 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             
             // Dagger: Critical hit chance (higher level = more chance)
             // Base 10% crit chance, +2% per level
+            let isCrit = false;
             if (weaponBaseName?.toLowerCase() === 'dagger') {
               const critChance = 0.10 + (weaponLevel - 1) * 0.02; // 10% base, +2% per level
               if (Math.random() < critChance) {
                 damage *= 3; // Triple damage on crit
+                isCrit = true;
               }
             }
             
             // Apply damage
             enemy.hp -= damage;
+            
+            // Log player attack event
+            const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+            const damageMessage = isCrit 
+              ? `CRIT! Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`
+              : `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`;
+            eventLogger.logEvent('combat', damageMessage, {
+              damage: Math.floor(damage),
+              enemyType: enemy.mobSubtype,
+              isBoss: enemy.isBoss,
+              enemyHp: Math.floor(enemy.hp),
+              isCrit
+            });
             
             // Mace: Knockback (higher level = more knockback)
             if (weaponBaseName?.toLowerCase() === 'mace' && enemy.hp > 0) {
@@ -644,6 +765,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 audioManager.playSound('coin');
                 levelRef.current!.entities = levelRef.current!.entities.filter(e => e.id !== enemy.id);
                 
+                // Log kill event
+                const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+                eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
+                  enemyType: enemy.mobSubtype,
+                  isBoss: enemy.isBoss
+                });
+                
                 // If boss was defeated, place exit at boss death location
                 if (enemy.isBoss && bossDeathPos && levelRef.current) {
                   const exitX = bossDeathPos.x;
@@ -662,6 +790,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     // Update exit position
                     levelRef.current.exitPos = { x: exitX, y: exitY };
                   }
+                  
+                  // Log boss defeat event
+                  eventLogger.logEvent('progression', `Boss ${enemy.mobSubtype} defeated`, {
+                    bossType: enemy.mobSubtype
+                  });
                 }
                 
                 // Calculate coin reward based on mob type
@@ -688,6 +821,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 
                 // Use base stats from ref to ensure we have latest coins value
                 dispatch({ type: 'UPDATE_STATS', payload: { coins: baseStats.coins + coinReward } });
+                
+                // Log coin collection event
+                eventLogger.logEvent('loot', `Collected ${coinReward} coins`, {
+                  amount: coinReward
+                });
                 
                 // Unlock compendium card on first defeat
                 if (enemy.mobSubtype) {
@@ -959,6 +1097,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       console.error('Error updating particles:', error);
       if (!levelRef.current.particles) {
         levelRef.current.particles = [];
+      }
+    }
+
+    // Update footprints
+    try {
+      if (!levelRef.current.footprints) {
+        levelRef.current.footprints = [];
+      }
+      
+      const updatedFootprints: Footprint[] = [];
+      for (let i = 0; i < levelRef.current.footprints.length; i++) {
+        const footprint = levelRef.current.footprints[i];
+        
+        // Check lifetime
+        if (now - footprint.createdAt > footprint.lifetime) {
+          continue; // Skip expired footprints
+        }
+        
+        updatedFootprints.push(footprint);
+      }
+      
+      levelRef.current.footprints = updatedFootprints;
+    } catch (error) {
+      console.error('Error updating footprints:', error);
+      if (!levelRef.current.footprints) {
+        levelRef.current.footprints = [];
       }
     }
 
@@ -1826,6 +1990,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 audioManager.playSound('damage');
                 dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
                 
+                // Log damage event
+                eventLogger.logEvent('combat', `Took ${damage} damage from ${entity.mobSubtype || 'enemy'}`, {
+                  damage,
+                  enemyType: entity.mobSubtype,
+                  hp: newHp,
+                  maxHp: baseStats.maxHp
+                });
+                
                 if (newHp <= 0 && !gameOverTriggeredRef.current) {
                   gameOverTriggeredRef.current = true;
                   audioManager.playSound('gameOver');
@@ -1860,6 +2032,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         // Play death sound (no coin sound - friendly fire kills don't reward player)
         audioManager.playSound('enemyDeath');
         
+        // Log kill event (for entities that died from other causes)
+        const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+        eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
+          enemyType: enemy.mobSubtype,
+          isBoss: enemy.isBoss
+        });
+        
         // If boss was defeated, place exit at boss death location
         if (enemy.isBoss && bossDeathPos && levelRef.current) {
           const exitX = bossDeathPos.x;
@@ -1878,6 +2057,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             // Update exit position
             levelRef.current.exitPos = { x: exitX, y: exitY };
           }
+          
+          // Log boss defeat event
+          eventLogger.logEvent('progression', `Boss ${enemy.mobSubtype} defeated`, {
+            bossType: enemy.mobSubtype
+          });
         }
       });
       
@@ -2050,6 +2234,94 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     } catch (error) {
       console.error('Error drawing afterimages:', error);
+    }
+
+    // Draw Footprints (fading foot-shaped prints)
+    try {
+      if (levelRef.current.footprints && levelRef.current.footprints.length > 0) {
+        levelRef.current.footprints.forEach((footprint: Footprint) => {
+          const age = Date.now() - footprint.createdAt;
+          const lifetime = footprint.lifetime;
+          const alpha = 1 - (age / lifetime); // Fade out over lifetime
+          
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, Math.min(1, alpha * 0.6)); // Max 60% opacity for shadows
+          
+          // Calculate rotation angle based on movement direction
+          const angle = Math.atan2(footprint.direction.y, footprint.direction.x);
+          
+          // Position in screen coordinates
+          const screenX = footprint.pos.x * TILE_SIZE;
+          const screenY = footprint.pos.y * TILE_SIZE;
+          const centerX = screenX + TILE_SIZE / 2;
+          const centerY = screenY + TILE_SIZE / 2;
+          
+          // Calculate perpendicular direction for left/right offset
+          // Perpendicular to movement direction (90 degrees rotated)
+          const perpAngle = angle + Math.PI / 2;
+          const offsetDistance = TILE_SIZE * 0.15; // Offset from center
+          const offsetX = Math.cos(perpAngle) * offsetDistance;
+          const offsetY = Math.sin(perpAngle) * offsetDistance;
+          
+          // Position left foot on left side, right foot on right side
+          // For left foot, offset in negative perpendicular direction
+          // For right foot, offset in positive perpendicular direction
+          const footprintX = centerX + (footprint.isLeftFoot ? -offsetX : offsetX);
+          const footprintY = centerY + (footprint.isLeftFoot ? -offsetY : offsetY);
+          
+          // Draw foot shape
+          ctx.translate(footprintX, footprintY);
+          ctx.rotate(angle);
+          
+          // Use dark shadow color
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // Dark shadow color
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.lineWidth = 1;
+          
+          // Draw actual foot shape (left or right)
+          const footLength = TILE_SIZE * 0.35;
+          const footWidth = TILE_SIZE * 0.2;
+          const toeWidth = TILE_SIZE * 0.15;
+          const heelWidth = TILE_SIZE * 0.12;
+          
+          ctx.beginPath();
+          
+          if (footprint.isLeftFoot) {
+            // Left foot shape - outer edge on left, inner edge on right
+            // Toe area (front, wider)
+            ctx.moveTo(footLength / 2, -toeWidth / 2);
+            ctx.lineTo(footLength / 2, toeWidth / 2);
+            // Outer edge (left side - curves outward)
+            ctx.quadraticCurveTo(footLength / 3, -footWidth / 2, -footLength / 3, -heelWidth / 2);
+            // Heel (back, narrower)
+            ctx.lineTo(-footLength / 2, -heelWidth / 2);
+            ctx.lineTo(-footLength / 2, heelWidth / 2);
+            // Inner edge (right side - curves inward)
+            ctx.quadraticCurveTo(-footLength / 3, footWidth / 2, footLength / 3, toeWidth / 2);
+            ctx.closePath();
+          } else {
+            // Right foot shape - outer edge on right, inner edge on left (mirrored)
+            // Toe area (front, wider)
+            ctx.moveTo(footLength / 2, -toeWidth / 2);
+            ctx.lineTo(footLength / 2, toeWidth / 2);
+            // Outer edge (right side - curves outward)
+            ctx.quadraticCurveTo(footLength / 3, footWidth / 2, -footLength / 3, heelWidth / 2);
+            // Heel (back, narrower)
+            ctx.lineTo(-footLength / 2, heelWidth / 2);
+            ctx.lineTo(-footLength / 2, -heelWidth / 2);
+            // Inner edge (left side - curves inward)
+            ctx.quadraticCurveTo(-footLength / 3, -footWidth / 2, footLength / 3, -toeWidth / 2);
+            ctx.closePath();
+          }
+          
+          ctx.fill();
+          ctx.stroke();
+          
+          ctx.restore();
+        });
+      }
+    } catch (error) {
+      console.error('Error drawing footprints:', error);
     }
 
     // Draw Projectiles (wrap in try-catch to prevent rendering errors from blocking draw)
@@ -2955,10 +3227,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 levelRef.current.particles.push(sparkle as any);
               }
             } else {
-              // Entity is in range - ensure it's fully visible with no blur
+              // Entity is in range - ensure it's fully visible with no blur, no particles, no rarity color effects
               ctx.save();
               ctx.filter = 'none'; // Explicitly clear blur
               ctx.globalAlpha = 1.0; // Full opacity
+              ctx.shadowBlur = 0; // Clear any shadow effects
+              ctx.shadowColor = 'transparent'; // Clear shadow color
               
               const size = TILE_SIZE * 0.6;
               ctx.fillStyle = '#ff4444';
@@ -3050,10 +3324,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               levelRef.current.particles.push(sparkle as any);
             }
           } else {
-            // Item is in range - ensure it's fully visible with no blur
+            // Item is in range - ensure it's fully visible with no blur, no particles, no rarity color effects
             ctx.save();
             ctx.filter = 'none'; // Explicitly clear blur
             ctx.globalAlpha = 1.0; // Full opacity
+            ctx.shadowBlur = 0; // Clear any shadow effects
+            ctx.shadowColor = 'transparent'; // Clear shadow color
             
             // Draw item icon using proper icon functions
             const itemSize = TILE_SIZE - 12;

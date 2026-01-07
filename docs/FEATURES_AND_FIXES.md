@@ -16,6 +16,8 @@ This document tracks new features and bug fixes implemented in the project.
   - [HUD Terminology Update - "SECTOR" Instead of "LEVEL"](#hud-terminology-update---sector-instead-of-level)
   - [Boss Sector Exit Spawning](#boss-sector-exit-spawning)
   - [Hover to See Equipped Stats Feature](#hover-to-see-equipped-stats-feature)
+  - [Player Footprint Trail](#player-footprint-trail)
+  - [Game Event Log Viewer](#game-event-log-viewer)
 - [Fixes](#fixes)
   - [Projectile Wall Collision Detection Fixes](#projectile-wall-collision-detection-fixes)
   - [Exit Tile Mob Spawn and Movement Prevention](#exit-tile-mob-spawn-and-movement-prevention)
@@ -1292,6 +1294,354 @@ const equippedItem = canEquip && !isEquipped
 - Verify tooltip doesn't appear on mobile devices
 - Test with no equipped item - tooltip should not appear
 - Test with item already equipped - tooltip should not appear
+
+---
+
+### Player Footprint Trail
+
+**Type**: Feature Enhancement  
+**Files Modified**: 
+- `client/src/lib/game/types.ts`
+- `client/src/lib/game/engine.ts`
+- `client/src/components/game/GameCanvas.tsx`
+
+#### Overview
+Implemented a visual footprint trail system that leaves dark shadow-like left and right foot prints behind the player as they move through the maze. Footprints alternate between left and right feet, are positioned on opposite sides of tiles, fade out over 3 seconds, and are properly mirrored to create a natural walking pattern.
+
+#### Problem
+The game lacked visual feedback showing the player's movement path through the maze. This made it difficult to:
+- Track where the player has been
+- Create a sense of movement and presence in the environment
+- Add visual polish and immersion to the gameplay experience
+
+#### Solution
+Created a footprint system that:
+1. Tracks player movement and creates footprints when entering new tiles
+2. Alternates between left and right foot prints
+3. Positions footprints on opposite sides of tiles (left foot on left, right foot on right)
+4. Renders actual foot shapes (not just ovals) that are properly mirrored
+5. Uses dark shadow colors that fade out over 3 seconds
+6. Orients footprints in the direction of movement
+
+#### Technical Implementation
+
+**Type System:**
+1. **Footprint Interface** (`types.ts`)
+   - Added `Footprint` interface with:
+     - `id`: Unique identifier
+     - `pos`: Position in tile coordinates
+     - `direction`: Movement direction when footprint was created
+     - `isLeftFoot`: Boolean flag for left/right foot
+     - `createdAt`: Timestamp for fade calculation
+     - `lifetime`: Duration in milliseconds (3000ms = 3 seconds)
+
+2. **Level Integration** (`types.ts`, `engine.ts`)
+   - Added `footprints: Footprint[]` array to `Level` interface
+   - Initialized empty `footprints: []` array when generating levels
+
+**GameCanvas Implementation:**
+
+1. **Tracking Refs:**
+   - `footprintIdCounterRef`: Counter for unique footprint IDs
+   - `lastFootprintPosRef`: Tracks last tile position where footprint was created
+   - `nextFootIsLeftRef`: Tracks which foot to place next (alternating)
+
+2. **Footprint Creation** (lines ~483-503):
+   - Creates footprint when player enters a new tile
+   - Alternates between left and right feet using `nextFootIsLeftRef`
+   - Stores movement direction for proper orientation
+   - Sets lifetime to 3000ms (3 seconds)
+
+3. **Footprint Update Loop** (lines ~1000-1025):
+   - Removes expired footprints (older than lifetime)
+   - Runs every frame to maintain performance
+
+4. **Footprint Rendering** (lines ~2120-2200):
+   - Calculates fade alpha based on age
+   - Positions footprints on opposite sides of tiles:
+     - Left foot: offset to left side (negative perpendicular offset)
+     - Right foot: offset to right side (positive perpendicular offset)
+   - Rotates footprints to match movement direction
+   - Draws actual foot shapes with:
+     - Wider toe area at front
+     - Narrower heel area at back
+     - Curved edges for natural foot appearance
+     - Proper mirroring (left foot outer edge on left, right foot outer edge on right)
+
+#### Implementation Details
+
+**Footprint Positioning:**
+```typescript
+// Calculate perpendicular direction for left/right offset
+const perpAngle = angle + Math.PI / 2;
+const offsetDistance = TILE_SIZE * 0.15; // Offset from center
+const offsetX = Math.cos(perpAngle) * offsetDistance;
+const offsetY = Math.sin(perpAngle) * offsetDistance;
+
+// Position left foot on left side, right foot on right side
+const footprintX = centerX + (footprint.isLeftFoot ? -offsetX : offsetX);
+const footprintY = centerY + (footprint.isLeftFoot ? -offsetY : offsetY);
+```
+
+**Foot Shape Drawing:**
+- Left foot: Outer edge (curved outward) on left, inner edge (curved inward) on right
+- Right foot: Outer edge (curved outward) on right, inner edge (curved inward) on left
+- Both feet have wider toe area and narrower heel area
+- Uses dark shadow color: `rgba(0, 0, 0, 0.5)` with stroke `rgba(0, 0, 0, 0.3)`
+
+**Alternating Logic:**
+```typescript
+const isLeftFoot = nextFootIsLeftRef.current;
+// ... create footprint with isLeftFoot ...
+nextFootIsLeftRef.current = !nextFootIsLeftRef.current; // Alternate
+```
+
+**Cleanup:**
+- Footprints are cleared on game over
+- Expired footprints are removed in update loop
+- Footprint tracking resets when new level loads
+
+#### Result
+- ✅ Footprints appear as dark shadow-like shapes behind the player
+- ✅ Left and right footprints alternate naturally
+- ✅ Footprints are positioned on opposite sides of tiles
+- ✅ Foot shapes are properly mirrored (not identical)
+- ✅ Footprints fade out over 3 seconds
+- ✅ Footprints are oriented in movement direction
+- ✅ Performance optimized with automatic cleanup
+- ✅ Visual polish enhances immersion
+
+#### User Experience Improvements
+- **Visual feedback**: Players can see their movement path through the maze
+- **Natural appearance**: Alternating left/right footprints create realistic walking pattern
+- **Non-intrusive**: Dark shadows fade quickly, don't clutter the screen
+- **Directional awareness**: Footprints show movement direction, helpful for navigation
+
+#### Behavior Notes
+- Footprints are only created when entering a new tile (not on same tile)
+- Footprints alternate between left and right feet
+- Left footprints appear on left side of tile, right footprints on right side
+- Footprints fade from 60% opacity to 0% over 3 seconds
+- Footprints are cleared when game ends or level changes
+- Footprint shapes are properly mirrored (left and right are different)
+
+#### Testing Notes
+- Move player through maze - verify footprints appear behind player
+- Verify footprints alternate between left and right
+- Check that left footprints are on left side of tiles, right on right side
+- Confirm footprints are mirrored (not identical shapes)
+- Verify footprints fade out over 3 seconds
+- Test footprints orient correctly in all movement directions (up, down, left, right, diagonals)
+- Verify footprints are cleared on game over
+- Test performance with many footprints (should clean up expired ones)
+
+---
+
+### Game Event Log Viewer
+
+**Type**: Feature Enhancement  
+**Files Modified**: 
+- `client/src/lib/game/eventLogger.ts`
+- `client/src/components/game/GameEventLogViewer.tsx`
+- `client/src/components/game/GameCanvas.tsx`
+- `client/src/pages/Game.tsx`
+- `client/src/lib/store.tsx`
+- `client/src/components/ui/toast.tsx`
+
+#### Overview
+Implemented a comprehensive in-game event logging system with a resizable log viewer that displays color-coded events in real-time. The system tracks all major game events including combat, progression, loot, shop purchases, environment interactions, consumable usage, and equipment changes. The log viewer is positioned at the bottom of the screen, remains visible during game over, and uses the same pixel font as the mission button for visual consistency.
+
+#### Problem
+Players had no way to review what happened during gameplay:
+- No visibility into damage dealt/taken, kills, or combat events
+- No record of item pickups, coin collection, or shop purchases
+- No tracking of sector progression, boss events, or level transitions
+- No log of environmental interactions (portals, lightswitches) or consumable usage
+- No way to review events after game over to understand what happened
+
+#### Solution
+Created a centralized event logging system with:
+1. **Event Logger Singleton**: Centralized service for logging all game events
+2. **Resizable Log Viewer**: Bottom panel that can be resized by the player
+3. **Color-Coded Categories**: Events grouped by type with distinct colors
+4. **Real-Time Updates**: Events appear immediately as they occur
+5. **Smart Filtering**: Automatically removes duplicate sector start events
+6. **Game Over Visibility**: Log remains visible during game over screen for review
+
+#### Technical Implementation
+
+**Event Type System:**
+Events are categorized into 7 types:
+- `combat`: Damage taken, damage dealt, enemy kills
+- `progression`: Sector start/complete, boss spawn/defeat
+- `loot`: Item pickups, coin collection
+- `shop`: Shop purchases
+- `environment`: Lightswitch activation, portal usage
+- `consumable`: Scroll usage, potion consumption
+- `event`: Equipment changes (equip/unequip)
+
+**Event Logger (`eventLogger.ts`):**
+- Singleton pattern for global access
+- Maintains event history (max 200 events)
+- Subscriber pattern for real-time UI updates
+- Type-safe event definitions
+- Automatic event trimming (keeps most recent 200)
+
+**Log Viewer Component (`GameEventLogViewer.tsx`):**
+- Resizable panel integrated with `ResizablePanelGroup`
+- Color-coded by event type:
+  - Combat: Red (`text-red-400`)
+  - Progression: Cyan (`text-cyan-400`)
+  - Loot: Blue (`text-blue-400`)
+  - Shop: Purple (`text-purple-400`)
+  - Environment: Pink (`text-pink-400`)
+  - Consumable: Amber (`text-amber-400`)
+  - Event: Green (`text-green-400`)
+- Newest events at top (reversed display)
+- Auto-scroll to newest events
+- Truncates long messages with tooltip on hover
+- Uses `font-pixel` to match mission button styling
+- Small font sizes for compact display (`text-xs` for timestamps/categories, `text-sm` for messages)
+
+**Event Logging Integration:**
+
+1. **Combat Events** (`GameCanvas.tsx`):
+   - Player damage taken
+   - Player damage dealt to enemies
+   - Enemy kills
+   - Boss defeats
+
+2. **Progression Events** (`GameCanvas.tsx`, `Game.tsx`):
+   - Sector start
+   - Sector complete
+   - Boss spawn
+   - Boss defeat
+
+3. **Loot Events** (`GameCanvas.tsx`):
+   - Item pickups
+   - Coin collection
+
+4. **Shop Events** (`Game.tsx`):
+   - Item purchases
+
+5. **Environment Events** (`GameCanvas.tsx`):
+   - Lightswitch activation
+   - Portal usage
+
+6. **Consumable Events** (`GameCanvas.tsx`, `store.tsx`):
+   - Scroll usage (Fortune, Pathfinding, Ending, Threat-sense, Loot-sense, Phasing, Commerce)
+   - Potion usage (Light, Healing, Speed)
+
+7. **Equipment Events** (`store.tsx`):
+   - Item equipped
+   - Item unequipped
+
+**Smart Filtering:**
+- Compares first two (oldest) events
+- If both are same category and both about starting a sector, drops the first (oldest) entry
+- Prevents duplicate "Sector 1 started" events from appearing
+- Only affects the first two events, never drops subsequent events
+
+**Z-Index Management:**
+- Log viewer: `z-[201]`
+- Toast notifications: `z-[250]` (ensures toasts always appear above log)
+- Game over overlay: Lower z-index to allow log visibility
+
+#### Implementation Details
+
+**Event Logger Structure:**
+```typescript
+export type EventType = 'combat' | 'progression' | 'loot' | 'shop' | 'environment' | 'consumable' | 'event';
+
+export interface GameEvent {
+  id: string;
+  timestamp: Date;
+  type: EventType;
+  message: string;
+  data?: Record<string, any>;
+}
+```
+
+**Subscription Pattern:**
+```typescript
+// Subscribe to events
+const unsubscribe = eventLogger.subscribe((event) => {
+  setEvents(prev => [...prev, event].slice(-maxEntries));
+});
+
+// Cleanup on unmount
+return () => unsubscribe();
+```
+
+**Resizable Integration:**
+```typescript
+<ResizablePanelGroup direction="vertical">
+  <ResizablePanel defaultSize={85} minSize={50}>
+    {/* Main game area */}
+  </ResizablePanel>
+  <ResizableHandle withHandle />
+  <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
+    <GameEventLogViewer />
+  </ResizablePanel>
+</ResizablePanelGroup>
+```
+
+**Filtering Logic:**
+```typescript
+// Only check first two (oldest) events
+if (events.length >= 2) {
+  const first = events[0];
+  const second = events[1];
+  
+  const sameCategory = first.type === second.type;
+  const bothAboutSectorStart = 
+    first.message.toLowerCase().includes('started') && 
+    second.message.toLowerCase().includes('started');
+  
+  if (sameCategory && bothAboutSectorStart) {
+    filtered = events.slice(1); // Drop first (oldest) entry
+  }
+}
+```
+
+#### Result
+- ✅ All major game events are logged and displayed
+- ✅ Color-coded categories make events easy to scan
+- ✅ Resizable panel allows players to adjust log size
+- ✅ Real-time updates show events as they happen
+- ✅ Log remains visible during game over for review
+- ✅ Smart filtering prevents duplicate sector start events
+- ✅ Compact font sizes and pixel font match game aesthetic
+- ✅ Toast notifications always appear above log viewer
+- ✅ Performance optimized with memoization and debounced scrolling
+
+#### User Experience Improvements
+- **Comprehensive Tracking**: Players can see everything that happened during gameplay
+- **Visual Organization**: Color coding makes it easy to find specific event types
+- **Review Capability**: Log visible during game over helps players understand what happened
+- **Non-Intrusive**: Resizable panel allows players to adjust size to preference
+- **Consistent Styling**: Pixel font matches mission button for visual consistency
+
+#### Behavior Notes
+- Events are displayed newest first (reversed order)
+- Only the first two (oldest) events are checked for duplicates
+- Shop events should never be dropped (players go through 4 sectors before shop)
+- Log viewer has higher z-index than game over overlay
+- Toast notifications have highest z-index to always appear on top
+- Font sizes are small for compact display (`text-xs`/`text-sm`)
+- Category and event message are vertically aligned (`items-center`)
+
+#### Testing Notes
+- Verify all event types appear in log with correct colors
+- Test resizable panel functionality (drag handle to resize)
+- Confirm log remains visible during game over screen
+- Verify toast notifications appear above log viewer
+- Test duplicate sector start filtering (should only drop first if both are sector starts)
+- Verify shop events appear correctly (should never be dropped)
+- Test equip/unequip events appear in log
+- Confirm scroll and potion usage events are logged
+- Verify portal and lightswitch events appear
+- Test performance with many events (should cap at 200)
 
 ---
 
