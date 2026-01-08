@@ -19,6 +19,51 @@ const stairsImageCache: { img: HTMLImageElement | null; loading: boolean } = {
   loading: false
 };
 
+// Helper function to format entity names with initial caps
+function formatEntityName(mobSubtype: MobSubtype | undefined, isBoss: boolean = false): string {
+  if (!mobSubtype) {
+    return isBoss ? 'Boss' : 'Enemy';
+  }
+  
+  // Handle boss types
+  if (mobSubtype.startsWith('boss_')) {
+    const bossName = mobSubtype.replace('boss_', '');
+    // Capitalize first letter: 'zeus' -> 'Zeus', 'hades' -> 'Hades', 'ares' -> 'Ares'
+    return bossName.charAt(0).toUpperCase() + bossName.slice(1);
+  }
+  
+  // For regular mobs, try to get the display name from MOB_TYPES
+  const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
+  if (mobType && mobType.name) {
+    return mobType.name;
+  }
+  
+  // Fallback: capitalize first letter of subtype
+  return mobSubtype.charAt(0).toUpperCase() + mobSubtype.slice(1);
+}
+
+// Helper function to format item names with initial caps
+function formatItemName(itemName: string): string {
+  if (!itemName) return itemName;
+  
+  // Item names are usually already properly formatted, but ensure first letter is capitalized
+  // Handle cases like "sword lv5" -> "Sword Lv5", "scroll of fortune" -> "Scroll of Fortune"
+  return itemName
+    .split(' ')
+    .map((word, index) => {
+      // Capitalize first letter of each word
+      // Preserve special patterns like "Lv5", "of", etc.
+      if (word.toLowerCase() === 'of' || word.toLowerCase() === 'the') {
+        return word.toLowerCase(); // Keep lowercase for articles/prepositions
+      }
+      if (word.match(/^Lv\d+$/i)) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // "Lv5" -> "Lv5"
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 // Preload stairs image
 function preloadStairsImage(): void {
   if (stairsImageCache.img || stairsImageCache.loading) {
@@ -304,7 +349,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       if (level.isBoss) {
         const bossEntity = level.entities.find(e => e.isBoss);
         if (bossEntity && bossEntity.mobSubtype) {
-          eventLogger.logEvent('progression', `Boss ${bossEntity.mobSubtype} spawned`, {
+          const bossName = formatEntityName(bossEntity.mobSubtype, true);
+          eventLogger.logEvent('progression', `Boss ${bossName} spawned`, {
             bossType: bossEntity.mobSubtype
           });
         }
@@ -614,7 +660,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             levelRef.current.items = levelRef.current.items.filter((_, i) => i !== itemIndex);
             
             // Log item pickup event
-            eventLogger.logEvent('loot', `Picked up ${collectedItem.name} (${collectedItem.rarity})`, {
+            const itemName = formatItemName(collectedItem.name);
+            eventLogger.logEvent('loot', `Picked up ${itemName} (${collectedItem.rarity})`, {
               item: collectedItem
             });
           }
@@ -687,7 +734,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 enemy.hp -= damage;
                 
                 // Log player attack event
-                const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+                const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
                 eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
                   damage: Math.floor(damage),
                   enemyType: enemy.mobSubtype,
@@ -719,7 +766,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             enemy.hp -= damage;
             
             // Log player attack event
-            const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+            const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
             const damageMessage = isCrit 
               ? `CRIT! Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`
               : `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`;
@@ -766,7 +813,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 levelRef.current!.entities = levelRef.current!.entities.filter(e => e.id !== enemy.id);
                 
                 // Log kill event
-                const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+                const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
                 eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
                   enemyType: enemy.mobSubtype,
                   isBoss: enemy.isBoss
@@ -792,7 +839,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   }
                   
                   // Log boss defeat event
-                  eventLogger.logEvent('progression', `Boss ${enemy.mobSubtype} defeated`, {
+                  const bossName = formatEntityName(enemy.mobSubtype, true);
+                  eventLogger.logEvent('progression', `Boss ${bossName} defeated`, {
                     bossType: enemy.mobSubtype
                   });
                 }
@@ -1991,7 +2039,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
                 
                 // Log damage event
-                eventLogger.logEvent('combat', `Took ${damage} damage from ${entity.mobSubtype || 'enemy'}`, {
+                const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
+                eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
                   damage,
                   enemyType: entity.mobSubtype,
                   hp: newHp,
@@ -2033,7 +2082,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         audioManager.playSound('enemyDeath');
         
         // Log kill event (for entities that died from other causes)
-        const enemyTypeName = enemy.mobSubtype || (enemy.isBoss ? 'Boss' : 'Enemy');
+        const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
         eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
           enemyType: enemy.mobSubtype,
           isBoss: enemy.isBoss
@@ -2059,7 +2108,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           }
           
           // Log boss defeat event
-          eventLogger.logEvent('progression', `Boss ${enemy.mobSubtype} defeated`, {
+          const bossName = formatEntityName(enemy.mobSubtype, true);
+          eventLogger.logEvent('progression', `Boss ${bossName} defeated`, {
             bossType: enemy.mobSubtype
           });
         }

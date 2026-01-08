@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { eventLogger, GameEvent, EventType } from '@/lib/game/eventLogger';
+import { RARITY_COLORS } from '@/lib/game/constants';
 
 /**
  * Props for GameEventLogViewer component
@@ -115,6 +116,82 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
     return message.substring(0, maxLength) + '...';
   }, []);
 
+  // Helper function to format item names with initial caps (same as in GameCanvas)
+  const formatItemName = useCallback((itemName: string): string => {
+    if (!itemName) return itemName;
+    return itemName
+      .split(' ')
+      .map((word) => {
+        if (word.toLowerCase() === 'of' || word.toLowerCase() === 'the') {
+          return word.toLowerCase();
+        }
+        if (word.match(/^Lv\d+$/i)) {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
+  }, []);
+
+  // Parse message and color-code item names based on rarity
+  const parseMessageWithItemColors = useCallback((displayMessage: string, originalMessage: string, event: GameEvent): React.ReactNode => {
+    // Check if event has item data with rarity
+    if (!event.data?.item || !event.data.item.rarity) {
+      return displayMessage;
+    }
+
+    const item = event.data.item;
+    const rarity = item.rarity as keyof typeof RARITY_COLORS;
+    const rarityColor = RARITY_COLORS[rarity] || RARITY_COLORS.common;
+    
+    // Format the item name to match what's in the message
+    const formattedItemName = formatItemName(item.name);
+    
+    // Find the item name in the original message first to get the exact case
+    const itemNameRegex = new RegExp(`(${formattedItemName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const originalMatch = itemNameRegex.exec(originalMessage);
+    
+    if (!originalMatch) {
+      return displayMessage; // Item name not found in original message
+    }
+    
+    // Use the exact item name from the original message (preserves case)
+    const exactItemName = originalMatch[1];
+    
+    // Now find and replace in the display message
+    const displayRegex = new RegExp(`(${exactItemName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
+    
+    // Split display message by item name and create React elements
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+    
+    // Reset regex for display message
+    displayRegex.lastIndex = 0;
+    while ((match = displayRegex.exec(displayMessage)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(displayMessage.substring(lastIndex, match.index));
+      }
+      
+      // Add the colored item name
+      parts.push(
+        <span key={match.index} style={{ color: rarityColor }}>
+          {match[1]}
+        </span>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < displayMessage.length) {
+      parts.push(displayMessage.substring(lastIndex));
+    }
+    
+    return parts.length > 0 ? <>{parts}</> : displayMessage;
+  }, [formatItemName]);
+
   // Memoize event items for better performance (reverse order - newest first)
   // Only check the first two (oldest) events - if they're same category and both about starting a sector, drop the first
   const eventItems = useMemo(() => {
@@ -140,11 +217,15 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
     // Reverse for newest first display
     const reversed = [...filtered].reverse();
     
-    return reversed.map((event) => ({
-      ...event,
-      displayMessage: truncateMessage(event.message),
-      isTruncated: event.message.length > 150
-    }));
+    return reversed.map((event) => {
+      const truncated = truncateMessage(event.message);
+      return {
+        ...event,
+        displayMessage: truncated,
+        originalMessage: event.message, // Keep original for item name parsing
+        isTruncated: event.message.length > 150
+      };
+    });
   }, [events, truncateMessage]);
 
   return (
@@ -176,7 +257,7 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
                       {event.type}:
                     </span>
                     <span className="flex-1 break-words whitespace-pre-wrap leading-relaxed text-sm">
-                      {event.displayMessage}
+                      {parseMessageWithItemColors(event.displayMessage, event.originalMessage || event.message, event)}
                     </span>
                   </div>
                 ))

@@ -1,4 +1,4 @@
-import { Item } from './types';
+import { Item, ScrollType } from './types';
 
 // Base item templates
 interface ItemTemplate {
@@ -50,6 +50,17 @@ const RARITY_MULTIPLIERS = {
   rare: 1.5,
   epic: 2.0,
   legendary: 3.0,
+};
+
+// Scroll base prices (utility-based pricing)
+const SCROLL_BASE_PRICES: Record<ScrollType, number> = {
+  scroll_threatsense: 30,    // Common - Moderate utility
+  scroll_lootsense: 60,      // Rare - Good utility
+  scroll_pathfinding: 80,    // Rare - High utility
+  scroll_fortune: 120,        // Epic - Very high utility
+  scroll_commerce: 100,      // Variable - Very high utility
+  scroll_phasing: 150,       // Variable - Extremely high utility
+  scroll_ending: 200,        // Epic - Extremely high utility
 };
 
 // Calculate sell value for an item
@@ -200,8 +211,8 @@ function generateItemName(baseName: string, stats: Item['stats'], rarity: Item['
 }
 
 // Generate a scroll with specific rarity
-export function generateScroll(scrollType: import('./types').ScrollType, rarity: Item['rarity']): Item {
-  const scrollNames: Record<import('./types').ScrollType, string> = {
+export function generateScroll(scrollType: ScrollType, rarity: Item['rarity']): Item {
+  const scrollNames: Record<ScrollType, string> = {
     scroll_fortune: 'Scroll of Fortune',
     scroll_pathfinding: 'Scroll of Pathfinding',
     scroll_commerce: 'Scroll of Commerce',
@@ -211,7 +222,7 @@ export function generateScroll(scrollType: import('./types').ScrollType, rarity:
     scroll_phasing: 'Scroll of Phasing',
   };
   
-  const scrollDescriptions: Record<import('./types').ScrollType, string> = {
+  const scrollDescriptions: Record<ScrollType, string> = {
     scroll_fortune: 'Teleports you near the nearest item',
     scroll_pathfinding: 'Teleports you near the exit',
     scroll_commerce: 'Opens a special vendor station',
@@ -221,13 +232,18 @@ export function generateScroll(scrollType: import('./types').ScrollType, rarity:
     scroll_phasing: 'Allows you to walk through walls',
   };
   
+  // Calculate price: basePrice × rarityMultiplier
+  const basePrice = SCROLL_BASE_PRICES[scrollType];
+  const rarityMultiplier = RARITY_MULTIPLIERS[rarity];
+  const price = Math.floor(basePrice * rarityMultiplier);
+  
   return {
     id: `scroll_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     name: scrollNames[scrollType],
     type: 'consumable',
     rarity,
     stats: {}, // Scrolls don't have stats
-    price: 0,
+    price,
     description: scrollDescriptions[scrollType],
   };
 }
@@ -236,7 +252,7 @@ export function generateScroll(scrollType: import('./types').ScrollType, rarity:
 export function generateRandomScroll(level: number): Item {
   // Scroll rarity distribution based on scroll type
   // Threat-sense: Common, Loot-sense/Pathfinding: Rare, Fortune/Ending: Epic, Commerce/Phasing: variable
-  const scrollTypes: Array<{ type: import('./types').ScrollType; rarity: Item['rarity'] }> = [
+  const scrollTypes: Array<{ type: ScrollType; rarity: Item['rarity'] }> = [
     { type: 'scroll_threatsense', rarity: 'common' },
     { type: 'scroll_lootsense', rarity: 'rare' },
     { type: 'scroll_pathfinding', rarity: 'rare' },

@@ -31,6 +31,28 @@ const clearAllVendorItems = () => {
   }
 };
 
+// Helper function to format item names with initial caps
+function formatItemName(itemName: string): string {
+  if (!itemName) return itemName;
+  
+  // Item names are usually already properly formatted, but ensure first letter is capitalized
+  // Handle cases like "sword lv5" -> "Sword Lv5", "scroll of fortune" -> "Scroll of Fortune"
+  return itemName
+    .split(' ')
+    .map((word, index) => {
+      // Capitalize first letter of each word
+      // Preserve special patterns like "Lv5", "of", etc.
+      if (word.toLowerCase() === 'of' || word.toLowerCase() === 'the') {
+        return word.toLowerCase(); // Keep lowercase for articles/prepositions
+      }
+      if (word.match(/^Lv\d+$/i)) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // "Lv5" -> "Lv5"
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 interface GameContextType {
   state: GameState;
   dispatch: (action: GameAction) => void;
@@ -185,7 +207,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
         case 'EQUIP_ITEM':
           newState.loadout = { ...prev.loadout, [action.payload.slot]: action.payload.item };
-          eventLogger.logEvent('event', `Equipped ${action.payload.item.name} (${action.payload.slot})`, {
+          const equippedItemName = formatItemName(action.payload.item.name);
+          eventLogger.logEvent('event', `Equipped ${equippedItemName} (${action.payload.slot})`, {
             slot: action.payload.slot,
             item: action.payload.item
           });
@@ -196,7 +219,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const unequippedItem = prev.loadout[action.payload.slot];
           newState.loadout = { ...prev.loadout, [action.payload.slot]: null };
           if (unequippedItem) {
-            eventLogger.logEvent('event', `Unequipped ${unequippedItem.name} (${action.payload.slot})`, {
+            const unequippedItemName = formatItemName(unequippedItem.name);
+            eventLogger.logEvent('event', `Unequipped ${unequippedItemName} (${action.payload.slot})`, {
               slot: action.payload.slot,
               item: unequippedItem
             });
@@ -228,14 +252,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Handle scroll effects that don't need level data
                 if (scrollType === 'scroll_threatsense') {
                   newState.activeScrollEffects.threatSense = true;
-                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Enemy detection active`, {
+                  const threatSenseItemName = formatItemName(consumable.name);
+                  eventLogger.logEvent('consumable', `Used ${threatSenseItemName} - Enemy detection active`, {
                     type: 'scroll',
                     scrollType: 'scroll_threatsense',
                     item: consumable
                   });
                 } else if (scrollType === 'scroll_lootsense') {
                   newState.activeScrollEffects.lootSense = true;
-                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Item detection active`, {
+                  const lootSenseItemName = formatItemName(consumable.name);
+                  eventLogger.logEvent('consumable', `Used ${lootSenseItemName} - Item detection active`, {
                     type: 'scroll',
                     scrollType: 'scroll_lootsense',
                     item: consumable
@@ -251,14 +277,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   }
                   newState.activeScrollEffects.phasing = { active: true, endTime };
                   const duration = endTime === 'entire_level' ? 'entire level' : `${Math.floor((endTime - now) / 1000)}s`;
-                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Phasing active for ${duration}`, {
+                  const phasingItemName = formatItemName(consumable.name);
+                  eventLogger.logEvent('consumable', `Used ${phasingItemName} - Phasing active for ${duration}`, {
                     type: 'scroll',
                     scrollType: 'scroll_phasing',
                     item: consumable,
                     duration
                   });
                 } else if (scrollType === 'scroll_commerce') {
-                  eventLogger.logEvent('consumable', `Used ${consumable.name} - Commerce vendor opened`, {
+                  const commerceItemName = formatItemName(consumable.name);
+                  eventLogger.logEvent('consumable', `Used ${commerceItemName} - Commerce vendor opened`, {
                     type: 'scroll',
                     scrollType: 'scroll_commerce',
                     item: consumable
@@ -291,7 +319,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               // Log potion usage event
               const boostText = consumable.rarity === 'legendary' ? 'Full maze reveal' : `+${visionBoost} vision`;
-              eventLogger.logEvent('consumable', `Used ${consumable.name} - ${boostText} for 10s`, {
+              const lightPotionItemName = formatItemName(consumable.name);
+              eventLogger.logEvent('consumable', `Used ${lightPotionItemName} - ${boostText} for 10s`, {
                 type: 'potion',
                 potionType: 'light',
                 item: consumable,
@@ -304,7 +333,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (consumable.stats.heal) {
                 updates.hp = Math.min(prev.stats.maxHp, prev.stats.hp + consumable.stats.heal);
                 // Log healing potion usage
-                eventLogger.logEvent('consumable', `Used ${consumable.name} - Healed ${consumable.stats.heal} HP`, {
+                const healPotionItemName = formatItemName(consumable.name);
+                eventLogger.logEvent('consumable', `Used ${healPotionItemName} - Healed ${consumable.stats.heal} HP`, {
                   type: 'potion',
                   potionType: 'heal',
                   item: consumable,
@@ -315,7 +345,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (consumable.stats.speed) {
                 // Speed boost is temporary - could be implemented as a temporary effect
                 // For now, we'll just remove the item after use
-                eventLogger.logEvent('consumable', `Used ${consumable.name} - Speed boost active`, {
+                const speedPotionItemName = formatItemName(consumable.name);
+                eventLogger.logEvent('consumable', `Used ${speedPotionItemName} - Speed boost active`, {
                   type: 'potion',
                   potionType: 'speed',
                   item: consumable,

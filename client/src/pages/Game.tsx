@@ -34,6 +34,23 @@ import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
 
+// Helper function to format item names with initial caps
+function formatItemName(itemName: string): string {
+  if (!itemName) return itemName;
+  return itemName
+    .split(' ')
+    .map((word) => {
+      if (word.toLowerCase() === 'of' || word.toLowerCase() === 'the') {
+        return word.toLowerCase();
+      }
+      if (word.match(/^Lv\d+$/i)) {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 // Component for inventory item with hover comparison
 const InventoryItemWithHover: React.FC<{
   item: Item;
@@ -267,11 +284,59 @@ export default function Game() {
   // Keyboard support
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Q key: Use smallest healing potion
+      if (e.key === 'q' || e.key === 'Q') {
+        // Don't trigger if game is over or dialogs are open
+        if (gameOverState || showInventory || showMenu || showCommerceVendor) {
+          return;
+        }
+        
+        // Find all healing potions (consumables with heal stat)
+        const healingPotions = state.inventory.filter(
+          item => item.type === 'consumable' && item.stats?.heal
+        );
+        
+        if (healingPotions.length > 0) {
+          // Sort by heal amount (smallest first)
+          const sortedPotions = [...healingPotions].sort(
+            (a, b) => (a.stats?.heal || 0) - (b.stats?.heal || 0)
+          );
+          
+          // Use the smallest healing potion
+          const smallestPotion = sortedPotions[0];
+          dispatch({ type: 'USE_CONSUMABLE', payload: { itemId: smallestPotion.id } });
+          
+          if (smallestPotion.stats?.heal) {
+            toast({ 
+              title: "USED", 
+              description: `${smallestPotion.name} - Healed ${smallestPotion.stats.heal} HP`,
+              className: "bg-green-900 border-green-500 text-green-100"
+            });
+          }
+          
+          e.preventDefault();
+        }
+        return;
+      }
+      
+      // Handle Tab key: Toggle inventory dialog
+      if (e.key === 'Tab') {
+        // Don't toggle if game is over or other dialogs are open
+        if (gameOverState || showMenu || showCommerceVendor) {
+          return;
+        }
+        
+        setShowInventory(prev => !prev);
+        e.preventDefault();
+        return;
+      }
+      
+      // Handle movement keys
       let x = 0, y = 0;
-      if (e.key === 'ArrowUp' || e.key === 'w') y = -1;
-      if (e.key === 'ArrowDown' || e.key === 's') y = 1;
-      if (e.key === 'ArrowLeft' || e.key === 'a') x = -1;
-      if (e.key === 'ArrowRight' || e.key === 'd') x = 1;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') y = -1;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') y = 1;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') x = -1;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') x = 1;
       if (x !== 0 || y !== 0) {
         setInputDir({ x, y });
         e.preventDefault();
@@ -285,7 +350,7 @@ export default function Game() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [state.inventory, gameOverState, showInventory, showMenu, showCommerceVendor, dispatch, toast]);
 
   const handleGameOver = () => {
     setGameOverState({ type: 'death' });
@@ -1264,7 +1329,8 @@ export default function Game() {
                                 markOfferPurchased(item.id);
                                 
                                 // Log shop purchase event
-                                eventLogger.logEvent('shop', `Purchased ${item.name} for $${adjustedPrice}`, {
+                                const purchasedItemName = formatItemName(item.name);
+                                eventLogger.logEvent('shop', `Purchased ${purchasedItemName} for $${adjustedPrice}`, {
                                   item,
                                   price: adjustedPrice
                                 });
@@ -1555,7 +1621,7 @@ export default function Game() {
 
               {/* Inventory Dialog - Combined with Equipment */}
               <Dialog open={showInventory} onOpenChange={setShowInventory}>
-          <DialogContent className="bg-card/95 border-primary/20 pixel-corners max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogContent className="bg-card/95 border-primary/20 pixel-corners max-w-md max-h-[80vh] overflow-y-auto z-[250]">
             <DialogHeader>
               <DialogTitle className="font-pixel text-primary">INVENTORY</DialogTitle>
             </DialogHeader>
@@ -1569,20 +1635,20 @@ export default function Game() {
                   return (
                     <div className="flex flex-row gap-4 justify-between">
                       <div className="flex flex-col">
-                        <span className="text-xs font-mono text-muted-foreground mb-0.5">DMG</span>
-                        <span className="text-2xl font-mono font-bold text-destructive leading-tight">{effectiveStats.damage}</span>
+                        <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">DMG</span>
+                        <span className="text-4xl font-mono font-bold text-destructive leading-tight">{effectiveStats.damage}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-mono text-muted-foreground mb-0.5">DEF</span>
-                        <span className="text-2xl font-mono font-bold text-purple-400 leading-tight">{totalDefense}</span>
+                        <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">DEF</span>
+                        <span className="text-4xl font-mono font-bold text-purple-400 leading-tight">{totalDefense}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-mono text-muted-foreground mb-0.5">SPD</span>
-                        <span className="text-2xl font-mono font-bold text-blue-400 leading-tight">{effectiveStats.speed.toFixed(1)}</span>
+                        <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">SPD</span>
+                        <span className="text-4xl font-mono font-bold text-blue-400 leading-tight">{effectiveStats.speed.toFixed(1)}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-mono text-muted-foreground mb-0.5">VIS</span>
-                        <span className="text-2xl font-mono font-bold text-cyan-400 leading-tight">{effectiveStats.visionRadius.toFixed(1)}</span>
+                        <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">VIS</span>
+                        <span className="text-4xl font-mono font-bold text-cyan-400 leading-tight">{effectiveStats.visionRadius.toFixed(1)}</span>
                       </div>
                     </div>
                   );
