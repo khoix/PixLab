@@ -240,7 +240,7 @@ export default function Demo() {
       {isMobile && (
         <>
           {(() => {
-            const controlType = state.settings.mobileControlType || 'joystick';
+            const controlType = state.settings.mobileControlType || 'dpad';
             if (controlType === 'touchpad') {
               return <TouchpadControl onMove={handleMove} />;
             } else if (controlType === 'dpad') {

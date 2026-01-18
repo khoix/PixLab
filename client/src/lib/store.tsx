@@ -131,7 +131,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               musicVolume: parsed.settings?.musicVolume ?? 0.5,
               sfxVolume: parsed.settings?.sfxVolume ?? 0.5,
               joystickPosition: parsed.settings?.joystickPosition ?? 'left',
-              mobileControlType: parsed.settings?.mobileControlType ?? 'joystick',
+              mobileControlType: parsed.settings?.mobileControlType ?? 'dpad',
             },
           };
           // Regenerate code from saved state to ensure it's up to date
@@ -163,7 +163,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
       temporaryVisionBoost: null,
       pendingScrollAction: null,
-      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'joystick' },
+      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'dpad' },
     };
     // Generate code from the default state
     try {
@@ -197,10 +197,31 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Auto-equip if slot is empty
           if (action.payload.type === 'weapon' && !prev.loadout.weapon) {
             newState.loadout = { ...prev.loadout, weapon: action.payload };
+            // Log auto-equip event
+            const weaponItemName = formatItemName(action.payload.name);
+            eventLogger.logEvent('event', `Auto-equipped ${weaponItemName} (weapon)`, {
+              slot: 'weapon',
+              item: action.payload,
+              autoEquipped: true
+            });
           } else if (action.payload.type === 'armor' && !prev.loadout.armor) {
             newState.loadout = { ...prev.loadout, armor: action.payload };
+            // Log auto-equip event
+            const armorItemName = formatItemName(action.payload.name);
+            eventLogger.logEvent('event', `Auto-equipped ${armorItemName} (armor)`, {
+              slot: 'armor',
+              item: action.payload,
+              autoEquipped: true
+            });
           } else if (action.payload.type === 'utility' && !prev.loadout.utility) {
             newState.loadout = { ...prev.loadout, utility: action.payload };
+            // Log auto-equip event
+            const utilityItemName = formatItemName(action.payload.name);
+            eventLogger.logEvent('event', `Auto-equipped ${utilityItemName} (utility)`, {
+              slot: 'utility',
+              item: action.payload,
+              autoEquipped: true
+            });
           }
           newState.uid = encodeGameState(newState);
           debouncedSave(newState);

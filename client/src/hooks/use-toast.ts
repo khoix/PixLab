@@ -55,6 +55,10 @@ interface State {
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+// Track dismiss timeouts separately for pause/resume functionality
+const dismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const pauseStartTimes = new Map<string, number>()
+const remainingDurations = new Map<string, number>()
 
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
@@ -70,6 +74,41 @@ const addToRemoveQueue = (toastId: string) => {
   }, TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
+}
+
+// Pause auto-dismiss when mouse enters toast
+function pauseToast(toastId: string) {
+  const timeout = dismissTimeouts.get(toastId)
+  if (timeout) {
+    clearTimeout(timeout)
+    dismissTimeouts.delete(toastId)
+    
+    // Calculate remaining time
+    const startTime = pauseStartTimes.get(toastId)
+    if (startTime) {
+      const elapsed = Date.now() - startTime
+      const remaining = Math.max(0, TOAST_DURATION - elapsed)
+      remainingDurations.set(toastId, remaining)
+      pauseStartTimes.delete(toastId)
+    }
+  }
+}
+
+// Resume auto-dismiss when mouse leaves toast
+function resumeToast(toastId: string) {
+  const remaining = remainingDurations.get(toastId)
+  if (remaining !== undefined && remaining > 0) {
+    remainingDurations.delete(toastId)
+    
+    const timeout = setTimeout(() => {
+      dismissTimeouts.delete(toastId)
+      pauseStartTimes.delete(toastId)
+      dispatch({ type: "DISMISS_TOAST", toastId })
+    }, remaining)
+    
+    dismissTimeouts.set(toastId, timeout)
+    pauseStartTimes.set(toastId, Date.now())
+  }
 }
 
 export const reducer = (state: State, action: Action): State => {
@@ -91,12 +130,25 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Clean up dismiss timeout when dismissing
       if (toastId) {
+        const timeout = dismissTimeouts.get(toastId)
+        if (timeout) {
+          clearTimeout(timeout)
+          dismissTimeouts.delete(toastId)
+          pauseStartTimes.delete(toastId)
+          remainingDurations.delete(toastId)
+        }
         addToRemoveQueue(toastId)
       } else {
         state.toasts.forEach((toast) => {
+          const timeout = dismissTimeouts.get(toast.id)
+          if (timeout) {
+            clearTimeout(timeout)
+            dismissTimeouts.delete(toast.id)
+            pauseStartTimes.delete(toast.id)
+            remainingDurations.delete(toast.id)
+          }
           addToRemoveQueue(toast.id)
         })
       }
@@ -114,6 +166,12 @@ export const reducer = (state: State, action: Action): State => {
       }
     }
     case "REMOVE_TOAST":
+      // Clean up all timeout tracking when removing
+      if (action.toastId) {
+        dismissTimeouts.delete(action.toastId)
+        pauseStartTimes.delete(action.toastId)
+        remainingDurations.delete(action.toastId)
+      }
       if (action.toastId === undefined) {
         return {
           ...state,
@@ -162,10 +220,15 @@ function toast({ ...props }: Toast) {
     },
   })
 
-  // Auto-dismiss after 4 seconds
-  setTimeout(() => {
+  // Auto-dismiss after 4 seconds - track this timeout for pause/resume
+  const timeout = setTimeout(() => {
+    dismissTimeouts.delete(id)
+    pauseStartTimes.delete(id)
     dismiss()
   }, TOAST_DURATION)
+  
+  dismissTimeouts.set(id, timeout)
+  pauseStartTimes.set(id, Date.now())
 
   return {
     id: id,
@@ -191,6 +254,8 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    pauseToast,
+    resumeToast,
   }
 }
 

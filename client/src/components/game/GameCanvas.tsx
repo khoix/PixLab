@@ -952,9 +952,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               applyVisionDebuff(0.15); // Add 15% to debuff stack
             }
             
+            // Find the projectile owner to identify attacker
+            const attacker = levelRef.current?.entities.find(e => e.id === projectile.ownerId);
+            const attackerTypeName = attacker 
+              ? formatEntityName(attacker.mobSubtype, attacker.isBoss)
+              : 'Unknown';
+            
             // Update stats immediately - dispatch is fast and shouldn't block
             audioManager.playSound('damage');
             dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+            
+            // Log damage event (projectile/ranged attack)
+            eventLogger.logEvent('combat', `Took ${damage} damage from ${attackerTypeName}`, {
+              damage,
+              enemyType: attacker?.mobSubtype,
+              isBoss: attacker?.isBoss,
+              isProjectile: true,
+              hp: newHp,
+              maxHp: baseStats.maxHp
+            });
             
             if (newHp <= 0 && !gameOverTriggeredRef.current) {
               gameOverTriggeredRef.current = true;
@@ -2012,6 +2028,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   enemyDamageCooldownRef.current.set(entity.id, now);
                   audioManager.playSound('damage');
                   dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+                  
+                  // Log damage event (Cerberus bite)
+                  const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
+                  eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
+                    damage,
+                    enemyType: entity.mobSubtype,
+                    isBoss: entity.isBoss,
+                    hp: newHp,
+                    maxHp: baseStats.maxHp
+                  });
                   
                   if (newHp <= 0 && !gameOverTriggeredRef.current) {
                     gameOverTriggeredRef.current = true;

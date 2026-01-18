@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/toast"
 
 export function Toaster() {
-  const { toasts, dismiss } = useToast()
+  const { toasts, dismiss, pauseToast, resumeToast } = useToast()
 
   return (
     <ToastProvider>
@@ -18,6 +18,8 @@ export function Toaster() {
           <Toast 
             key={id} 
             {...props}
+            onMouseEnter={() => pauseToast(id)}
+            onMouseLeave={() => resumeToast(id)}
             onClick={(e) => {
               // Only dismiss if clicking on the toast itself, not on buttons or interactive elements
               const target = e.target as HTMLElement

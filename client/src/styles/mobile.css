@@ -46,10 +46,10 @@
     -webkit-user-select: none;
   }
 
-  /* Ensure minimum touch target size (44x44px recommended) */
+  /* Ensure minimum touch target size (40x40px recommended) */
   button, a, [role="button"] {
-    min-height: 44px;
-  /*  min-width: 44px; */
+    min-height: 40px;
+  /*  min-width: 40px; */
   }
 
   /* Mobile Game UI Positioning */
@@ -634,8 +634,8 @@
   /* Optimize inventory filter buttons */
   .lobby-page .p-1\.5.border {
     padding: 0.625rem !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
   }
 
   /* Optimize tab content headings */

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { eventLogger, GameEvent, EventType } from '@/lib/game/eventLogger';
 import { RARITY_COLORS } from '@/lib/game/constants';
+import { Plus, Minus } from 'lucide-react';
 
 /**
  * Props for GameEventLogViewer component
@@ -28,6 +29,12 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef<boolean>(true);
   const scrollTimeoutRef = useRef<number | null>(null);
+  
+  // Font size state (default: 14px / text-sm)
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('eventLogFontSize');
+    return saved ? parseInt(saved, 10) : 14;
+  });
 
   // Subscribe to events on mount
   useEffect(() => {
@@ -78,6 +85,23 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
   const clearLogs = useCallback(() => {
     eventLogger.clearEvents();
     setEvents([]);
+  }, []);
+
+  // Font size controls
+  const increaseFontSize = useCallback(() => {
+    setFontSize(prev => {
+      const newSize = Math.min(prev + 2, 24); // Max 24px
+      localStorage.setItem('eventLogFontSize', newSize.toString());
+      return newSize;
+    });
+  }, []);
+
+  const decreaseFontSize = useCallback(() => {
+    setFontSize(prev => {
+      const newSize = Math.max(prev - 2, 10); // Min 10px
+      localStorage.setItem('eventLogFontSize', newSize.toString());
+      return newSize;
+    });
   }, []);
 
   const getEventColor = useCallback((type: EventType): string => {
@@ -232,15 +256,35 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
     <div className="relative h-full w-full z-[201] pointer-events-auto">
       <Card className="h-full bg-black/95 border-t border-primary/50 max-md:bg-black/98">
         <CardContent className="p-2 h-full relative">
-          <div className="absolute top-2 right-2 z-10">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+            <div className="flex items-center gap-1 border border-primary/30 rounded">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={decreaseFontSize} 
+                className="h-6 w-6 p-0 hover:bg-primary/20"
+                title="Decrease font size"
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={increaseFontSize} 
+                className="h-6 w-6 p-0 hover:bg-primary/20"
+                title="Increase font size"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
             <Button variant="ghost" size="sm" onClick={clearLogs} className="h-7 px-3 text-base">
               Clear
             </Button>
           </div>
           <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
-            <div className="space-y-0 font-pixel text-sm pr-4">
+            <div className="space-y-0 font-pixel pr-4" style={{ fontSize: `${fontSize}px` }}>
               {events.length === 0 ? (
-                <div className="text-muted-foreground text-center py-4 text-base">
+                <div className="text-muted-foreground text-center py-4">
                   No events yet...
                 </div>
               ) : (
@@ -250,13 +294,13 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
                     className={`flex items-center gap-3 ${getEventColor(event.type)} transition-opacity hover:opacity-90`}
                     title={event.isTruncated ? event.message : undefined}
                   >
-                    <span className="text-muted-foreground flex-shrink-0 text-xs">
+                    <span className="text-muted-foreground flex-shrink-0" style={{ fontSize: `${fontSize * 0.85}px` }}>
                       [{formatTime(event.timestamp)}]
                     </span>
-                    <span className="flex-shrink-0 min-w-[5rem] uppercase text-xs font-semibold">
+                    <span className="flex-shrink-0 min-w-[5rem] uppercase font-semibold" style={{ fontSize: `${fontSize * 0.85}px` }}>
                       {event.type}:
                     </span>
-                    <span className="flex-1 break-words whitespace-pre-wrap leading-relaxed text-sm">
+                    <span className="flex-1 break-words whitespace-pre-wrap leading-relaxed">
                       {parseMessageWithItemColors(event.displayMessage, event.originalMessage || event.message, event)}
                     </span>
                   </div>

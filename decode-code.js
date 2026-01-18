@@ -208,7 +208,7 @@ function decodeCode(code) {
       Lo: { w: null, a: null, u: null },
       m: [],
       b: [],
-      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'joystick' },
+      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'dpad' },
     });
     
     // Expand short property names to full names and restore items
@@ -227,7 +227,7 @@ function decodeCode(code) {
         musicVolume: saveData.S?.['1'] ?? 0.5,
         sfxVolume: saveData.S?.['2'] ?? 0.5,
         joystickPosition: saveData.S?.['3'] ?? 'left',
-        mobileControlType: saveData.S?.['4'] ?? 'joystick',
+        mobileControlType: saveData.S?.['4'] ?? 'dpad',
       },
     };
     

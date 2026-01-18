@@ -473,7 +473,7 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.musicVolume !== 0.5) settings['1'] = state.settings.musicVolume;
       if (state.settings.sfxVolume !== 0.5) settings['2'] = state.settings.sfxVolume;
       if (state.settings.joystickPosition !== 'left') settings['3'] = state.settings.joystickPosition;
-      if (state.settings.mobileControlType && state.settings.mobileControlType !== 'joystick') settings['4'] = state.settings.mobileControlType;
+      if (state.settings.mobileControlType && state.settings.mobileControlType !== 'dpad') settings['4'] = state.settings.mobileControlType;
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -546,7 +546,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
       Lo: { w: null, a: null, u: null },
       m: [],
       b: [],
-      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'joystick' },
+      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'dpad' },
     });
     
     // Expand short property names to full names and restore items
@@ -565,7 +565,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         musicVolume: saveData.S?.['1'] ?? 0.5,
         sfxVolume: saveData.S?.['2'] ?? 0.5,
         joystickPosition: saveData.S?.['3'] ?? 'left',
-        mobileControlType: saveData.S?.['4'] ?? 'joystick',
+        mobileControlType: saveData.S?.['4'] ?? 'dpad',
       },
     };
     

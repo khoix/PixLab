@@ -29,7 +29,7 @@ import { recordItemOffer, markOfferPurchased, getSoftAssistAdjustments, getOffer
 import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
-import { Plus, Sword, Shield, Wrench, FlaskConical, Settings } from 'lucide-react';
+import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
@@ -743,7 +743,7 @@ export default function Game() {
               </TabsList>
 
               <div className="p-6 flex-1 relative overflow-hidden">
-                <TabsContent value="mission" className="h-full flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95">
+                <TabsContent value="mission" className="h-full flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 relative">
                   <div className="text-center space-y-2">
                     <h2 className="text-2xl text-white font-pixel">SECTOR {state.currentLevel}</h2>
                     <p className="text-muted-foreground font-mono text-lg">
@@ -766,6 +766,21 @@ export default function Game() {
                   >
                     ENTER
                   </Button>
+                  {/* Terminal icon button for mobile - bottom right */}
+                  <button
+                    className="md:hidden absolute bottom-4 right-4 w-10 h-10 p-0 bg-transparent border-none opacity-70 hover:opacity-80 transition-opacity cursor-pointer"
+                    onClick={handleCopyCode}
+                    title="Copy code to clipboard"
+                  >
+                    {/* Cog icon as outer container */}
+                    <Cog className="w-10 h-10 text-primary absolute inset-0 drop-shadow-lg" />
+                    {/* Solid color background inside cog */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-6 h-6 bg-primary rounded-full drop-shadow-md flex items-center justify-center">
+                        <Terminal className="w-3.5 h-3.5 text-black" />
+                      </div>
+                    </div>
+                  </button>
                 </TabsContent>
 
                 <TabsContent value="loadout" className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -1163,7 +1178,7 @@ export default function Game() {
                     <div className="md:hidden">
                       <label className="text-lg font-pixel text-primary mb-2 block">MOBILE CONTROLS</label>
                       <RadioGroup
-                        value={(state.settings.mobileControlType || 'joystick') as 'joystick' | 'touchpad' | 'dpad'}
+                        value={(state.settings.mobileControlType || 'dpad') as 'joystick' | 'touchpad' | 'dpad'}
                         onValueChange={(value) => {
                           dispatch({ 
                             type: 'UPDATE_SETTINGS', 
@@ -1173,21 +1188,21 @@ export default function Game() {
                         className="flex flex-col gap-3"
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="joystick" id="joystick" />
-                          <label htmlFor="joystick" className="text-sm font-mono text-foreground cursor-pointer">
-                            Virtual Joystick
+                          <RadioGroupItem value="dpad" id="dpad" style={{ minWidth: '40px' }} />
+                          <label htmlFor="dpad" className="text-sm font-mono text-foreground cursor-pointer">
+                            Directional Pad
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="touchpad" id="touchpad" />
+                          <RadioGroupItem value="touchpad" id="touchpad" style={{ minWidth: '40px' }} />
                           <label htmlFor="touchpad" className="text-sm font-mono text-foreground cursor-pointer">
                             Touchpad (Swipe & Tap)
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="dpad" id="dpad" />
-                          <label htmlFor="dpad" className="text-sm font-mono text-foreground cursor-pointer">
-                            Directional Pad
+                          <RadioGroupItem value="joystick" id="joystick" style={{ minWidth: '40px' }} />
+                          <label htmlFor="joystick" className="text-sm font-mono text-foreground cursor-pointer">
+                            Virtual Joystick
                           </label>
                         </div>
                       </RadioGroup>
@@ -1198,7 +1213,7 @@ export default function Game() {
             </Tabs>
           </Card>
         </div>
-        <div className="mt-8 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full max-w-4xl">
+        <div className="hidden md:block mt-8 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full max-w-4xl">
           <p className="text-lg text-center text-muted-foreground font-mono">
             CODE: <span 
               className="text-primary font-mono break-all cursor-pointer hover:text-primary/80 transition-colors select-none"
@@ -1215,29 +1230,29 @@ export default function Game() {
 
   if (state.screen === 'shop') {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 crt">
+      <div className="h-screen bg-background flex flex-col items-center justify-center p-4 crt">
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/20 via-black to-black pointer-events-none" />
-        <Card className="bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500">
-          <CardHeader>
+        <Card className="bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 h-[calc(100vh-2rem)] flex flex-col">
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="text-primary text-2xl font-pixel">VENDOR STATION</CardTitle>
             <p className="text-xs font-mono text-muted-foreground mt-2">SECTOR {state.currentLevel} • TRADING POST</p>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded">
+          <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden">
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded flex-shrink-0">
               <p className="text-2xl font-mono text-muted-foreground text-right">
                 COINS: <span className="text-yellow-400 font-bold">${state.stats.coins}</span>
               </p>
             </div>
             
-            <Tabs defaultValue="buy" className="w-full">
-              <TabsList className="vendor-station-tabs w-full bg-black/40 rounded-none border-b border-white/10">
+            <Tabs defaultValue="buy" className="w-full flex-1 flex flex-col overflow-hidden">
+              <TabsList className="vendor-station-tabs w-full bg-black/40 rounded-none border-b border-white/10 flex-shrink-0">
                 <TabsTrigger value="buy" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">PURCHASE</TabsTrigger>
                 <TabsTrigger value="sell" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">SELL ITEMS</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="buy" className="space-y-4 mt-4">
+              <TabsContent value="buy" className="flex-1 flex flex-col overflow-hidden mt-4">
                 {/* Stat Boosts Section */}
-                <div>
+                <div className="flex-shrink-0">
                   <h4 className="font-pixel text-sm text-primary mb-2">STAT BOOSTS</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {SHOP_ITEMS.map(item => {
@@ -1291,9 +1306,10 @@ export default function Game() {
 
                 {/* Random Items Section */}
                 {(vendorItems.length > 0 || soldItems.length > 0) && (
-                  <div className="vendor-items-section">
-                    <h4 className="font-pixel text-sm text-primary mb-2">ITEMS</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="vendor-items-section flex-1 flex flex-col overflow-hidden">
+                    <h4 className="font-pixel text-sm text-primary mb-2 mt-6 flex-shrink-0">ITEMS</h4>
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[...vendorItems, ...soldItems].map(item => {
                         const rarityColor = RARITY_COLORS[item.rarity];
                         const canAfford = state.stats.coins >= item.price;
@@ -1409,19 +1425,20 @@ export default function Game() {
                           />
                         );
                       })}
+                      </div>
                     </div>
                   </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="sell" className="space-y-4 mt-4">
+              <TabsContent value="sell" className="flex-1 flex flex-col overflow-hidden mt-4">
                 {state.inventory.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground font-mono text-sm">NO ITEMS TO SELL</p>
                     <p className="text-muted-foreground/60 font-mono text-xs mt-2">Collect items during missions to sell them here</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-2">
                     {state.inventory.map(item => {
                       const rarityColor = RARITY_COLORS[item.rarity];
                       const sellValue = calculateSellValue(item);
@@ -1542,7 +1559,7 @@ export default function Game() {
             </Tabs>
 
             <Button 
-              className="w-full mt-6 bg-secondary text-black hover:bg-secondary/80 font-pixel text-lg py-6"
+              className="w-full mt-6 bg-secondary text-black hover:bg-secondary/80 font-pixel text-lg py-6 flex-shrink-0"
               onClick={() => {
                 dispatch({ type: 'NEXT_LEVEL' });
                 dispatch({ type: 'SET_SCREEN', payload: 'lobby' });
@@ -1574,7 +1591,7 @@ export default function Game() {
               />
               {!gameOverState && isMobile && (
                 (() => {
-                  const controlType = state.settings.mobileControlType || 'joystick';
+                  const controlType = state.settings.mobileControlType || 'dpad';
                   if (controlType === 'touchpad') {
                     return <TouchpadControl onMove={handleMove} />;
                   } else if (controlType === 'dpad') {
@@ -2054,10 +2071,14 @@ export default function Game() {
               </Dialog>
             </div>
           </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
-            <GameEventLogViewer />
-          </ResizablePanel>
+          {!isMobile && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
+                <GameEventLogViewer />
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
       </div>
     );

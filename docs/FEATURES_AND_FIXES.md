@@ -29,6 +29,7 @@ This document tracks new features and bug fixes implemented in the project.
   - [Loot-sense and Threat-sense Spotlight Visibility Fix](#loot-sense-and-threat-sense-spotlight-visibility-fix)
   - [Cerberus Mob Movement and Attack Fixes](#cerberus-mob-movement-and-attack-fixes)
   - [Input Direction Reset on Sector Load Fix](#input-direction-reset-on-sector-load-fix)
+  - [Toast Focus Outline Removal Fix](#toast-focus-outline-removal-fix)
 - [Suggestions / Roadmap](#suggestions--roadmap)
 
 ---
@@ -2661,6 +2662,73 @@ useEffect(() => {
 - Test with mobile touch controls (joystick, d-pad, touchpad)
 - Verify normal movement still works correctly during gameplay
 - Test rapid level transitions to ensure reset works consistently
+
+---
+
+### Toast Focus Outline Removal Fix
+
+**Type**: Bug Fix  
+**Files Modified**: 
+- `client/src/components/ui/toast.tsx`
+
+#### Overview
+Fixed an issue where toast notifications displayed an unwanted white highlight line (focus outline) around the toast container, particularly visible after clicking the toast and pressing the Escape key. This created a distracting visual artifact that detracted from the clean toast notification design.
+
+#### Problem
+Toast notifications were showing a white focus outline ring around the entire toast container when:
+- The toast was clicked
+- The Escape key was pressed after interacting with the toast
+- The toast received focus through keyboard navigation
+
+This was the same type of focus outline that appears around buttons after clicking them and pressing Escape, which is a default browser focus-visible behavior. While useful for accessibility, it was visually distracting for toast notifications that are meant to be non-interactive display elements.
+
+#### Solution
+Added comprehensive focus state management classes to the `toastVariants` base styles to remove all focus outlines and rings:
+- `outline-none` - removes default outline
+- `focus:ring-0` - removes focus ring
+- `focus:ring-offset-0` - removes ring offset
+- `focus-visible:ring-0` - removes focus-visible ring (prevents white border after Escape key)
+- `focus-visible:ring-offset-0` - removes focus-visible ring offset
+- `focus-visible:outline-none` - removes focus-visible outline
+- `active:ring-0` - removes active state ring
+
+#### Technical Implementation
+
+**Files Modified:**
+
+1. **`client/src/components/ui/toast.tsx`**
+   - Updated `toastVariants` base class string to include focus outline removal classes
+   - Added classes to line 26 in the `cva()` function call
+
+**Implementation:**
+```typescript
+const toastVariants = cva(
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none active:ring-0",
+  {
+    // ... variants
+  }
+)
+```
+
+#### Result
+- ✅ No white highlight line appears around toast notifications
+- ✅ Focus outline is removed for all focus states (focus, focus-visible, active)
+- ✅ Toast notifications maintain clean, distraction-free appearance
+- ✅ No visual artifacts when clicking toasts or pressing Escape
+- ✅ Consistent with the focus state management approach used in toast action buttons
+
+#### Behavior Notes
+- The focus outline removal applies to the toast container itself, not to interactive elements within the toast (buttons, close button, etc.)
+- Interactive elements within toasts (like the quick-equip button) have their own focus state management
+- This fix ensures toasts appear as clean display elements without unwanted browser focus indicators
+
+#### Testing Notes
+- Display a toast notification - verify no outline appears
+- Click on a toast notification - verify no white border appears
+- Click on a toast then press Escape - verify no white border appears
+- Test with keyboard navigation - verify toasts don't show focus outlines
+- Verify interactive elements within toasts (buttons) still have appropriate focus states if needed
+- Test with different toast types (default, destructive, with actions, etc.)
 
 ---
 
