@@ -17,6 +17,28 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(result.direction).toEqual({ x: 0, y: -1 });
   });
 
+  test('release clears buffered direction to prevent ghost movement', async ({ page }) => {
+    await page.goto('/');
+
+    const result = await page.evaluate(() => {
+      const api = window.__PIXLAB_GAME_INPUT__!;
+      api.clear();
+      api.setDirection({ x: 1, y: 0 });
+      api.bufferDirection({ x: 1, y: 0 });
+      api.setDirection({ x: 0, y: 0 });
+      const applied = api.applyBuffered();
+      return {
+        applied,
+        direction: api.getDirection(),
+        buffered: api.getBufferedDirection(),
+      };
+    });
+
+    expect(result.applied).toBe(false);
+    expect(result.direction).toEqual({ x: 0, y: 0 });
+    expect(result.buffered).toBeNull();
+  });
+
   test('mobile control settings sliders are available in lobby', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
@@ -45,30 +67,29 @@ test.describe('M5 — Mobile UX & controls', () => {
     await expect(quickHeal).toBeEnabled();
   });
 
-  test('dpad control is positioned without overlapping sector badge on short viewport', async ({ page }) => {
+  test('sector badge sits in lower HUD band on short viewport', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await startSectorRun(page);
 
     const dpad = page.getByTestId('mobile-dpad-control');
     await expect(dpad).toBeVisible();
 
-    const overlap = await page.evaluate(() => {
-      const pad = document.querySelector('[data-testid="mobile-dpad-control"]') as HTMLElement | null;
+    const layout = await page.evaluate(() => {
       const badge = document.querySelector('.mobile-hud-sector-badge') as HTMLElement | null;
-      if (!pad || !badge) return false;
+      if (!badge) return null;
 
-      const padBox = pad.getBoundingClientRect();
       const badgeBox = badge.getBoundingClientRect();
+      const vh = window.innerHeight;
 
-      const separated =
-        padBox.top >= badgeBox.bottom - 4 ||
-        padBox.bottom <= badgeBox.top + 4 ||
-        padBox.right <= badgeBox.left + 4 ||
-        padBox.left >= badgeBox.right - 4;
-
-      return !separated;
+      return {
+        // Lower third of screen (not mid-screen like the M5 regression)
+        inLowerBand: badgeBox.top > vh * 0.55,
+        // Above the D-pad vertical center so label stays readable
+        aboveDpadCenter: badgeBox.bottom <= vh - 80,
+      };
     });
 
-    expect(overlap).toBe(false);
+    expect(layout?.inLowerBand).toBe(true);
+    expect(layout?.aboveDpadCenter).toBe(true);
   });
 });

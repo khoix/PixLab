@@ -760,11 +760,8 @@
     transform-origin: bottom left;
   }
 
-  .mobile-control-position-left {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
-    left: max(0.75rem, env(safe-area-inset-left, 0px));
-    width: 9.5rem;
-    height: 9.5rem;
+  .mobile-run-landscape-hint {
+    display: none !important;
   }
 
   .mobile-quick-heal {
@@ -773,25 +770,11 @@
     bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
   }
 
-  .mobile-hud-sector-badge {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 15.5rem);
-  }
-
   @media (max-height: 700px) {
-    .mobile-control-position-left {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 4.75rem);
-      width: 8.5rem;
-      height: 8.5rem;
-    }
-
     .mobile-quick-heal {
       bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
       width: 3rem;
       height: 3rem;
-    }
-
-    .mobile-hud-sector-badge {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 14rem);
     }
 
     .consumables-panel {
@@ -803,7 +786,7 @@
 
   @media (orientation: landscape) and (max-height: 500px) {
     .mobile-run-landscape-hint {
-      display: flex;
+      display: flex !important;
     }
   }
 }

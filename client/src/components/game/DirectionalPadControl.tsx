@@ -131,7 +131,7 @@ export const DirectionalPadControl: React.FC<DirectionalPadControlProps> = ({ on
       ref={containerRef}
       data-testid="mobile-dpad-control"
       className={cn(
-        'md:hidden mobile-dpad-control absolute z-50 touch-none pointer-events-auto',
+        'md:hidden mobile-dpad-control absolute bottom-40 left-5 w-40 h-40 z-50 touch-none pointer-events-auto',
         className,
       )}
       onMouseDown={handleSwipeStart}
