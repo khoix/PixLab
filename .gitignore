@@ -6,3 +6,6 @@ vite.config.ts.*
 *.tar.gz
 Thumbs.db
 .cache/
+test-results/
+playwright-report/
+playwright/.cache/

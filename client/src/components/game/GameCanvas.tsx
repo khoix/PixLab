@@ -11,6 +11,9 @@ import { getItemBaseName } from '../../lib/game/compendium-image-map';
 import { audioManager } from '../../lib/audio';
 import { eventLogger } from '../../lib/game/eventLogger';
 import { GameOverlay } from './GameOverlay';
+import { PerfOverlay } from './PerfOverlay';
+import { isPerfOverlayEnabled } from '../../lib/game/perfFlags';
+import { perfMonitor } from '../../lib/game/perfMonitor';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -131,6 +134,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const previousEnemyIdsRef = useRef<Set<string>>(new Set());
   const bonusSelectionRef = useRef<{ options: string[] } | null>(null);
   const [showBonusSelection, setShowBonusSelection] = useState(false);
+  const showPerfOverlay = isPerfOverlayEnabled();
   
   // Calculate mod modifiers
   const getModifiers = () => {
@@ -300,6 +304,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     moveProgressRef.current = 1;
     lastPlayerPosRef.current = { ...level.startPos };
     levelStartTimeRef.current = Date.now();
+    if (perfMonitor.isActive() && state.screen === 'run') {
+      perfMonitor.setSectorLevel(state.currentLevel);
+    }
     gameOverTriggeredRef.current = false;
     // Reset damage cooldowns when level changes
     enemyDamageCooldownRef.current.clear();
@@ -378,6 +385,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
   // Game Loop
   useEffect(() => {
+    if (perfMonitor.isActive()) {
+      perfMonitor.recordLoopRestart();
+    }
+
     let animationFrameId: number;
     let isFirstFrame = true;
 
@@ -398,8 +409,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const MAX_DELTA_TIME = 100; // Cap at 100ms (10 FPS minimum)
       deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
 
+      const frameStart = performance.now();
+      const updateStart = performance.now();
       update(deltaTime);
+      const updateMs = performance.now() - updateStart;
+      const drawStart = performance.now();
       draw();
+      const drawMs = performance.now() - drawStart;
+      const frameMs = performance.now() - frameStart;
+      if (perfMonitor.isActive()) {
+        perfMonitor.recordFrame(frameMs, drawMs, updateMs);
+      }
+
       animationFrameId = requestAnimationFrame(loop);
     };
 
@@ -457,6 +478,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
   const update = (deltaTime: number) => {
     if (!levelRef.current) return;
+
+    if (perfMonitor.isActive()) {
+      perfMonitor.setEntityCount(levelRef.current.entities.length);
+    }
 
     // Pause/freeze sector state on gameover - stop all mobs, projectiles, and afterimages
     // Check both gameOverState prop and gameOverTriggeredRef to catch timeouts immediately
@@ -605,6 +630,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const tile = levelRef.current.tiles[nextPos.y][nextPos.x];
           if (tile === 'exit') {
             audioManager.playSound('levelComplete');
+            if (perfMonitor.isActive()) {
+              perfMonitor.recordSectorClear(state.currentLevel, true);
+            }
             onLevelComplete();
           }
 
@@ -3590,6 +3618,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         className="block touch-none"
         style={{ position: 'relative', zIndex: 0 }}
       />
+      <PerfOverlay visible={showPerfOverlay && perfMonitor.isActive()} />
       <GameOverlay />
       {showBonusSelection && bonusSelectionRef.current && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[199]">

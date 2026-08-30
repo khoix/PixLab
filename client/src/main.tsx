@@ -1,5 +1,8 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { initPerfMonitoring } from "./lib/game/perfMonitor";
+
+initPerfMonitoring();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

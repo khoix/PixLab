@@ -86,6 +86,7 @@ export default function Home() {
 
         <div className="w-full space-y-4 mt-8">
             <Button 
+                data-testid="start-run-button"
                 className="w-full h-14 text-xl font-pixel bg-primary text-black hover:bg-primary/80 pixel-corners shadow-[0_0_20px_rgba(0,255,245,0.4)] transition-all hover:scale-105"
                 onClick={handleStart}
             >

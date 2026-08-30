@@ -33,6 +33,7 @@ import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } fr
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
+import { perfMonitor } from '../lib/game/perfMonitor';
 
 // Helper function to format item names with initial caps
 function formatItemName(itemName: string): string {
@@ -278,6 +279,7 @@ export default function Game() {
   }, [state.inventory.length, toast, dispatch]);
 
   const handleMove = (dir: { x: number; y: number }) => {
+    perfMonitor.recordInputDirectionUpdate();
     setInputDir(dir);
   };
 
@@ -751,6 +753,7 @@ export default function Game() {
                     </p>
                   </div>
                   <Button 
+                    data-testid="enter-sector-button"
                     size="lg" 
                     className="w-64 h-16 text-xl font-pixel bg-primary text-black hover:bg-primary/80 pixel-corners"
                     onClick={() => {
