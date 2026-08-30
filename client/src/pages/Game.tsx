@@ -326,7 +326,11 @@ export default function Game() {
   }, [state.inventory.length, toast, dispatch]);
 
   const handleMove = (dir: { x: number; y: number }) => {
-    setGameInputDirection(dir);
+    if (dir.x === 0 && dir.y === 0) {
+      clearGameInputDirection();
+    } else {
+      setGameInputDirection(dir);
+    }
   };
 
   const handleQuickHeal = React.useCallback(() => {
@@ -394,7 +398,15 @@ export default function Game() {
         e.preventDefault();
       }
     };
-    const handleKeyUp = () => clearGameInputDirection();
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const moveKeys = new Set([
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'w', 'a', 's', 'd', 'W', 'A', 'S', 'D',
+      ]);
+      if (moveKeys.has(e.key)) {
+        clearGameInputDirection();
+      }
+    };
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -1742,12 +1754,11 @@ export default function Game() {
       '--mobile-control-opacity': state.settings.controlOpacity ?? 0.85,
       '--mobile-control-scale': state.settings.controlSize ?? 1,
     } as React.CSSProperties;
-    const controlClassName = 'mobile-control-position-left';
     
     return (
       <div className={`relative w-full h-screen overflow-hidden bg-black touch-none ${gameOverState ? 'pointer-events-none' : ''}`}>
         {isMobile && (
-          <div className="mobile-run-landscape-hint md:hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-[60] px-3 py-1 rounded bg-black/70 border border-primary/40 text-[10px] font-pixel text-primary">
+          <div className="mobile-run-landscape-hint hidden md:hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-[60] px-3 py-1 rounded bg-black/70 border border-primary/40 text-[10px] font-pixel text-primary">
             Portrait recommended for controls
           </div>
         )}
@@ -1769,9 +1780,9 @@ export default function Game() {
                       return <TouchpadControl onMove={handleMove} />;
                     }
                     if (controlType === 'dpad') {
-                      return <DirectionalPadControl onMove={handleMove} className={controlClassName} />;
+                      return <DirectionalPadControl onMove={handleMove} />;
                     }
-                    return <VirtualJoystick onMove={handleMove} className={controlClassName} />;
+                    return <VirtualJoystick onMove={handleMove} />;
                   })()}
                   <QuickHealButton
                     healAmount={smallestHealingPotion?.stats?.heal ?? null}

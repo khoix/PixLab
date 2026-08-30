@@ -19,6 +19,11 @@ export function setGameInputDirection(dir: Direction): boolean {
 
   gameInputDirectionRef.current = { x: dir.x, y: dir.y };
 
+  // Release must drop any queued direction (dpad uses setDirection, not clear())
+  if (dir.x === 0 && dir.y === 0) {
+    gameInputBufferRef.current = null;
+  }
+
   if (perfMonitor.isActive()) {
     perfMonitor.recordInputDirectionUpdate();
   }
