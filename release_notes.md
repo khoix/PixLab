@@ -99,4 +99,6 @@ npm run test:e2e:ui     # interactive UI mode
 - E2e: `e2e/m3-canvas-fog.spec.ts` — DPR cap + fog blits exceed rebuilds when idle
 
 ### Notes
+- Fixed tile-cache alignment: blit per tile at grid positions instead of fractional scroll offset (prevents player appearing inside walls).
+- Canvas logical size now measured from the canvas element via `ResizeObserver`, not `window.innerWidth/Height`.
 - Fixed logical viewport deferred; full-window canvas retained with caching optimizations.

@@ -8,8 +8,29 @@ export interface CanvasDimensions {
   bufferHeight: number;
 }
 
-export function getCanvasDimensions(): CanvasDimensions {
+export function getCanvasDimensions(canvas?: HTMLCanvasElement | null): CanvasDimensions {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+
+  if (canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const logicalWidth = Math.max(
+      1,
+      Math.floor(rect.width) || canvas.clientWidth || window.innerWidth,
+    );
+    const logicalHeight = Math.max(
+      1,
+      Math.floor(rect.height) || canvas.clientHeight || window.innerHeight,
+    );
+
+    return {
+      logicalWidth,
+      logicalHeight,
+      dpr,
+      bufferWidth: Math.max(1, Math.floor(logicalWidth * dpr)),
+      bufferHeight: Math.max(1, Math.floor(logicalHeight * dpr)),
+    };
+  }
+
   const logicalWidth = window.innerWidth;
   const logicalHeight = window.innerHeight;
 
@@ -28,12 +49,11 @@ export function applyCanvasDimensions(
 ): CanvasRenderingContext2D | null {
   canvas.width = dims.bufferWidth;
   canvas.height = dims.bufferHeight;
-  canvas.style.width = `${dims.logicalWidth}px`;
-  canvas.style.height = `${dims.logicalHeight}px`;
 
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.setTransform(dims.dpr, 0, 0, dims.dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
   }
   return ctx;
 }

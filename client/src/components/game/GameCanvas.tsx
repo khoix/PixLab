@@ -143,11 +143,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const temporaryVisionBoostRef = useRef<typeof state.temporaryVisionBoost>(state.temporaryVisionBoost);
   const activeScrollEffectsRef = useRef<typeof state.activeScrollEffects>(state.activeScrollEffects);
   const settingsRef = useRef(state.settings);
-  const initialCanvasDims = getCanvasDimensions();
   const canvasSizeRef = useRef({
-    logicalWidth: initialCanvasDims.logicalWidth,
-    logicalHeight: initialCanvasDims.logicalHeight,
-    dpr: initialCanvasDims.dpr,
+    logicalWidth: 1,
+    logicalHeight: 1,
+    dpr: 1,
   });
   const lastPlayerPosRef = useRef<Position>({ x: 0, y: 0 });
   const previousEnemyIdsRef = useRef<Set<string>>(new Set());
@@ -388,13 +387,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
   }, [state.currentLevel, state.screen]);
 
-  // Handle canvas resize
+  // Handle canvas resize — measure display size from the canvas element, not window
   useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      const dims = getCanvasDimensions();
+    const handleResize = () => {
+      const dims = getCanvasDimensions(canvas);
       canvasSizeRef.current = {
         logicalWidth: dims.logicalWidth,
         logicalHeight: dims.logicalHeight,
@@ -405,11 +404,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       tileLayerCache.invalidate();
     };
 
-    window.addEventListener('resize', handleResize);
-    // Set initial size
     handleResize();
 
-    return () => window.removeEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(canvas);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   // Helper function to check if a mob can move diagonally (flying mobs)
@@ -3652,10 +3656,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     <div className="relative w-full h-full">
       <canvas 
         ref={canvasRef} 
-        width={canvasSizeRef.current.logicalWidth} 
-        height={canvasSizeRef.current.logicalHeight}
-        className="game-canvas block touch-none"
-        style={{ position: 'relative', zIndex: 0 }}
+        className="game-canvas absolute inset-0 w-full h-full touch-none"
+        style={{ zIndex: 0 }}
       />
       <PerfOverlay visible={showPerfOverlay && perfMonitor.isActive()} />
       <GameOverlay />
