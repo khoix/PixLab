@@ -76,3 +76,27 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Notes
 - DPR / canvas backing-store cap deferred to M3.
+
+---
+
+## Milestone 3 — Canvas & Fog Optimizations
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Added
+- **`canvasSizing.ts`** — DPR cap at 2, logical vs buffer dimensions, `window.__PIXLAB_CANVAS__` API
+- **`fogLayer.ts`** — `FogLayerCache` offscreen fog gradient with rebuild/blit stats via `window.__PIXLAB_FOG__`
+- **`tileLayer.ts`** — pre-rendered wall/floor buffer per sector/theme; exit stairs still drawn in main loop
+- **`drawSnapshot.ts`** — single per-frame snapshot for modifiers, effective stats, and fog/vision params
+
+### Changed
+- **`GameCanvas`** — uses logical canvas dimensions, cached fog/tile layers, per-frame draw snapshot
+- **`colorThemes.ts`** — palette `id` for tile cache invalidation keys
+- **`main.tsx`** — initializes canvas sizing and fog cache test hooks
+
+### Verification
+- E2e: `e2e/m3-canvas-fog.spec.ts` — DPR cap + fog blits exceed rebuilds when idle
+
+### Notes
+- Fixed logical viewport deferred; full-window canvas retained with caching optimizations.
