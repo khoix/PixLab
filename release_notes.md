@@ -27,3 +27,24 @@ npm run test:e2e:ui     # interactive UI mode
 ### Notes
 - No gameplay behavior changes in this milestone.
 - Baseline numbers are recorded in `plan.md` → **Results (M0)** for comparison after Milestone 1.
+
+---
+
+## Milestone 1 — Hot Path: Input & Game Loop
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Changed
+- **`gameInput.ts`** — shared `gameInputDirectionRef`; direction updates deduplicated; `window.__PIXLAB_GAME_INPUT__` API for tests.
+- **`GameCanvas`** — game loop uses stable `[]` deps + `updateFnRef`/`drawFnRef`; reads input from ref; pauses on `visibilitychange` and suspends audio.
+- **`Game.tsx`** — removed `inputDir` React state; keyboard/mobile input writes to shared ref only on change.
+- **Mobile controls** — removed 16ms `setInterval` polling; hold-to-move with direction-change deduplication (D-pad, joystick, touchpad).
+
+### Verification
+- E2e: `e2e/m1-input-loop.spec.ts` — held key does not increase loop restarts; lobby collects zero perf samples.
+- Compare M0 vs M1 perf overlay: loop restarts stay flat while holding a direction.
+
+### Notes
+- `GameCanvas` unmounts when leaving `run` screen, which stops RAF; visibility gating covers tab background during active runs.
+- Demo sandbox still passes optional `inputDirection` prop (synced into shared ref).

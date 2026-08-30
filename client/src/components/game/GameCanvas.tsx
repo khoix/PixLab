@@ -14,6 +14,7 @@ import { GameOverlay } from './GameOverlay';
 import { PerfOverlay } from './PerfOverlay';
 import { isPerfOverlayEnabled } from '../../lib/game/perfFlags';
 import { perfMonitor } from '../../lib/game/perfMonitor';
+import { gameInputDirectionRef } from '../../lib/game/gameInput';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -92,7 +93,8 @@ function preloadStairsImage(): void {
 preloadStairsImage();
 
 interface GameCanvasProps {
-  inputDirection: { x: number; y: number };
+  /** @deprecated Direction is read from gameInputDirectionRef; optional for Demo sandbox. */
+  inputDirection?: { x: number; y: number };
   onGameOver: () => void;
   onLevelComplete: () => void;
   onTimeOut: () => void;
@@ -135,6 +137,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const bonusSelectionRef = useRef<{ options: string[] } | null>(null);
   const [showBonusSelection, setShowBonusSelection] = useState(false);
   const showPerfOverlay = isPerfOverlayEnabled();
+  const updateFnRef = useRef<(deltaTime: number) => void>(() => {});
+  const drawFnRef = useRef<() => void>(() => {});
+  const loopRunningRef = useRef(false);
   
   // Calculate mod modifiers
   const getModifiers = () => {
@@ -168,6 +173,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     temporaryVisionBoostRef.current = state.temporaryVisionBoost;
     activeScrollEffectsRef.current = state.activeScrollEffects;
   }, [state.stats, state.loadout, state.activeMods, state.temporaryVisionBoost, state.activeScrollEffects]);
+
+  // Sync optional prop input (Demo sandbox) into shared input ref
+  useEffect(() => {
+    if (inputDirection) {
+      gameInputDirectionRef.current = { x: inputDirection.x, y: inputDirection.y };
+    }
+  }, [inputDirection?.x, inputDirection?.y]);
 
   // Handle pending scroll actions (excluding Commerce, which is handled in Game.tsx)
   useEffect(() => {
@@ -383,51 +395,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Game Loop
-  useEffect(() => {
-    if (perfMonitor.isActive()) {
-      perfMonitor.recordLoopRestart();
-    }
-
-    let animationFrameId: number;
-    let isFirstFrame = true;
-
-    const loop = (time: number) => {
-      // Initialize lastTimeRef on first frame to prevent huge deltaTime
-      if (isFirstFrame) {
-        lastTimeRef.current = time;
-        isFirstFrame = false;
-        animationFrameId = requestAnimationFrame(loop);
-        return;
-      }
-      
-      let deltaTime = time - lastTimeRef.current;
-      lastTimeRef.current = time;
-      
-      // Cap deltaTime to prevent frame rate spikes from affecting game logic
-      // This ensures mobs don't move/attack faster when player speed changes
-      const MAX_DELTA_TIME = 100; // Cap at 100ms (10 FPS minimum)
-      deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
-
-      const frameStart = performance.now();
-      const updateStart = performance.now();
-      update(deltaTime);
-      const updateMs = performance.now() - updateStart;
-      const drawStart = performance.now();
-      draw();
-      const drawMs = performance.now() - drawStart;
-      const frameMs = performance.now() - frameStart;
-      if (perfMonitor.isActive()) {
-        perfMonitor.recordFrame(frameMs, drawMs, updateMs);
-      }
-
-      animationFrameId = requestAnimationFrame(loop);
-    };
-
-    animationFrameId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [inputDirection]);
-
   // Helper function to check if a mob can move diagonally (flying mobs)
   const canMoveDiagonally = (entity: Entity): boolean => {
     // Phase mobs and moth mobs can move diagonally
@@ -558,8 +525,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     const baseStats = statsRef.current;
     const effectiveStats = getEffectiveStats(baseStats, loadoutRef.current);
     const moveDelay = 1000 / (effectiveStats.speed * 4);
-    const dx = Math.round(inputDirection.x);
-    const dy = Math.round(inputDirection.y);
+    const dx = Math.round(gameInputDirectionRef.current.x);
+    const dy = Math.round(gameInputDirectionRef.current.y);
     const hasInput = dx !== 0 || dy !== 0;
 
     // Update visual position interpolation
@@ -3541,6 +3508,82 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       console.error('Error in draw function:', error);
     }
   };
+
+  updateFnRef.current = update;
+  drawFnRef.current = draw;
+
+  // Game loop — stable deps; reads input from gameInputDirectionRef
+  useEffect(() => {
+    if (perfMonitor.isActive()) {
+      perfMonitor.recordLoopRestart();
+    }
+
+    let animationFrameId = 0;
+    let isFirstFrame = true;
+
+    const loop = (time: number) => {
+      if (!loopRunningRef.current || document.hidden) {
+        return;
+      }
+
+      if (isFirstFrame) {
+        lastTimeRef.current = time;
+        isFirstFrame = false;
+        animationFrameId = requestAnimationFrame(loop);
+        return;
+      }
+
+      let deltaTime = time - lastTimeRef.current;
+      lastTimeRef.current = time;
+
+      const MAX_DELTA_TIME = 100;
+      deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
+
+      const frameStart = performance.now();
+      const updateStart = performance.now();
+      updateFnRef.current(deltaTime);
+      const updateMs = performance.now() - updateStart;
+      const drawStart = performance.now();
+      drawFnRef.current();
+      const drawMs = performance.now() - drawStart;
+      const frameMs = performance.now() - frameStart;
+      if (perfMonitor.isActive()) {
+        perfMonitor.recordFrame(frameMs, drawMs, updateMs);
+      }
+
+      animationFrameId = requestAnimationFrame(loop);
+    };
+
+    const startLoop = () => {
+      if (loopRunningRef.current || document.hidden) return;
+      loopRunningRef.current = true;
+      isFirstFrame = true;
+      animationFrameId = requestAnimationFrame(loop);
+    };
+
+    const stopLoop = () => {
+      loopRunningRef.current = false;
+      cancelAnimationFrame(animationFrameId);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopLoop();
+        void audioManager.suspend();
+      } else {
+        void audioManager.resume();
+        startLoop();
+      }
+    };
+
+    startLoop();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopLoop();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const handleBonusSelect = (bonusType: string) => {
     if (!bonusSelectionRef.current) return;

@@ -33,7 +33,7 @@ import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } fr
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
-import { perfMonitor } from '../lib/game/perfMonitor';
+import { setGameInputDirection, clearGameInputDirection } from '../lib/game/gameInput';
 
 // Helper function to format item names with initial caps
 function formatItemName(itemName: string): string {
@@ -159,7 +159,6 @@ export default function Game() {
   const { state, dispatch, resetGame } = useGame();
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
-  const [inputDir, setInputDir] = useState({ x: 0, y: 0 });
   const [levelStartTime, setLevelStartTime] = useState(Date.now());
   const [showMenu, setShowMenu] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
@@ -279,8 +278,7 @@ export default function Game() {
   }, [state.inventory.length, toast, dispatch]);
 
   const handleMove = (dir: { x: number; y: number }) => {
-    perfMonitor.recordInputDirectionUpdate();
-    setInputDir(dir);
+    setGameInputDirection(dir);
   };
 
   // Keyboard support
@@ -340,11 +338,11 @@ export default function Game() {
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') x = -1;
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') x = 1;
       if (x !== 0 || y !== 0) {
-        setInputDir({ x, y });
+        setGameInputDirection({ x, y });
         e.preventDefault();
       }
     };
-    const handleKeyUp = () => setInputDir({ x: 0, y: 0 });
+    const handleKeyUp = () => clearGameInputDirection();
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -429,7 +427,7 @@ export default function Game() {
   // Reset input direction when a new level loads to prevent unwanted movement
   useEffect(() => {
     if (state.screen === 'run') {
-      setInputDir({ x: 0, y: 0 });
+      clearGameInputDirection();
     }
   }, [state.currentLevel, state.screen]);
 
@@ -1586,7 +1584,6 @@ export default function Game() {
             <div className="relative w-full h-full">
               <HUD levelStartTime={levelStartTime} isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
               <GameCanvas 
-                inputDirection={inputDir} 
                 onGameOver={handleGameOver}
                 onLevelComplete={handleLevelComplete}
                 onTimeOut={handleTimeOut}
