@@ -14,7 +14,13 @@ import { GameOverlay } from './GameOverlay';
 import { PerfOverlay } from './PerfOverlay';
 import { isPerfOverlayEnabled } from '../../lib/game/perfFlags';
 import { perfMonitor } from '../../lib/game/perfMonitor';
-import { gameInputDirectionRef } from '../../lib/game/gameInput';
+import {
+  applyBufferedGameInput,
+  bufferGameInputDirection,
+  gameInputDirectionRef,
+} from '../../lib/game/gameInput';
+import { triggerHaptic } from '../../lib/game/haptics';
+import { runtimeVisionDebuffRef } from '../../lib/game/runtimeRefs';
 import {
   installShadowQualityGate,
   resolveRenderQuality,
@@ -173,6 +179,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   
   // Calculate mod modifiers
   const getModifiers = () => buildModifiers(activeModsRef.current);
+
+  const haptic = (pattern: 'light' | 'medium' | 'heavy' | 'success') => {
+    triggerHaptic(pattern, { enabled: settingsRef.current.hapticsEnabled !== false });
+  };
 
   // Apply vision debuff (stacks up to complete blindness)
   const applyVisionDebuff = (amount: number = 0.15) => {
@@ -363,6 +373,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     afterimageIdCounterRef.current = 0;
     particleIdCounterRef.current = 0;
     visionDebuffLevelRef.current = 0;
+    runtimeVisionDebuffRef.current = 0;
     lightswitchRevealEndTimeRef.current = null;
     // Initialize afterimages array if not present
     if (!level.afterimages) {
@@ -525,6 +536,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const decayRate = 0.02 * (deltaTime / 1000); // 2% per second
       visionDebuffLevelRef.current = Math.max(0, visionDebuffLevelRef.current - decayRate);
     }
+    runtimeVisionDebuffRef.current = visionDebuffLevelRef.current;
 
     // Check if temporary vision boost has expired
     if (temporaryVisionBoostRef.current && now >= temporaryVisionBoostRef.current.endTime) {
@@ -568,9 +580,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     const baseStats = statsRef.current;
     const effectiveStats = getEffectiveStats(baseStats, loadoutRef.current);
     const moveDelay = 1000 / (effectiveStats.speed * 4);
+
+    // Buffer direction changes during tile interpolation for next legal move tick
+    const heldX = Math.round(gameInputDirectionRef.current.x);
+    const heldY = Math.round(gameInputDirectionRef.current.y);
+    if (moveProgressRef.current < 1 && (heldX !== 0 || heldY !== 0)) {
+      bufferGameInputDirection({ x: heldX, y: heldY });
+    }
+
+    if (moveProgressRef.current >= 1) {
+      applyBufferedGameInput();
+    }
+
     const dx = Math.round(gameInputDirectionRef.current.x);
     const dy = Math.round(gameInputDirectionRef.current.y);
     const hasInput = dx !== 0 || dy !== 0;
+    const canAttemptMove = moveProgressRef.current >= 1;
 
     // Update visual position interpolation
     if (moveProgressRef.current < 1) {
@@ -586,7 +611,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       visualPosRef.current = { ...playerPosRef.current };
     }
 
-    if (hasInput) {
+    if (hasInput && canAttemptMove) {
       moveTimerRef.current += deltaTime;
       if (moveTimerRef.current > moveDelay) {
         const nextPos = { x: playerPosRef.current.x + dx, y: playerPosRef.current.y + dy };
@@ -640,6 +665,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const tile = levelRef.current.tiles[nextPos.y][nextPos.x];
           if (tile === 'exit') {
             audioManager.playSound('levelComplete');
+            haptic('success');
             if (perfMonitor.isActive()) {
               perfMonitor.recordSectorClear(state.currentLevel, true);
             }
@@ -677,7 +703,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             lightswitch.activated = true;
             lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
             visionDebuffLevelRef.current = 0; // Clear Nyx effect
-            
+            runtimeVisionDebuffRef.current = 0;
+
             // Log lightswitch activation event
             eventLogger.logEvent('environment', 'Activated lightswitch - Full maze reveal for 5s', {
               type: 'lightswitch',
@@ -694,6 +721,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           if (itemIndex !== -1) {
             const collectedItem = levelRef.current.items[itemIndex].item;
             audioManager.playSound('itemPickup');
+            haptic('light');
             dispatch({ type: 'ADD_ITEM', payload: collectedItem });
             levelRef.current.items = levelRef.current.items.filter((_, i) => i !== itemIndex);
             
@@ -998,6 +1026,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             
             // Update stats immediately - dispatch is fast and shouldn't block
             audioManager.playSound('damage');
+            haptic('medium');
             statsRef.current = { ...statsRef.current, hp: newHp };
             queueStatsUpdate({ hp: newHp });
             
@@ -1084,6 +1113,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   
                   // Play damage sound
                   audioManager.playSound('damage');
+                  haptic('medium');
                 }
                 
                 hitEnemy = true;
@@ -2067,6 +2097,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   
                   enemyDamageCooldownRef.current.set(entity.id, now);
                   audioManager.playSound('damage');
+                  haptic('medium');
                   statsRef.current = { ...statsRef.current, hp: newHp };
             queueStatsUpdate({ hp: newHp });
                   
@@ -2103,6 +2134,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 
                 enemyDamageCooldownRef.current.set(entity.id, now);
                 audioManager.playSound('damage');
+                haptic('medium');
                 statsRef.current = { ...statsRef.current, hp: newHp };
             queueStatsUpdate({ hp: newHp });
                 

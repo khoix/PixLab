@@ -181,5 +181,8 @@ export interface GameState {
     joystickPosition: 'left' | 'right';
     mobileControlType?: 'joystick' | 'dpad' | 'touchpad';
     renderQuality?: 'auto' | 'high' | 'medium' | 'low';
+    controlOpacity?: number;
+    controlSize?: number;
+    hapticsEnabled?: boolean;
   };
 }

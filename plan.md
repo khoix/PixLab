@@ -149,13 +149,13 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Make touch play feel intentional, not a compromised desktop port.
 
 **Tasks:**
-- [ ] **Input buffering:** Queue next direction during tile interpolation; apply on next legal move tick
-- [ ] **Quick-heal button:** Floating mobile button (smallest healing potion), equivalent to desktop `Q`
-- [ ] **Layout pass:** Resolve D-pad / HUD overlap on short viewports (iPhone SE class); use safe-area insets consistently
-- [ ] **Haptic feedback:** `navigator.vibrate()` on hit, pickup, sector clear (respect reduced-motion / user setting)
-- [ ] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator
-- [ ] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
-- [ ] Evaluate landscape hint or adaptive HUD layout for phones in landscape
+- [x] **Input buffering:** Queue next direction during tile interpolation; apply on next legal move tick
+- [x] **Quick-heal button:** Floating mobile button (smallest healing potion), equivalent to desktop `Q`
+- [x] **Layout pass:** Resolve D-pad / HUD overlap on short viewports (iPhone SE class); use safe-area insets consistently
+- [x] **Haptic feedback:** `navigator.vibrate()` on hit, pickup, sector clear (respect reduced-motion / user setting)
+- [x] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator
+- [x] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
+- [x] **Landscape hint:** Portrait recommendation banner on short landscape viewports
 
 **Files:**
 - `client/src/pages/Game.tsx`

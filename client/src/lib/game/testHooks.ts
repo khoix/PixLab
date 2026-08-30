@@ -5,6 +5,7 @@ declare global {
     __PIXLAB_TEST__?: {
       updateSettings: (payload: Partial<GameState['settings']>) => void;
       setActiveMods: (mods: string[]) => void;
+      addHealingPotion: () => void;
     };
   }
 }

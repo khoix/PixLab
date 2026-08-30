@@ -35,7 +35,10 @@ import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } fr
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
-import { setGameInputDirection, clearGameInputDirection } from '../lib/game/gameInput';
+import { QuickHealButton } from '../components/game/QuickHealButton';
+import { findSmallestHealingPotion } from '../lib/game/quickHeal';
+import { triggerHaptic } from '../lib/game/haptics';
+import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
 
 // Helper function to format item names with initial caps
 function formatItemName(itemName: string): string {
@@ -183,6 +186,20 @@ export default function Game() {
       setActiveMods: (mods: string[]) => {
         dispatch({ type: 'SET_MODS', payload: mods });
       },
+      addHealingPotion: () => {
+        dispatch({
+          type: 'ADD_ITEM',
+          payload: {
+            id: `test-potion-${Date.now()}`,
+            name: 'Test Healing Potion',
+            type: 'consumable',
+            rarity: 'common',
+            stats: { heal: 25 },
+            price: 10,
+            description: 'E2e test potion',
+          },
+        });
+      },
     };
     return () => {
       delete window.__PIXLAB_TEST__;
@@ -312,41 +329,45 @@ export default function Game() {
     setGameInputDirection(dir);
   };
 
+  const handleQuickHeal = React.useCallback(() => {
+    if (gameOverState || showInventory || showMenu || showCommerceVendor) {
+      return;
+    }
+
+    const smallestPotion = findSmallestHealingPotion(state.inventory);
+    if (!smallestPotion) return;
+
+    dispatch({ type: 'USE_CONSUMABLE', payload: { itemId: smallestPotion.id } });
+    triggerHaptic('success', { enabled: state.settings.hapticsEnabled !== false });
+
+    if (smallestPotion.stats?.heal) {
+      toast({
+        title: 'USED',
+        description: `${smallestPotion.name} - Healed ${smallestPotion.stats.heal} HP`,
+        className: 'bg-green-900 border-green-500 text-green-100',
+      });
+    }
+  }, [
+    gameOverState,
+    showInventory,
+    showMenu,
+    showCommerceVendor,
+    state.inventory,
+    state.settings.hapticsEnabled,
+    dispatch,
+    toast,
+  ]);
+
   // Keyboard support
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Handle Q key: Use smallest healing potion
       if (e.key === 'q' || e.key === 'Q') {
-        // Don't trigger if game is over or dialogs are open
         if (gameOverState || showInventory || showMenu || showCommerceVendor) {
           return;
         }
-        
-        // Find all healing potions (consumables with heal stat)
-        const healingPotions = state.inventory.filter(
-          item => item.type === 'consumable' && item.stats?.heal
-        );
-        
-        if (healingPotions.length > 0) {
-          // Sort by heal amount (smallest first)
-          const sortedPotions = [...healingPotions].sort(
-            (a, b) => (a.stats?.heal || 0) - (b.stats?.heal || 0)
-          );
-          
-          // Use the smallest healing potion
-          const smallestPotion = sortedPotions[0];
-          dispatch({ type: 'USE_CONSUMABLE', payload: { itemId: smallestPotion.id } });
-          
-          if (smallestPotion.stats?.heal) {
-            toast({ 
-              title: "USED", 
-              description: `${smallestPotion.name} - Healed ${smallestPotion.stats.heal} HP`,
-              className: "bg-green-900 border-green-500 text-green-100"
-            });
-          }
-          
-          e.preventDefault();
-        }
+        handleQuickHeal();
+        e.preventDefault();
         return;
       }
       
@@ -381,7 +402,7 @@ export default function Game() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [state.inventory, gameOverState, showInventory, showMenu, showCommerceVendor, dispatch, toast]);
+  }, [gameOverState, showInventory, showMenu, showCommerceVendor, handleQuickHeal]);
 
   const handleGameOver = () => {
     setGameOverState({ type: 'death' });
@@ -1277,6 +1298,77 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
+                    <div className="md:hidden" data-testid="mobile-control-settings">
+                      <label className="text-lg font-pixel text-primary mb-2 block">CONTROL OPACITY</label>
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          value={[state.settings.controlOpacity ?? 0.85]}
+                          onValueChange={(value) => {
+                            dispatch({
+                              type: 'UPDATE_SETTINGS',
+                              payload: { controlOpacity: value[0] },
+                            });
+                          }}
+                          min={0.4}
+                          max={1}
+                          step={0.05}
+                          className="flex-1"
+                          data-testid="control-opacity-slider"
+                        />
+                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                          {Math.round((state.settings.controlOpacity ?? 0.85) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="md:hidden">
+                      <label className="text-lg font-pixel text-primary mb-2 block">CONTROL SIZE</label>
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          value={[state.settings.controlSize ?? 1]}
+                          onValueChange={(value) => {
+                            dispatch({
+                              type: 'UPDATE_SETTINGS',
+                              payload: { controlSize: value[0] },
+                            });
+                          }}
+                          min={0.8}
+                          max={1.2}
+                          step={0.05}
+                          className="flex-1"
+                          data-testid="control-size-slider"
+                        />
+                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                          {Math.round((state.settings.controlSize ?? 1) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-lg font-pixel text-primary mb-2 block">HAPTIC FEEDBACK</label>
+                      <RadioGroup
+                        value={(state.settings.hapticsEnabled !== false).toString()}
+                        onValueChange={(value) => {
+                          dispatch({
+                            type: 'UPDATE_SETTINGS',
+                            payload: { hapticsEnabled: value === 'true' },
+                          });
+                        }}
+                        className="flex flex-col gap-3"
+                        data-testid="haptics-settings"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="true" id="haptics-on" style={{ minWidth: '40px' }} />
+                          <label htmlFor="haptics-on" className="text-sm font-mono text-foreground cursor-pointer">
+                            On
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="false" id="haptics-off" style={{ minWidth: '40px' }} />
+                          <label htmlFor="haptics-off" className="text-sm font-mono text-foreground cursor-pointer">
+                            Off
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </div>
                   </div>
                 </TabsContent>
               </div>
@@ -1645,9 +1737,20 @@ export default function Game() {
 
   if (state.screen === 'run') {
     const consumables = state.inventory.filter(item => item.type === 'consumable');
+    const smallestHealingPotion = findSmallestHealingPotion(state.inventory);
+    const mobileControlStyle = {
+      '--mobile-control-opacity': state.settings.controlOpacity ?? 0.85,
+      '--mobile-control-scale': state.settings.controlSize ?? 1,
+    } as React.CSSProperties;
+    const controlClassName = 'mobile-control-position-left';
     
     return (
       <div className={`relative w-full h-screen overflow-hidden bg-black touch-none ${gameOverState ? 'pointer-events-none' : ''}`}>
+        {isMobile && (
+          <div className="mobile-run-landscape-hint md:hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-[60] px-3 py-1 rounded bg-black/70 border border-primary/40 text-[10px] font-pixel text-primary">
+            Portrait recommended for controls
+          </div>
+        )}
         <ResizablePanelGroup direction="vertical" className="h-full">
           <ResizablePanel defaultSize={85} minSize={50}>
             <div className="relative w-full h-full">
@@ -1659,16 +1762,23 @@ export default function Game() {
                 gameOverState={gameOverState}
               />
               {!gameOverState && isMobile && (
-                (() => {
-                  const controlType = state.settings.mobileControlType || 'dpad';
-                  if (controlType === 'touchpad') {
-                    return <TouchpadControl onMove={handleMove} />;
-                  } else if (controlType === 'dpad') {
-                    return <DirectionalPadControl onMove={handleMove} />;
-                  } else {
-                    return <VirtualJoystick onMove={handleMove} />;
-                  }
-                })()
+                <div className="mobile-controls-root pointer-events-none absolute inset-0 z-50" style={mobileControlStyle}>
+                  {(() => {
+                    const controlType = state.settings.mobileControlType || 'dpad';
+                    if (controlType === 'touchpad') {
+                      return <TouchpadControl onMove={handleMove} />;
+                    }
+                    if (controlType === 'dpad') {
+                      return <DirectionalPadControl onMove={handleMove} className={controlClassName} />;
+                    }
+                    return <VirtualJoystick onMove={handleMove} className={controlClassName} />;
+                  })()}
+                  <QuickHealButton
+                    healAmount={smallestHealingPotion?.stats?.heal ?? null}
+                    disabled={!!gameOverState || showInventory || showMenu || showCommerceVendor}
+                    onHeal={handleQuickHeal}
+                  />
+                </div>
               )}
 
               {/* Menu Button - hidden during game over */}

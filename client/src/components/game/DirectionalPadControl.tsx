@@ -4,9 +4,10 @@ import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface DirectionalPadControlProps {
   onMove: (dir: { x: number; y: number }) => void;
+  className?: string;
 }
 
-export const DirectionalPadControl: React.FC<DirectionalPadControlProps> = ({ onMove }) => {
+export const DirectionalPadControl: React.FC<DirectionalPadControlProps> = ({ onMove, className }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeDirection, setActiveDirection] = useState<{ x: number; y: number } | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
@@ -128,7 +129,11 @@ export const DirectionalPadControl: React.FC<DirectionalPadControlProps> = ({ on
   return (
     <div
       ref={containerRef}
-      className="md:hidden absolute bottom-40 left-5 w-40 h-40 z-50 touch-none"
+      data-testid="mobile-dpad-control"
+      className={cn(
+        'md:hidden mobile-dpad-control absolute z-50 touch-none pointer-events-auto',
+        className,
+      )}
       onMouseDown={handleSwipeStart}
       onTouchStart={handleSwipeStart}
       onMouseMove={handleSwipeMove}

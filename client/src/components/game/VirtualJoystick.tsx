@@ -3,9 +3,10 @@ import { cn } from '../../lib/utils';
 
 interface VirtualJoystickProps {
   onMove: (dir: { x: number; y: number }) => void;
+  className?: string;
 }
 
-export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onMove }) => {
+export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onMove, className }) => {
   const [active, setActive] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -105,7 +106,12 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onMove }) => {
 
   return (
     <div
-      className="absolute bottom-[140px] left-[10px] w-32 h-32 rounded-full border-2 border-primary/30 bg-black/20 backdrop-blur-sm z-50 touch-none flex items-center justify-center"
+      data-testid="mobile-joystick-control"
+      className={cn(
+        'mobile-joystick-control absolute z-50 touch-none pointer-events-auto',
+        'w-32 h-32 rounded-full border-2 border-primary/30 bg-black/20 backdrop-blur-sm flex items-center justify-center',
+        className,
+      )}
       onMouseDown={handleStart}
       onTouchStart={handleStart}
       onMouseMove={handleMove}

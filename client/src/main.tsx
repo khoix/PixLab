@@ -9,6 +9,8 @@ import { fogLayerCache } from "./lib/game/renderer/cacheInstances";
 import { initModifiersApi } from "./lib/game/modifiers";
 import { initSectorTimerApi } from "./lib/game/sectorTimer";
 import { initGameLoopBatchApi } from "./lib/game/gameLoopBatch";
+import { initHapticsApi } from "./lib/game/haptics";
+import { initRuntimeRefsApi } from "./lib/game/runtimeRefs";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -19,6 +21,8 @@ initFogLayerCache(fogLayerCache);
 initModifiersApi();
 initSectorTimerApi();
 initGameLoopBatchApi();
+initHapticsApi();
+initRuntimeRefsApi();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)
