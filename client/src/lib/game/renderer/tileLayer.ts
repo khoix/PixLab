@@ -83,21 +83,39 @@ export class TileLayerCache {
   ): boolean {
     if (!this.buffer || !this.key) return false;
 
-    const sourceWidth = Math.min(viewWidth, this.buffer.width - camX);
-    const sourceHeight = Math.min(viewHeight, this.buffer.height - camY);
-    if (sourceWidth <= 0 || sourceHeight <= 0) return false;
+    const prevSmoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
 
-    ctx.drawImage(
-      this.buffer,
-      camX,
-      camY,
-      sourceWidth,
-      sourceHeight,
-      camX,
-      camY,
-      sourceWidth,
-      sourceHeight,
+    const startCol = Math.max(0, Math.floor(camX / TILE_SIZE));
+    const startRow = Math.max(0, Math.floor(camY / TILE_SIZE));
+    const endCol = Math.min(
+      this.key.width,
+      startCol + Math.ceil(viewWidth / TILE_SIZE) + 2,
     );
+    const endRow = Math.min(
+      this.key.height,
+      startRow + Math.ceil(viewHeight / TILE_SIZE) + 2,
+    );
+
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startCol; x < endCol; x++) {
+        const tileX = x * TILE_SIZE;
+        const tileY = y * TILE_SIZE;
+        ctx.drawImage(
+          this.buffer,
+          tileX,
+          tileY,
+          TILE_SIZE,
+          TILE_SIZE,
+          tileX,
+          tileY,
+          TILE_SIZE,
+          TILE_SIZE,
+        );
+      }
+    }
+
+    ctx.imageSmoothingEnabled = prevSmoothing;
     return true;
   }
 }
