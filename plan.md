@@ -41,13 +41,13 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Problem:** `GameCanvas` game loop depends on `[inputDirection]`; mobile D-pad calls `setInputDir` every 16ms, causing re-renders and loop teardown/restart.
 
 **Tasks:**
-- [ ] Add `inputDirectionRef` in `GameCanvas`; read it inside `update()` instead of closure over prop
-- [ ] Remove `inputDirection` from the game loop `useEffect` dependency array (empty deps + stable refs)
-- [ ] Update `Game.tsx` `handleMove` to write to a ref passed into `GameCanvas`, or expose a ref callback; only call `setInputDir` when direction *changes* (for UI that needs it)
-- [ ] Update `DirectionalPadControl`, `VirtualJoystick`, and `TouchpadControl` to avoid redundant `onMove` calls when direction is unchanged
-- [ ] Replace D-pad `setInterval(16ms)` with hold-to-move: set direction on touch start, clear on touch end; let game loop consume held direction
-- [ ] Gate RAF loop: start only when `state.screen === 'run'`, cancel when leaving run screen
-- [ ] Add `document.visibilitychange` handler: pause loop + pause audio when hidden; resume on visible
+- [x] Add `inputDirectionRef` in `GameCanvas`; read it inside `update()` instead of closure over prop
+- [x] Remove `inputDirection` from the game loop `useEffect` dependency array (empty deps + stable refs)
+- [x] Update `Game.tsx` `handleMove` to write to a ref passed into `GameCanvas`, or expose a ref callback; only call `setInputDir` when direction *changes* (for UI that needs it)
+- [x] Update `DirectionalPadControl`, `VirtualJoystick`, and `TouchpadControl` to avoid redundant `onMove` calls when direction is unchanged
+- [x] Replace D-pad `setInterval(16ms)` with hold-to-move: set direction on touch start, clear on touch end; let game loop consume held direction
+- [x] Gate RAF loop: start only when `state.screen === 'run'`, cancel when leaving run screen
+- [x] Add `document.visibilitychange` handler: pause loop + pause audio when hidden; resume on visible
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`

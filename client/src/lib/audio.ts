@@ -51,6 +51,18 @@ class AudioManager {
     }
   }
 
+  /** Suspend audio context when tab is hidden (M1 visibility gating). */
+  async suspend() {
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'running') {
+      try {
+        await this.audioContext.suspend();
+      } catch (error) {
+        // Ignore suspend failures
+      }
+    }
+  }
+
   setMusicVolume(volume: number) {
     this.musicVolume = Math.max(0, Math.min(1, volume));
     if (this.musicGainNode) {
