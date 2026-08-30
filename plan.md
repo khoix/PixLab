@@ -100,15 +100,15 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Reduce per-frame draw cost through caching and smarter buffer sizing.
 
 **Tasks:**
-- [ ] **DPR scaling:** Set `canvas.width/height = logicalSize * min(dpr, 2)`; `ctx.scale(dpr, dpr)` for crisp pixels without 3x cost
-- [ ] **Fog layer cache:** Render fog radial gradient to offscreen canvas; redraw only when vision radius, debuff, lightswitch, scroll effects, or canvas size change
-- [ ] **Static tile cache (optional):** Pre-render wall/floor tiles for current sector to offscreen buffer; blit each frame instead of redrawing every tile
-- [ ] **Per-frame dedup:** Compute `getModifiers()` + `getEffectiveStats()` once per frame into a snapshot object; use `activeModsRef` inside loop
+- [x] **DPR scaling:** Set `canvas.width/height = logicalSize * min(dpr, 2)`; `ctx.scale(dpr, dpr)` for crisp pixels without 3x cost
+- [x] **Fog layer cache:** Render fog radial gradient to offscreen canvas; redraw only when vision radius, debuff, lightswitch, scroll effects, or canvas size change
+- [x] **Static tile cache (optional):** Pre-render wall/floor tiles for current sector to offscreen buffer; blit each frame instead of redrawing every tile
+- [x] **Per-frame dedup:** Compute `getModifiers()` + `getEffectiveStats()` once per frame into a snapshot object; use `activeModsRef` inside loop
 - [ ] Consider fixed logical viewport (11×15 tiles from constants) instead of full window if full-screen canvas remains costly
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`
-- New (optional): `client/src/lib/game/renderer/fogLayer.ts`, `tileLayer.ts`
+- `client/src/lib/game/renderer/canvasSizing.ts`, `fogLayer.ts`, `tileLayer.ts`, `drawSnapshot.ts`, `cacheInstances.ts`
 
 **Exit criteria:**
 - Fog gradient not recreated every frame during stationary gameplay

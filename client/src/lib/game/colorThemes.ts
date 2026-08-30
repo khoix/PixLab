@@ -4,6 +4,7 @@
  */
 
 export interface ColorPalette {
+  id: string;
   wall: string;
   floor: string;
 }
@@ -135,6 +136,7 @@ export function generateColorPalette(seed: number): ColorPalette {
   }
 
   return {
+    id: `theme-${seed}`,
     wall: wallColor,
     floor: floorColor,
   };

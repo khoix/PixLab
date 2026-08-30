@@ -3,11 +3,16 @@ import App from "./App";
 import { initPerfMonitoring } from "./lib/game/perfMonitor";
 import { initGameInput } from "./lib/game/gameInput";
 import { initRenderQuality } from "./lib/game/renderQuality";
+import { initCanvasSizing } from "./lib/game/renderer/canvasSizing";
+import { initFogLayerCache } from "./lib/game/renderer/fogLayer";
+import { fogLayerCache } from "./lib/game/renderer/cacheInstances";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
 initGameInput();
 initRenderQuality();
+initCanvasSizing();
+initFogLayerCache(fogLayerCache);
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

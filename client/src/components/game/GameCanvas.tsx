@@ -23,6 +23,9 @@ import {
   strokeGlowCircle,
   MOBILE_BREAKPOINT,
 } from '../../lib/game/renderQuality';
+import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/renderer/canvasSizing';
+import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
+import { buildDrawFrameSnapshot, buildModifiers } from '../../lib/game/renderer/drawSnapshot';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -140,7 +143,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const temporaryVisionBoostRef = useRef<typeof state.temporaryVisionBoost>(state.temporaryVisionBoost);
   const activeScrollEffectsRef = useRef<typeof state.activeScrollEffects>(state.activeScrollEffects);
   const settingsRef = useRef(state.settings);
-  const canvasSizeRef = useRef({ width: window.innerWidth, height: window.innerHeight });
+  const initialCanvasDims = getCanvasDimensions();
+  const canvasSizeRef = useRef({
+    logicalWidth: initialCanvasDims.logicalWidth,
+    logicalHeight: initialCanvasDims.logicalHeight,
+    dpr: initialCanvasDims.dpr,
+  });
   const lastPlayerPosRef = useRef<Position>({ x: 0, y: 0 });
   const previousEnemyIdsRef = useRef<Set<string>>(new Set());
   const bonusSelectionRef = useRef<{ options: string[] } | null>(null);
@@ -151,16 +159,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const loopRunningRef = useRef(false);
   
   // Calculate mod modifiers
-  const getModifiers = () => {
-    let modifiers = { enemyHp: 1, coinMult: 1, timerMult: 1, visionMult: 1, explosiveDeaths: false, autoReveal: false };
-    state.activeMods.forEach(modId => {
-      const mod = MODS.find(m => m.id === modId);
-      if (mod?.modifiers) {
-        Object.assign(modifiers, mod.modifiers);
-      }
-    });
-    return modifiers;
-  };
+  const getModifiers = () => buildModifiers(activeModsRef.current);
 
   // Apply vision debuff (stacks up to complete blindness)
   const applyVisionDebuff = (amount: number = 0.15) => {
@@ -320,6 +319,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       loadoutRef.current
     );
     levelRef.current = level;
+    tileLayerCache.invalidate();
+    fogLayerCache.invalidate();
     playerPosRef.current = { ...level.startPos };
     visualPosRef.current = { ...level.startPos };
     moveStartPosRef.current = { ...level.startPos };
@@ -391,11 +392,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   useEffect(() => {
     const handleResize = () => {
       const canvas = canvasRef.current;
-      if (canvas) {
-        canvasSizeRef.current = { width: window.innerWidth, height: window.innerHeight };
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
+      if (!canvas) return;
+
+      const dims = getCanvasDimensions();
+      canvasSizeRef.current = {
+        logicalWidth: dims.logicalWidth,
+        logicalHeight: dims.logicalHeight,
+        dpr: dims.dpr,
+      };
+      applyCanvasDimensions(canvas, dims);
+      fogLayerCache.invalidate();
+      tileLayerCache.invalidate();
     };
 
     window.addEventListener('resize', handleResize);
@@ -2172,38 +2179,43 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     // Get color theme for current level (changes every 4 sectors)
     const theme = getThemeForLevel(state.currentLevel);
+    const { logicalWidth, logicalHeight, dpr } = canvasSizeRef.current;
+
+    const frame = buildDrawFrameSnapshot({
+      stats: statsRef.current,
+      loadout: loadoutRef.current,
+      activeMods: activeModsRef.current,
+      temporaryVisionBoost: temporaryVisionBoostRef.current,
+      lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
+      visionDebuffLevel: visionDebuffLevelRef.current,
+      logicalWidth,
+      logicalHeight,
+      tileSize: TILE_SIZE,
+    });
 
     ctx.fillStyle = '#050505';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
     // Use visual position for camera to follow smooth movement
-    const camX = visualPosRef.current.x * TILE_SIZE - canvas.width / 2 + TILE_SIZE / 2;
-    const camY = visualPosRef.current.y * TILE_SIZE - canvas.height / 2 + TILE_SIZE / 2;
+    const camX = visualPosRef.current.x * TILE_SIZE - logicalWidth / 2 + TILE_SIZE / 2;
+    const camY = visualPosRef.current.y * TILE_SIZE - logicalHeight / 2 + TILE_SIZE / 2;
 
     ctx.save();
     ctx.translate(-camX, -camY);
 
-    // Draw Map
+    // Draw Map — static wall/floor from tile cache; exit stairs drawn separately
     const startCol = Math.max(0, Math.floor(camX / TILE_SIZE));
-    const endCol = Math.min(levelRef.current.width, startCol + (canvas.width / TILE_SIZE) + 2);
+    const endCol = Math.min(levelRef.current.width, startCol + (logicalWidth / TILE_SIZE) + 2);
     const startRow = Math.max(0, Math.floor(camY / TILE_SIZE));
-    const endRow = Math.min(levelRef.current.height, startRow + (canvas.height / TILE_SIZE) + 2);
+    const endRow = Math.min(levelRef.current.height, startRow + (logicalHeight / TILE_SIZE) + 2);
+
+    tileLayerCache.build(levelRef.current, theme, String(state.currentLevel));
+    tileLayerCache.drawVisibleRegion(ctx, camX, camY, logicalWidth, logicalHeight);
 
     for (let y = startRow; y < endRow; y++) {
       for (let x = startCol; x < endCol; x++) {
         const tile = levelRef.current.tiles[y][x];
-        
-        if (tile === 'wall') {
-          ctx.fillStyle = theme.wall;
-          ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-          ctx.fillStyle = 'rgba(0,0,0,0.3)';
-          ctx.fillRect(x * TILE_SIZE + 4, y * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-        } else if (tile === 'floor') {
-          ctx.fillStyle = theme.floor;
-          ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-          ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        } else if (tile === 'exit') {
+        if (tile !== 'exit') continue;
           const tileX = x * TILE_SIZE;
           const tileY = y * TILE_SIZE;
           
@@ -2264,7 +2276,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             ctx.strokeRect(tileX + holePadding, tileY + holePadding, TILE_SIZE - holePadding * 2, TILE_SIZE - holePadding * 2);
             ctx.shadowBlur = 0;
           }
-        }
       }
     }
 
@@ -3212,48 +3223,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     ctx.restore();
 
-    // Spotlight + Fog - use effective stats including item bonuses
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const modifiers = getModifiers();
-    const effectiveStats = getEffectiveStats(statsRef.current, loadoutRef.current);
-    // Apply vision debuff if active (stacks up to complete blindness)
-    let visionMultiplier = modifiers.visionMult;
-    if (visionDebuffLevelRef.current > 0) {
-      // Debuff level 0 = no reduction, 1.0 = complete blindness (0 radius)
-      visionMultiplier *= (1.0 - visionDebuffLevelRef.current);
-    }
-    // Apply temporary vision boost from Potion of Light
-    let visionBoost = 0;
-    if (temporaryVisionBoostRef.current) {
-      const now = Date.now();
-      if (now < temporaryVisionBoostRef.current.endTime) {
-        visionBoost = temporaryVisionBoostRef.current.amount;
-        // For Legendary (full maze reveal), use a very large radius
-        if (visionBoost >= 9999) {
-          visionBoost = Math.max(canvas.width, canvas.height) * 2; // Large enough to reveal entire maze
-        }
-      }
-    }
-    // Apply lightswitch full reveal effect
-    const now = Date.now();
-    if (lightswitchRevealEndTimeRef.current && now < lightswitchRevealEndTimeRef.current) {
-      // Full maze reveal (very large radius)
-      visionBoost = Math.max(canvas.width, canvas.height) * 2;
-    }
-    const radius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * TILE_SIZE;
-
-    // Create radial gradient for smooth fade effect
-    const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)'); // Transparent in center
-    gradient.addColorStop(0.4, 'rgba(0, 0, 0, 0.1)'); // Very subtle fade starts
-    gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.3)'); // Gentle fade
-    gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.6)'); // Moderate fade
-    gradient.addColorStop(0.95, 'rgba(0, 0, 0, 0.9)'); // Near opaque
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 1)'); // Fully opaque at edges
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Spotlight + Fog — cached offscreen gradient, rebuilt only when vision/size changes
+    fogLayerCache.draw(ctx, {
+      logicalWidth: frame.logicalWidth,
+      logicalHeight: frame.logicalHeight,
+      dpr,
+      centerX: frame.fogCenterX,
+      centerY: frame.fogCenterY,
+      radius: frame.fogRadius,
+    });
 
     // Draw Scroll Sense Effects (above spotlight overlay)
     // Threat-sense: Show all enemies, Loot-sense: Show all items
@@ -3261,26 +3239,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       ctx.save();
       
       // Calculate player screen position
-      const playerScreenX = canvas.width / 2;
-      const playerScreenY = canvas.height / 2;
-      const effectiveStats = getEffectiveStats(statsRef.current, loadoutRef.current);
-      let visionMultiplier = modifiers.visionMult;
-      if (visionDebuffLevelRef.current > 0) {
-        visionMultiplier *= (1.0 - visionDebuffLevelRef.current);
-      }
-      let visionBoost = 0;
-      if (temporaryVisionBoostRef.current) {
-        if (now < temporaryVisionBoostRef.current.endTime) {
-          visionBoost = temporaryVisionBoostRef.current.amount;
-          if (visionBoost >= 9999) {
-            visionBoost = Math.max(canvas.width, canvas.height) * 2;
-          }
-        }
-      }
-      if (lightswitchRevealEndTimeRef.current && now < lightswitchRevealEndTimeRef.current) {
-        visionBoost = Math.max(canvas.width, canvas.height) * 2;
-      }
-      const visionRadius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * TILE_SIZE;
+      const playerScreenX = logicalWidth / 2;
+      const playerScreenY = logicalHeight / 2;
+      const visionRadius = frame.visionRadiusPx;
       
       // Draw Threat-sense: All enemies
       if (activeScrollEffectsRef.current.threatSense) {
@@ -3508,7 +3469,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Check window width directly for immediate detection (mobile breakpoint is 768px)
     const isMobileWidth = window.innerWidth < 768;
     if (isMobileWidth && levelRef.current && !levelRef.current.isShop && !levelRef.current.isBoss && !showBonusSelection) {
-      const modifiers = getModifiers();
+      const modifiers = frame.modifiers;
       const timeLimit = LEVEL_TIME_LIMIT * modifiers.timerMult * 1000; // ms
       const elapsed = Date.now() - levelStartTimeRef.current;
       const remaining = Math.max(0, timeLimit - elapsed);
@@ -3516,8 +3477,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       
       // Minimal progress bar at the very bottom
       const barHeight = 3; // Thin bar
-      const barY = canvas.height - barHeight;
-      const barWidth = canvas.width;
+      const barY = logicalHeight - barHeight;
+      const barWidth = logicalWidth;
       
       // Background (dark)
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -3691,8 +3652,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     <div className="relative w-full h-full">
       <canvas 
         ref={canvasRef} 
-        width={canvasSizeRef.current.width} 
-        height={canvasSizeRef.current.height}
+        width={canvasSizeRef.current.logicalWidth} 
+        height={canvasSizeRef.current.logicalHeight}
         className="game-canvas block touch-none"
         style={{ position: 'relative', zIndex: 0 }}
       />
