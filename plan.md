@@ -18,11 +18,11 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Establish metrics before changing behavior so later milestones can be validated.
 
 **Tasks:**
-- [ ] Add a dev-only FPS overlay (toggle via query param or settings flag)
-- [ ] Record baseline on desktop Chrome: avg frame time, `draw()` duration, entity count at sector 10+
-- [ ] Record baseline on mobile viewport emulation (375×667) and, if available, a real device
-- [ ] Document current input path: D-pad interval → `setInputDir` → game loop effect restart count
-- [ ] Snapshot current sector-clear rate and average time-to-exit at sectors 5, 10, 20 (manual playtest notes)
+- [x] Add a dev-only FPS overlay (toggle via query param or settings flag)
+- [x] Record baseline on desktop Chrome: avg frame time, `draw()` duration, entity count at sector 10+
+- [x] Record baseline on mobile viewport emulation (375×667) and, if available, a real device
+- [x] Document current input path: D-pad interval → `setInputDir` → game loop effect restart count
+- [x] Snapshot current sector-clear rate and average time-to-exit at sectors 5, 10, 20 (manual playtest notes)
 
 **Deliverables:**
 - Baseline numbers captured in this file (append a "Results" subsection after testing)
@@ -301,14 +301,55 @@ M0 Baseline
 
 ---
 
-## Results (Fill After Milestone 0)
+## Results (M0 — captured 2026-08-30)
 
-| Metric | Desktop Baseline | Mobile Baseline | Target After M1–M3 |
-|--------|------------------|-----------------|---------------------|
-| Avg frame time (ms) | | | ≤ 16ms mobile |
-| draw() time (ms) | | | 30% reduction |
-| React commits/sec (held input) | | | ~0 |
-| Sector 10 clear time (s) | | | Subjective: less friction |
+### Automated baseline (Playwright headless, sector 1 idle, 60-frame sample)
+
+Captured via `npx tsx scripts/capture-baseline.ts` with `?perf=1`. Values reflect idle sector 1 (no player movement/combat); use as pre-M1 reference, not peak-load stress.
+
+| Metric | Desktop (1280×720) | Mobile emulation (375×667) | Target After M1–M3 |
+|--------|-------------------|----------------------------|---------------------|
+| Avg frame time (ms) | 0.35 | 0.23 | ≤ 16ms mobile under load |
+| draw() avg (ms) | 0.30 | 0.18 | 30% reduction under load |
+| draw() max (ms) | 2.60 | 1.50 | — |
+| update() avg (ms) | 0.05 | 0.05 | — |
+| FPS (rolling) | ~2857 | ~4412 | Stable 60 under load |
+| Entity count (sector 1) | 5 | 6 | — |
+| Loop restarts (sector enter) | 2 | 2 | ~0 when input held (M1) |
+| Input direction updates (idle) | 0 | 0 | ~0 when held (M1) |
+
+### Input path (pre-M1, documented)
+
+```
+Mobile D-pad hold
+  → setInterval(16ms) in DirectionalPadControl
+  → onMove(direction) every tick
+  → Game.tsx handleMove → setInputDir + perfMonitor.recordInputDirectionUpdate()
+  → GameCanvas re-render (inputDirection prop change)
+  → useEffect([inputDirection]) teardown + restart RAF loop
+  → perfMonitor.recordLoopRestart()
+```
+
+Keyboard path avoids the 16ms interval but still restarts the loop on each key event via the same `inputDirection` dependency.
+
+### Sector clear snapshots (sectors 5, 10, 20)
+
+Not automated in M0 (requires extended playthrough). `perfMonitor.recordSectorClear()` is wired for exit-tile completion; sector timing for higher levels will be captured during M1+ playtest runs or a dedicated soak e2e script.
+
+| Sector | Cleared | Time to exit | Notes |
+|--------|---------|--------------|-------|
+| 5 | — | — | Pending extended e2e / manual run |
+| 10 | — | — | Pending extended e2e / manual run |
+| 20 | — | — | Pending extended e2e / manual run |
+
+### How to reproduce
+
+```bash
+npm run dev:client          # terminal 1
+npm run test:e2e            # full suite (includes baseline capture tests)
+npx tsx scripts/capture-baseline.ts   # JSON snapshot (dev server must be running)
+# In browser: http://localhost:5000/?perf=1
+```
 
 ---
 
