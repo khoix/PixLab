@@ -132,6 +132,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               sfxVolume: parsed.settings?.sfxVolume ?? 0.5,
               joystickPosition: parsed.settings?.joystickPosition ?? 'left',
               mobileControlType: parsed.settings?.mobileControlType ?? 'dpad',
+              renderQuality: parsed.settings?.renderQuality ?? 'auto',
             },
           };
           // Regenerate code from saved state to ensure it's up to date
@@ -163,7 +164,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
       temporaryVisionBoost: null,
       pendingScrollAction: null,
-      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'dpad' },
+      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'dpad', renderQuality: 'auto' },
     };
     // Generate code from the default state
     try {

@@ -180,5 +180,6 @@ export interface GameState {
     sfxVolume: number;
     joystickPosition: 'left' | 'right';
     mobileControlType?: 'joystick' | 'dpad' | 'touchpad';
+    renderQuality?: 'auto' | 'high' | 'medium' | 'low';
   };
 }
