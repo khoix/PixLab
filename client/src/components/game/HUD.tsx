@@ -1,42 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useGame } from '../../lib/store';
-import { Card } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
-import { LEVEL_TIME_LIMIT } from '../../lib/game/constants';
-import { MODS } from '../../lib/game/constants';
+import { getSectorTimeLeftSec } from '../../lib/game/sectorTimer';
 import { useIsMobile } from '../../hooks/use-mobile';
 
 interface HUDProps {
-  levelStartTime: number;
   isShop: boolean;
   isBoss: boolean;
 }
 
-export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
+export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
   const { state } = useGame();
   const isMobile = useIsMobile();
-  const [timeLeft, setTimeLeft] = useState(LEVEL_TIME_LIMIT);
+  const [timeLeft, setTimeLeft] = useState(() =>
+    Math.ceil(getSectorTimeLeftSec(state.activeMods)),
+  );
 
   useEffect(() => {
     if (isShop || isBoss) return;
 
     const interval = setInterval(() => {
-      const modifiers = MODS.reduce((acc, mod) => {
-        if (state.activeMods.includes(mod.id) && mod.modifiers?.timerMult) {
-          acc.timerMult = mod.modifiers.timerMult;
-        }
-        return acc;
-      }, { timerMult: 1 });
-
-      const elapsed = (Date.now() - levelStartTime) / 1000;
-      const limit = LEVEL_TIME_LIMIT * modifiers.timerMult;
-      const remaining = Math.max(0, limit - elapsed);
-      setTimeLeft(Math.ceil(remaining));
+      setTimeLeft(Math.ceil(getSectorTimeLeftSec(state.activeMods)));
     }, 100);
 
     return () => clearInterval(interval);
-  }, [levelStartTime, isShop, isBoss, state.activeMods]);
+  }, [isShop, isBoss, state.activeMods, state.currentLevel]);
 
   return (
     <>
@@ -61,7 +50,10 @@ export const HUD: React.FC<HUDProps> = ({ levelStartTime, isShop, isBoss }) => {
               SECTOR {state.currentLevel}
             </Badge>
             {!isShop && !isBoss && (
-              <div className={`font-pixel text-lg drop-shadow-md transition-colors ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
+              <div
+                className={`font-pixel text-lg drop-shadow-md transition-colors ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-primary'}`}
+                data-testid="hud-sector-timer"
+              >
                 {Math.floor(timeLeft)}s
               </div>
             )}

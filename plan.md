@@ -123,16 +123,16 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Reduce React dispatch churn from the game loop and fix modifier/timer inconsistencies.
 
 **Tasks:**
-- [ ] Batch non-critical `dispatch()` calls from game loop (coins, compendium unlock) into a single flush per frame or on event boundary
-- [ ] Remove no-op dispatches used only to trigger re-renders (e.g. `UPDATE_STATS` with `{}`); use refs + infrequent sync instead
-- [ ] Fix modifier stacking: multiply numeric modifiers (`timerMult`, `visionMult`, `enemyHp`, `coinMult`); OR booleans for flags — shared helper used by `GameCanvas` and `HUD`
-- [ ] Single source of truth for sector timer: either HUD reads from game loop ref or GameCanvas exposes `timeLeftRef`; remove duplicate 100ms HUD interval logic if redundant
-- [ ] Pause sector timer while inventory, menu, or commerce vendor dialogs are open (mobile parity with bonus-selection pause)
+- [x] **Batch non-critical `dispatch()` calls** from game loop (coins, compendium unlock) into a single flush per frame or on event boundary
+- [x] **Remove no-op dispatches** used only to trigger re-renders (e.g. `UPDATE_STATS` with `{}`); use refs + infrequent sync instead
+- [x] **Fix modifier stacking:** multiply numeric modifiers (`timerMult`, `visionMult`, `enemyHp`, `coinMult`); OR booleans for flags — shared helper used by `GameCanvas` and `HUD`
+- [x] **Single source of truth for sector timer:** `sectorTimer.ts` shared by `GameCanvas`, HUD, and mobile progress bar
+- [x] **Pause sector timer** while inventory, menu, commerce vendor, or bonus-selection dialogs are open
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`
 - `client/src/components/game/HUD.tsx`
-- `client/src/lib/game/modifiers.ts` (new shared helper)
+- `client/src/lib/game/modifiers.ts`, `sectorTimer.ts`, `gameLoopBatch.ts`
 - `client/src/pages/Game.tsx`
 
 **Exit criteria:**

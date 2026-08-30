@@ -6,6 +6,9 @@ import { initRenderQuality } from "./lib/game/renderQuality";
 import { initCanvasSizing } from "./lib/game/renderer/canvasSizing";
 import { initFogLayerCache } from "./lib/game/renderer/fogLayer";
 import { fogLayerCache } from "./lib/game/renderer/cacheInstances";
+import { initModifiersApi } from "./lib/game/modifiers";
+import { initSectorTimerApi } from "./lib/game/sectorTimer";
+import { initGameLoopBatchApi } from "./lib/game/gameLoopBatch";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -13,6 +16,9 @@ initGameInput();
 initRenderQuality();
 initCanvasSizing();
 initFogLayerCache(fogLayerCache);
+initModifiersApi();
+initSectorTimerApi();
+initGameLoopBatchApi();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

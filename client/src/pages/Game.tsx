@@ -7,6 +7,7 @@ import { VirtualJoystick } from '../components/game/VirtualJoystick';
 import { TouchpadControl } from '../components/game/TouchpadControl';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
+import { pushSectorTimerPause, popSectorTimerPause } from '../lib/game/sectorTimer';
 import { Compendium } from '../components/game/Compendium';
 import { GameOverlay } from '../components/game/GameOverlay';
 import { GameEventLogViewer } from '../components/game/GameEventLogViewer';
@@ -160,7 +161,6 @@ export default function Game() {
   const { state, dispatch, resetGame } = useGame();
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
-  const [levelStartTime, setLevelStartTime] = useState(Date.now());
   const [showMenu, setShowMenu] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
   const [lastItemCount, setLastItemCount] = useState(state.inventory.length);
@@ -180,11 +180,29 @@ export default function Game() {
       updateSettings: (payload: Partial<GameState['settings']>) => {
         dispatch({ type: 'UPDATE_SETTINGS', payload });
       },
+      setActiveMods: (mods: string[]) => {
+        dispatch({ type: 'SET_MODS', payload: mods });
+      },
     };
     return () => {
       delete window.__PIXLAB_TEST__;
     };
   }, [dispatch]);
+
+  // Pause sector timer while run dialogs are open
+  useEffect(() => {
+    if (state.screen !== 'run') return;
+
+    const pauseReasons: string[] = [];
+    if (showInventory) pauseReasons.push('inventory');
+    if (showMenu) pauseReasons.push('menu');
+    if (showCommerceVendor) pauseReasons.push('commerce');
+
+    pauseReasons.forEach((reason) => pushSectorTimerPause(reason));
+    return () => {
+      pauseReasons.forEach((reason) => popSectorTimerPause(reason));
+    };
+  }, [state.screen, showInventory, showMenu, showCommerceVendor]);
 
   // Handle page refresh - clean up game state and navigate to Home (no UI prompt)
   useEffect(() => {
@@ -773,7 +791,6 @@ export default function Game() {
                         toast({ title: "SHOP SECTOR", description: "Welcome, operator. Browse our wares.", className: "bg-green-900 border-green-500 text-green-100" });
                         dispatch({ type: 'SET_SCREEN', payload: 'shop' });
                       } else {
-                        setLevelStartTime(Date.now());
                         dispatch({ type: 'SET_SCREEN', payload: 'run' });
                       }
                     }}
@@ -1634,7 +1651,7 @@ export default function Game() {
         <ResizablePanelGroup direction="vertical" className="h-full">
           <ResizablePanel defaultSize={85} minSize={50}>
             <div className="relative w-full h-full">
-              <HUD levelStartTime={levelStartTime} isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
+              <HUD isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
               <GameCanvas 
                 onGameOver={handleGameOver}
                 onLevelComplete={handleLevelComplete}
@@ -1660,6 +1677,7 @@ export default function Game() {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
+              data-testid="game-menu-button"
               className="absolute top-4 right-4 z-50 text-white hover:bg-primary/50 font-pixel text-xs bg-black/50"
             >
               MENU

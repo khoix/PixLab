@@ -102,3 +102,23 @@ npm run test:e2e:ui     # interactive UI mode
 - Fixed tile-cache alignment: blit per tile at grid positions instead of fractional scroll offset (prevents player appearing inside walls).
 - Canvas logical size now measured from the canvas element via `ResizeObserver`, not `window.innerWidth/Height`.
 - Fixed logical viewport deferred; full-window canvas retained with caching optimizations.
+
+---
+
+## Milestone 4 — State Updates & HUD Consistency
+
+**Branch:** `cursor/m4-state-hud-aa59`  
+**Status:** Ready for review
+
+### Added
+- **`modifiers.ts`** — shared `buildModifiers()` with numeric multiply + boolean OR stacking; `window.__PIXLAB_MODS__`
+- **`sectorTimer.ts`** — single sector timer with pause stack; `window.__PIXLAB_TIMER__`
+- **`gameLoopBatch.ts`** — per-frame batch flush for stats/compendium dispatches; `window.__PIXLAB_BATCH__`
+
+### Changed
+- **`GameCanvas`** — batches coin/HP/compendium updates; removed no-op `UPDATE_STATS`; uses shared sector timer
+- **`HUD`** — reads timer from `sectorTimer` (fixes mod stacking bug in old HUD reduce)
+- **`Game.tsx`** — pauses timer for inventory/menu/commerce dialogs
+
+### Verification
+- E2e: `e2e/m4-state-hud.spec.ts` — modifier stacking, timer pause on menu, batch flush rate
