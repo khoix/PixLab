@@ -475,6 +475,9 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.joystickPosition !== 'left') settings['3'] = state.settings.joystickPosition;
       if (state.settings.mobileControlType && state.settings.mobileControlType !== 'dpad') settings['4'] = state.settings.mobileControlType;
       if (state.settings.renderQuality && state.settings.renderQuality !== 'auto') settings['5'] = state.settings.renderQuality;
+      if (state.settings.controlOpacity !== undefined && state.settings.controlOpacity !== 0.85) settings['6'] = state.settings.controlOpacity;
+      if (state.settings.controlSize !== undefined && state.settings.controlSize !== 1) settings['7'] = state.settings.controlSize;
+      if (state.settings.hapticsEnabled === false) settings['8'] = 0;
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -568,6 +571,9 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         joystickPosition: saveData.S?.['3'] ?? 'left',
         mobileControlType: saveData.S?.['4'] ?? 'dpad',
         renderQuality: saveData.S?.['5'] ?? 'auto',
+        controlOpacity: saveData.S?.['6'] ?? 0.85,
+        controlSize: saveData.S?.['7'] ?? 1,
+        hapticsEnabled: saveData.S?.['8'] !== 0,
       },
     };
     

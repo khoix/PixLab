@@ -122,3 +122,25 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Verification
 - E2e: `e2e/m4-state-hud.spec.ts` — modifier stacking, timer pause on menu, batch flush rate
+
+---
+
+## Milestone 5 — Mobile UX & Controls
+
+**Branch:** `cursor/m5-mobile-ux-aa59`  
+**Status:** Ready for review
+
+### Added
+- **Input buffering** — `bufferDirection` / `applyBuffered` in `gameInput.ts`; applied on next legal move tick
+- **Quick-heal button** — mobile floating heal (smallest potion), equivalent to desktop `Q`
+- **`haptics.ts`** — vibration on damage, pickup, sector clear; respects reduced-motion + setting
+- **Vision debuff HUD** — Nyx blight indicator with severity bar via `runtimeRefs.ts`
+- **Control accessibility settings** — opacity + size sliders; haptics on/off
+
+### Changed
+- **Mobile layout** — safe-area insets, short viewport tuning, D-pad/HUD separation
+- **Controls** — D-pad/joystick use CSS variables for opacity/scale from settings
+- **Landscape** — portrait recommendation hint on short landscape phones
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts` — buffer API, settings sliders, quick heal, layout overlap

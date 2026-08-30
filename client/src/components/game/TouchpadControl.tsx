@@ -121,6 +121,7 @@ export const TouchpadControl: React.FC<TouchpadControlProps> = ({ onMove }) => {
   return (
     <div
       ref={containerRef}
+      data-testid="mobile-touchpad-control"
       className="md:hidden fixed inset-0 z-50 touch-none pointer-events-auto"
       onMouseDown={handleTouchStart}
       onTouchStart={handleTouchStart}
