@@ -25,7 +25,21 @@ import {
 } from '../../lib/game/renderQuality';
 import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/renderer/canvasSizing';
 import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
-import { buildDrawFrameSnapshot, buildModifiers } from '../../lib/game/renderer/drawSnapshot';
+import { buildDrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
+import { buildModifiers } from '../../lib/game/modifiers';
+import {
+  flushGameLoopBatch,
+  queueCompendiumUnlock,
+  queueStatsUpdate,
+  resetGameLoopBatch,
+} from '../../lib/game/gameLoopBatch';
+import {
+  getSectorElapsedMs,
+  getSectorTimeLimitMs,
+  popSectorTimerPause,
+  pushSectorTimerPause,
+  resetSectorTimer,
+} from '../../lib/game/sectorTimer';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -189,6 +203,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
   }, [inputDirection?.x, inputDirection?.y]);
 
+  // Pause sector timer during bonus selection (mirrors timeout freeze)
+  useEffect(() => {
+    if (showBonusSelection) {
+      pushSectorTimerPause('bonus');
+      return () => popSectorTimerPause('bonus');
+    }
+    return undefined;
+  }, [showBonusSelection]);
+
   // Handle pending scroll actions (excluding Commerce, which is handled in Game.tsx)
   useEffect(() => {
     if (state.pendingScrollAction && levelRef.current && state.pendingScrollAction.type !== 'scroll_commerce') {
@@ -320,6 +343,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     levelRef.current = level;
     tileLayerCache.invalidate();
     fogLayerCache.invalidate();
+    resetGameLoopBatch();
+    resetSectorTimer(Date.now());
     playerPosRef.current = { ...level.startPos };
     visualPosRef.current = { ...level.startPos };
     moveStartPosRef.current = { ...level.startPos };
@@ -465,6 +490,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   };
 
   const update = (deltaTime: number) => {
+    try {
     if (!levelRef.current) return;
 
     if (perfMonitor.isActive()) {
@@ -503,8 +529,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Check if temporary vision boost has expired
     if (temporaryVisionBoostRef.current && now >= temporaryVisionBoostRef.current.endTime) {
       temporaryVisionBoostRef.current = null;
-      // Clear from state (dispatch will trigger re-render and sync ref)
-      dispatch({ type: 'UPDATE_STATS', payload: {} });
     }
 
     // Check if lightswitch reveal has expired
@@ -523,7 +547,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         if (now >= phasingEffect.endTime) {
           // Phasing expired
           activeScrollEffectsRef.current.phasing = null;
-          dispatch({ type: 'UPDATE_STATS', payload: {} }); // Trigger state update
         }
       }
     }
@@ -531,9 +554,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Check time limit
     // Don't check timer during bonus selection to prevent game over while player is choosing
     if (!levelRef.current.isShop && !levelRef.current.isBoss && !showBonusSelection) {
-      const modifiers = getModifiers();
-      const timeLimit = LEVEL_TIME_LIMIT * modifiers.timerMult * 1000; // ms
-      const elapsed = Date.now() - levelStartTimeRef.current;
+      const timeLimit = getSectorTimeLimitMs(activeModsRef.current);
+      const elapsed = getSectorElapsedMs(now);
       
       if (elapsed > timeLimit && !gameOverTriggeredRef.current) {
         gameOverTriggeredRef.current = true;
@@ -883,8 +905,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 const assists = getSoftAssistAdjustments(metrics.economyRatio);
                 coinReward = Math.floor(coinReward * assists.coinRewardMultiplier);
                 
-                // Use base stats from ref to ensure we have latest coins value
-                dispatch({ type: 'UPDATE_STATS', payload: { coins: baseStats.coins + coinReward } });
+                statsRef.current = { ...statsRef.current, coins: statsRef.current.coins + coinReward };
+                queueStatsUpdate({ coins: statsRef.current.coins });
                 
                 // Log coin collection event
                 eventLogger.logEvent('loot', `Collected ${coinReward} coins`, {
@@ -893,7 +915,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 
                 // Unlock compendium card on first defeat
                 if (enemy.mobSubtype) {
-                  dispatch({ type: 'UNLOCK_COMPENDIUM_CARD', payload: enemy.mobSubtype });
+                  queueCompendiumUnlock(enemy.mobSubtype);
                 }
                 
                 // Check if all non-boss enemies are cleared
@@ -976,7 +998,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             
             // Update stats immediately - dispatch is fast and shouldn't block
             audioManager.playSound('damage');
-            dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+            statsRef.current = { ...statsRef.current, hp: newHp };
+            queueStatsUpdate({ hp: newHp });
             
             // Log damage event (projectile/ranged attack)
             eventLogger.logEvent('combat', `Took ${damage} damage from ${attackerTypeName}`, {
@@ -1130,7 +1153,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           // Hit player - chip damage
           const chipDamage = afterimage.damage;
           const newHp = Math.max(0, baseStats.hp - chipDamage);
-          dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+          statsRef.current = { ...statsRef.current, hp: newHp };
+          queueStatsUpdate({ hp: newHp });
           if (newHp <= 0 && !gameOverTriggeredRef.current) {
             gameOverTriggeredRef.current = true;
             requestAnimationFrame(() => {
@@ -2043,7 +2067,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   
                   enemyDamageCooldownRef.current.set(entity.id, now);
                   audioManager.playSound('damage');
-                  dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+                  statsRef.current = { ...statsRef.current, hp: newHp };
+            queueStatsUpdate({ hp: newHp });
                   
                   // Log damage event (Cerberus bite)
                   const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
@@ -2078,7 +2103,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 
                 enemyDamageCooldownRef.current.set(entity.id, now);
                 audioManager.playSound('damage');
-                dispatch({ type: 'UPDATE_STATS', payload: { hp: newHp } });
+                statsRef.current = { ...statsRef.current, hp: newHp };
+            queueStatsUpdate({ hp: newHp });
                 
                 // Log damage event
                 const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
@@ -2161,6 +2187,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       levelRef.current.entities = levelRef.current.entities.filter(e => 
         !((e.type === 'enemy' || e.type === 'boss_enemy') && e.hp <= 0)
       );
+    }
+    } finally {
+      flushGameLoopBatch(dispatch);
     }
   };
 
@@ -3473,9 +3502,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Check window width directly for immediate detection (mobile breakpoint is 768px)
     const isMobileWidth = window.innerWidth < 768;
     if (isMobileWidth && levelRef.current && !levelRef.current.isShop && !levelRef.current.isBoss && !showBonusSelection) {
-      const modifiers = frame.modifiers;
-      const timeLimit = LEVEL_TIME_LIMIT * modifiers.timerMult * 1000; // ms
-      const elapsed = Date.now() - levelStartTimeRef.current;
+      const timeLimit = getSectorTimeLimitMs(activeModsRef.current);
+      const elapsed = getSectorElapsedMs();
       const remaining = Math.max(0, timeLimit - elapsed);
       const progress = Math.min(1, remaining / timeLimit);
       

@@ -4,6 +4,7 @@ declare global {
   interface Window {
     __PIXLAB_TEST__?: {
       updateSettings: (payload: Partial<GameState['settings']>) => void;
+      setActiveMods: (mods: string[]) => void;
     };
   }
 }

@@ -1,15 +1,9 @@
-import { MODS } from '../constants';
 import { getEffectiveStats } from '../stats';
+import { buildModifiers, type ModifierSnapshot } from '../modifiers';
 import type { GameState, PlayerStats } from '../types';
 
-export interface ModifierSnapshot {
-  enemyHp: number;
-  coinMult: number;
-  timerMult: number;
-  visionMult: number;
-  explosiveDeaths: boolean;
-  autoReveal: boolean;
-}
+export type { ModifierSnapshot };
+export { buildModifiers };
 
 export interface DrawFrameSnapshot {
   modifiers: ModifierSnapshot;
@@ -23,26 +17,6 @@ export interface DrawFrameSnapshot {
   fogRadius: number;
   fogCenterX: number;
   fogCenterY: number;
-}
-
-export function buildModifiers(activeModIds: string[]): ModifierSnapshot {
-  const modifiers: ModifierSnapshot = {
-    enemyHp: 1,
-    coinMult: 1,
-    timerMult: 1,
-    visionMult: 1,
-    explosiveDeaths: false,
-    autoReveal: false,
-  };
-
-  activeModIds.forEach((modId) => {
-    const mod = MODS.find((entry) => entry.id === modId);
-    if (mod?.modifiers) {
-      Object.assign(modifiers, mod.modifiers);
-    }
-  });
-
-  return modifiers;
 }
 
 interface BuildDrawFrameSnapshotInput {
