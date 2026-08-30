@@ -15,6 +15,14 @@ import { PerfOverlay } from './PerfOverlay';
 import { isPerfOverlayEnabled } from '../../lib/game/perfFlags';
 import { perfMonitor } from '../../lib/game/perfMonitor';
 import { gameInputDirectionRef } from '../../lib/game/gameInput';
+import {
+  installShadowQualityGate,
+  resolveRenderQuality,
+  setShadowTier,
+  strokeGlowRect,
+  strokeGlowCircle,
+  MOBILE_BREAKPOINT,
+} from '../../lib/game/renderQuality';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -131,6 +139,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const activeModsRef = useRef<string[]>(state.activeMods);
   const temporaryVisionBoostRef = useRef<typeof state.temporaryVisionBoost>(state.temporaryVisionBoost);
   const activeScrollEffectsRef = useRef<typeof state.activeScrollEffects>(state.activeScrollEffects);
+  const settingsRef = useRef(state.settings);
   const canvasSizeRef = useRef({ width: window.innerWidth, height: window.innerHeight });
   const lastPlayerPosRef = useRef<Position>({ x: 0, y: 0 });
   const previousEnemyIdsRef = useRef<Set<string>>(new Set());
@@ -172,7 +181,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     activeModsRef.current = state.activeMods;
     temporaryVisionBoostRef.current = state.temporaryVisionBoost;
     activeScrollEffectsRef.current = state.activeScrollEffects;
-  }, [state.stats, state.loadout, state.activeMods, state.temporaryVisionBoost, state.activeScrollEffects]);
+    settingsRef.current = state.settings;
+  }, [state.stats, state.loadout, state.activeMods, state.temporaryVisionBoost, state.activeScrollEffects, state.settings]);
 
   // Sync optional prop input (Demo sandbox) into shared input ref
   useEffect(() => {
@@ -2144,12 +2154,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   };
 
   const draw = () => {
+    let restoreShadowGate: (() => void) | null = null;
     // Wrap entire draw function in try-catch to ensure it always completes
     try {
       const canvas = canvasRef.current;
       if (!canvas || !levelRef.current) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
+      const isMobileViewport =
+        canvas.clientWidth < MOBILE_BREAKPOINT || window.innerWidth < MOBILE_BREAKPOINT;
+      const effectiveQuality = resolveRenderQuality(
+        settingsRef.current.renderQuality ?? 'auto',
+        isMobileViewport,
+      );
+      restoreShadowGate = installShadowQualityGate(ctx, effectiveQuality);
 
     // Get color theme for current level (changes every 4 sectors)
     const theme = getThemeForLevel(state.currentLevel);
@@ -2237,6 +2256,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             ctx.fillRect(tileX + holePadding, tileY + holePadding, TILE_SIZE - holePadding * 2, TILE_SIZE - holePadding * 2);
             
             // Add glow effect around the hole
+            setShadowTier('exit');
             ctx.shadowColor = COLORS.exit;
             ctx.shadowBlur = 8;
             ctx.strokeStyle = COLORS.exit;
@@ -2425,6 +2445,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     // Draw Entities with unique appearances
     levelRef.current.entities.forEach(entity => {
+      setShadowTier(entity.isBoss ? 'boss' : 'generic');
       let color = COLORS.enemy;
       let size = TILE_SIZE - 8;
       
@@ -2519,6 +2540,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           ctx.beginPath();
           ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
           ctx.fill();
+        }
+
+        if (effectiveQuality === 'low') {
+          strokeGlowCircle(ctx, centerX, centerY, size / 2, color, 2);
         }
       } else if (entity.mobSubtype === 'phase') {
         // Hades Phase: Ghost/wraith appearance with bright eyes
@@ -3159,6 +3184,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
 
     // Draw Player at visual position for smooth animation
+    setShadowTier('player');
     const isPhasing = activeScrollEffectsRef.current.phasing && activeScrollEffectsRef.current.phasing.active;
     
     // Visual indicator for phasing (semi-transparent with glow)
@@ -3176,6 +3202,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     ctx.fillRect(visualPosRef.current.x * TILE_SIZE + 10, visualPosRef.current.y * TILE_SIZE + 10, TILE_SIZE - 20, TILE_SIZE - 20);
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1.0;
+
+    if (effectiveQuality === 'low') {
+      const playerX = visualPosRef.current.x * TILE_SIZE + 6;
+      const playerY = visualPosRef.current.y * TILE_SIZE + 6;
+      const playerSize = TILE_SIZE - 12;
+      strokeGlowRect(ctx, playerX, playerY, playerSize, playerSize, COLORS.player, 2);
+    }
 
     ctx.restore();
 
@@ -3506,6 +3539,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     } catch (error) {
       // If draw fails, log error but don't block the game loop
       console.error('Error in draw function:', error);
+    } finally {
+      restoreShadowGate?.();
     }
   };
 
@@ -3658,7 +3693,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         ref={canvasRef} 
         width={canvasSizeRef.current.width} 
         height={canvasSizeRef.current.height}
-        className="block touch-none"
+        className="game-canvas block touch-none"
         style={{ position: 'relative', zIndex: 0 }}
       />
       <PerfOverlay visible={showPerfOverlay && perfMonitor.isActive()} />

@@ -48,3 +48,31 @@ npm run test:e2e:ui     # interactive UI mode
 ### Notes
 - `GameCanvas` unmounts when leaving `run` screen, which stops RAF; visibility gating covers tab background during active runs.
 - Demo sandbox still passes optional `inputDirection` prop (synced into shared ref).
+
+---
+
+## Milestone 2 — Mobile Render Quality Preset
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Added
+- **`renderQuality.ts`** — quality resolution, shadow tier gating via `installShadowQualityGate`, low-quality outline helpers
+- **`settings.renderQuality`** — `auto | high | medium | low` persisted in game state and save codec
+- **Lobby settings UI** — render quality radio group with test ids
+- **`game-canvas` class** on gameplay canvas (activates `mobile.css` touch rules)
+- **Perf overlay** — shows active render quality when `?perf=1`
+
+### Behavior
+| Setting | Desktop | Mobile (auto) |
+|---------|---------|---------------|
+| auto | high | low |
+| high | all shadows | all shadows |
+| medium | all shadows | player/boss/exit shadows only |
+| low | outline glow, no shadows | outline glow, no shadows |
+
+### Verification
+- E2e: `e2e/m2-render-quality.spec.ts` (auto mobile/desktop + user override + canvas class)
+
+### Notes
+- DPR / canvas backing-store cap deferred to M3.

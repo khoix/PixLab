@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { perfMonitor, type PerfSnapshot } from '../../lib/game/perfMonitor';
+import { getActiveRenderQuality } from '../../lib/game/renderQuality';
 
 interface PerfOverlayProps {
   visible: boolean;
@@ -39,6 +40,7 @@ export const PerfOverlay: React.FC<PerfOverlayProps> = ({ visible }) => {
       <div>Loop restarts: {snapshot.loopRestarts}</div>
       <div>Input updates: {snapshot.inputDirectionUpdates}</div>
       <div>Samples: {snapshot.sampleCount}</div>
+      <div>Quality: {getActiveRenderQuality()}</div>
     </div>
   );
 };

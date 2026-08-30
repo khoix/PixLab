@@ -29,6 +29,7 @@ import { recordItemOffer, markOfferPurchased, getSoftAssistAdjustments, getOffer
 import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
+import type { GameState } from '../lib/game/types';
 import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
@@ -172,6 +173,18 @@ export default function Game() {
   const [commerceScrollRarity, setCommerceScrollRarity] = useState<Item['rarity'] | null>(null);
   const { toast } = useToast();
   const hasHandledRefresh = useRef(false);
+
+  // E2e/test hook for settings updates (avoids background canvas intercepting UI clicks)
+  useEffect(() => {
+    window.__PIXLAB_TEST__ = {
+      updateSettings: (payload: Partial<GameState['settings']>) => {
+        dispatch({ type: 'UPDATE_SETTINGS', payload });
+      },
+    };
+    return () => {
+      delete window.__PIXLAB_TEST__;
+    };
+  }, [dispatch]);
 
   // Handle page refresh - clean up game state and navigate to Home (no UI prompt)
   useEffect(() => {
@@ -737,7 +750,7 @@ export default function Game() {
                 </TabsTrigger>
                 <TabsTrigger value="compendium" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">COMPENDIUM</TabsTrigger>
                 <TabsTrigger value="mods" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MODS</TabsTrigger>
-                <TabsTrigger value="settings" className="w-auto aspect-square font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
+                <TabsTrigger value="settings" data-testid="lobby-settings-tab" className="w-auto aspect-square font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
                   <Settings className="w-4 h-4" />
                 </TabsTrigger>
               </TabsList>
@@ -1204,6 +1217,45 @@ export default function Game() {
                           <RadioGroupItem value="joystick" id="joystick" style={{ minWidth: '40px' }} />
                           <label htmlFor="joystick" className="text-sm font-mono text-foreground cursor-pointer">
                             Virtual Joystick
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>
+                      <RadioGroup
+                        value={(state.settings.renderQuality || 'auto') as 'auto' | 'high' | 'medium' | 'low'}
+                        onValueChange={(value) => {
+                          dispatch({
+                            type: 'UPDATE_SETTINGS',
+                            payload: { renderQuality: value as 'auto' | 'high' | 'medium' | 'low' },
+                          });
+                        }}
+                        className="flex flex-col gap-3"
+                        data-testid="render-quality-settings"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="auto" id="render-auto" data-testid="render-quality-auto" style={{ minWidth: '40px' }} />
+                          <label htmlFor="render-auto" className="text-sm font-mono text-foreground cursor-pointer">
+                            Auto (mobile = low, desktop = high)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="high" id="render-high" data-testid="render-quality-high" style={{ minWidth: '40px' }} />
+                          <label htmlFor="render-high" className="text-sm font-mono text-foreground cursor-pointer">
+                            High (all shadows)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="medium" id="render-medium" data-testid="render-quality-medium" style={{ minWidth: '40px' }} />
+                          <label htmlFor="render-medium" className="text-sm font-mono text-foreground cursor-pointer">
+                            Medium (player, boss, exit shadows)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="low" id="render-low" data-testid="render-quality-low" style={{ minWidth: '40px' }} />
+                          <label htmlFor="render-low" className="text-sm font-mono text-foreground cursor-pointer">
+                            Low (no shadows, outline glow)
                           </label>
                         </div>
                       </RadioGroup>

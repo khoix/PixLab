@@ -72,12 +72,12 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Problem:** 50+ `shadowBlur` calls per frame and full-window canvas are expensive on mobile GPUs.
 
 **Tasks:**
-- [ ] Add `settings.renderQuality`: `'auto' | 'high' | 'medium' | 'low'`
-- [ ] Auto-detect: `low` on mobile (`useIsMobile`), `high` on desktop; allow override in settings menu
-- [ ] **Low:** Remove all `shadowBlur`; use solid outlines / simple color brightening for glow
-- [ ] **Medium:** Shadows on player, bosses, exit only
-- [ ] **High:** Current behavior
-- [ ] Add `game-canvas` class to canvas element (fixes dead CSS in `mobile.css`)
+- [x] Add `settings.renderQuality`: `'auto' | 'high' | 'medium' | 'low'`
+- [x] Auto-detect: `low` on mobile (`useIsMobile`), `high` on desktop; allow override in settings menu
+- [x] **Low:** Remove all `shadowBlur`; use solid outlines / simple color brightening for glow
+- [x] **Medium:** Shadows on player, bosses, exit only
+- [x] **High:** Current behavior
+- [x] Add `game-canvas` class to canvas element (fixes dead CSS in `mobile.css`)
 - [ ] Optionally cap canvas backing store resolution on mobile (see Milestone 3)
 
 **Files:**
