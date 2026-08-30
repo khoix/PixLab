@@ -1,0 +1,319 @@
+# PixLab Optimization & Gameplay Plan
+
+Execution plan for performance optimization and gameplay improvements on web and mobile. Milestones are ordered by dependency and impact; each milestone should be shippable on its own.
+
+**Scope:** Client-side game (`client/src/`), primarily `GameCanvas.tsx`, mobile controls, HUD, and balance constants.
+
+**Success criteria (overall):**
+- Stable 60fps on mid-range mobile during active gameplay (sector run screen)
+- No React re-renders on every touch tick during movement
+- Mobile controls feel responsive with input buffering
+- Timer, combat, and modifier behavior are consistent across HUD and game loop
+- Measurable before/after via browser Performance tab + manual mobile smoke test
+
+---
+
+## Milestone 0 — Baseline & Instrumentation
+
+**Goal:** Establish metrics before changing behavior so later milestones can be validated.
+
+**Tasks:**
+- [ ] Add a dev-only FPS overlay (toggle via query param or settings flag)
+- [ ] Record baseline on desktop Chrome: avg frame time, `draw()` duration, entity count at sector 10+
+- [ ] Record baseline on mobile viewport emulation (375×667) and, if available, a real device
+- [ ] Document current input path: D-pad interval → `setInputDir` → game loop effect restart count
+- [ ] Snapshot current sector-clear rate and average time-to-exit at sectors 5, 10, 20 (manual playtest notes)
+
+**Deliverables:**
+- Baseline numbers captured in this file (append a "Results" subsection after testing)
+- Dev FPS overlay (optional, dev-only)
+
+**Exit criteria:** Team can compare frame time and input latency before/after Milestone 1.
+
+**Estimated invasiveness:** Low — diagnostics only, no gameplay changes.
+
+---
+
+## Milestone 1 — Hot Path: Input & Game Loop
+
+**Goal:** Remove React from the movement hot path and stop unnecessary RAF loop churn.
+
+**Problem:** `GameCanvas` game loop depends on `[inputDirection]`; mobile D-pad calls `setInputDir` every 16ms, causing re-renders and loop teardown/restart.
+
+**Tasks:**
+- [ ] Add `inputDirectionRef` in `GameCanvas`; read it inside `update()` instead of closure over prop
+- [ ] Remove `inputDirection` from the game loop `useEffect` dependency array (empty deps + stable refs)
+- [ ] Update `Game.tsx` `handleMove` to write to a ref passed into `GameCanvas`, or expose a ref callback; only call `setInputDir` when direction *changes* (for UI that needs it)
+- [ ] Update `DirectionalPadControl`, `VirtualJoystick`, and `TouchpadControl` to avoid redundant `onMove` calls when direction is unchanged
+- [ ] Replace D-pad `setInterval(16ms)` with hold-to-move: set direction on touch start, clear on touch end; let game loop consume held direction
+- [ ] Gate RAF loop: start only when `state.screen === 'run'`, cancel when leaving run screen
+- [ ] Add `document.visibilitychange` handler: pause loop + pause audio when hidden; resume on visible
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx`
+- `client/src/pages/Game.tsx`
+- `client/src/components/game/DirectionalPadControl.tsx`
+- `client/src/components/game/VirtualJoystick.tsx`
+- `client/src/components/game/TouchpadControl.tsx`
+
+**Exit criteria:**
+- Holding a direction on mobile does not trigger React re-renders every frame
+- Game loop does not restart when input is held steady
+- No CPU use from RAF when on title/lobby or tab is backgrounded
+
+**Depends on:** Milestone 0 (optional but recommended)
+
+---
+
+## Milestone 2 — Mobile Render Quality Preset
+
+**Goal:** Cut Canvas 2D GPU cost on mobile without changing desktop visuals.
+
+**Problem:** 50+ `shadowBlur` calls per frame and full-window canvas are expensive on mobile GPUs.
+
+**Tasks:**
+- [ ] Add `settings.renderQuality`: `'auto' | 'high' | 'medium' | 'low'`
+- [ ] Auto-detect: `low` on mobile (`useIsMobile`), `high` on desktop; allow override in settings menu
+- [ ] **Low:** Remove all `shadowBlur`; use solid outlines / simple color brightening for glow
+- [ ] **Medium:** Shadows on player, bosses, exit only
+- [ ] **High:** Current behavior
+- [ ] Add `game-canvas` class to canvas element (fixes dead CSS in `mobile.css`)
+- [ ] Optionally cap canvas backing store resolution on mobile (see Milestone 3)
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx`
+- `client/src/lib/store.tsx` (settings type + persistence)
+- `client/src/pages/Game.tsx` (settings UI)
+- `client/src/styles/mobile.css`
+
+**Exit criteria:**
+- Mobile preset shows visibly smoother scrolling/panning in combat-heavy sectors
+- Desktop unchanged at `high` quality
+- User can override quality in menu
+
+**Depends on:** Milestone 1 (loop gating makes A/B testing easier)
+
+---
+
+## Milestone 3 — Canvas & Fog Optimizations
+
+**Goal:** Reduce per-frame draw cost through caching and smarter buffer sizing.
+
+**Tasks:**
+- [ ] **DPR scaling:** Set `canvas.width/height = logicalSize * min(dpr, 2)`; `ctx.scale(dpr, dpr)` for crisp pixels without 3x cost
+- [ ] **Fog layer cache:** Render fog radial gradient to offscreen canvas; redraw only when vision radius, debuff, lightswitch, scroll effects, or canvas size change
+- [ ] **Static tile cache (optional):** Pre-render wall/floor tiles for current sector to offscreen buffer; blit each frame instead of redrawing every tile
+- [ ] **Per-frame dedup:** Compute `getModifiers()` + `getEffectiveStats()` once per frame into a snapshot object; use `activeModsRef` inside loop
+- [ ] Consider fixed logical viewport (11×15 tiles from constants) instead of full window if full-screen canvas remains costly
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx`
+- New (optional): `client/src/lib/game/renderer/fogLayer.ts`, `tileLayer.ts`
+
+**Exit criteria:**
+- Fog gradient not recreated every frame during stationary gameplay
+- Frame time in `draw()` reduced vs Milestone 0 baseline (target: 30%+ on mobile emulation)
+
+**Depends on:** Milestone 2 (quality preset defines shadow/fog tradeoffs)
+
+---
+
+## Milestone 4 — State Updates & HUD Consistency
+
+**Goal:** Reduce React dispatch churn from the game loop and fix modifier/timer inconsistencies.
+
+**Tasks:**
+- [ ] Batch non-critical `dispatch()` calls from game loop (coins, compendium unlock) into a single flush per frame or on event boundary
+- [ ] Remove no-op dispatches used only to trigger re-renders (e.g. `UPDATE_STATS` with `{}`); use refs + infrequent sync instead
+- [ ] Fix modifier stacking: multiply numeric modifiers (`timerMult`, `visionMult`, `enemyHp`, `coinMult`); OR booleans for flags — shared helper used by `GameCanvas` and `HUD`
+- [ ] Single source of truth for sector timer: either HUD reads from game loop ref or GameCanvas exposes `timeLeftRef`; remove duplicate 100ms HUD interval logic if redundant
+- [ ] Pause sector timer while inventory, menu, or commerce vendor dialogs are open (mobile parity with bonus-selection pause)
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx`
+- `client/src/components/game/HUD.tsx`
+- `client/src/lib/game/modifiers.ts` (new shared helper)
+- `client/src/pages/Game.tsx`
+
+**Exit criteria:**
+- Multiple mods stack correctly when enabled together (test with Zeus + Hades + Artemis)
+- Timer does not count down while inventory is open
+- Fewer React commits per second during combat
+
+**Depends on:** Milestone 1
+
+---
+
+## Milestone 5 — Mobile UX & Controls
+
+**Goal:** Make touch play feel intentional, not a compromised desktop port.
+
+**Tasks:**
+- [ ] **Input buffering:** Queue next direction during tile interpolation; apply on next legal move tick
+- [ ] **Quick-heal button:** Floating mobile button (smallest healing potion), equivalent to desktop `Q`
+- [ ] **Layout pass:** Resolve D-pad / HUD overlap on short viewports (iPhone SE class); use safe-area insets consistently
+- [ ] **Haptic feedback:** `navigator.vibrate()` on hit, pickup, sector clear (respect reduced-motion / user setting)
+- [ ] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator
+- [ ] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
+- [ ] Evaluate landscape hint or adaptive HUD layout for phones in landscape
+
+**Files:**
+- `client/src/pages/Game.tsx`
+- `client/src/components/game/DirectionalPadControl.tsx`
+- `client/src/components/game/HUD.tsx`
+- `client/src/styles/mobile.css`
+
+**Exit criteria:**
+- Player can heal without opening full inventory on mobile
+- No overlapping touch targets on 375×667 viewport
+- Direction changes during movement feel responsive (buffering)
+
+**Depends on:** Milestone 1, Milestone 4 (timer pause in dialogs)
+
+---
+
+## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
+
+**Goal:** Improve fairness and pacing, especially for mobile sessions.
+
+**Tasks:**
+- [ ] **Decouple move speed from DPS:** Introduce separate attack cadence or cooldown floor; update `scaling.ts` `baseAttackRate` assumptions
+- [ ] **Mobile timer adjustment:** +15–20% sector time on mobile OR configurable "relaxed timer" setting; document in constants
+- [ ] **Low-time assist:** When timer < 30s, optional subtle path hint toward exit (BFS distance overlay or compass pulse)
+- [ ] **Attack telegraphs:** Wind-up flash or aim line for sniper, turret, and boss ranged attacks before projectile spawn
+- [ ] **Cerberus tuning:** Revisit tri-bite damage/window per `docs/BALANCE_ANALYSIS.md`; ensure mobile reaction time is feasible
+- [ ] **Hit feedback:** Brief damage flash or floating damage numbers on enemies
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx`
+- `client/src/lib/game/constants.ts`
+- `client/src/lib/game/scaling.ts`
+- `client/src/lib/game/stats.ts`
+
+**Exit criteria:**
+- Speed gear no longer double-dips movement and scaling DPS without tradeoffs
+- Playtest notes: sector 10 completable on mobile without timer frustration
+- Ranged enemies telegraph before firing
+
+**Depends on:** Milestone 4 (consistent timer), Milestone 5 (mobile UX)
+
+---
+
+## Milestone 7 — AI & Late-Game Performance
+
+**Goal:** Keep frame times stable as enemy count and sector level grow.
+
+**Tasks:**
+- [ ] Skip AI updates for mobs outside `aggroRange + buffer` of player
+- [ ] Stagger mob AI: update subset per frame (e.g. ⅓ of active mobs per frame)
+- [ ] Cache line-of-sight for stationary entities until player or entity moves
+- [ ] Profile mob update block at sector 20+ with 15+ enemies; target specific hotspots
+
+**Files:**
+- `client/src/components/game/GameCanvas.tsx` (or extracted `GameEngine` — see Milestone 8)
+
+**Exit criteria:**
+- Frame time does not scale linearly with total entity count on map
+- No observable AI regressions (mobs still aggro and attack correctly in range)
+
+**Depends on:** Milestone 3 (render opt baseline), Milestone 1 (stable loop)
+
+---
+
+## Milestone 8 — Architecture Refactor (Enabler)
+
+**Goal:** Split monolithic `GameCanvas.tsx` so future features and optimizations are localized.
+
+**Tasks:**
+- [ ] Extract **`GameEngine`**: pure `update(state, deltaTime, input)` — movement, combat, AI, timers; no Canvas/DOM
+- [ ] Extract **`CanvasRenderer`**: `draw(state, qualityPreset, layerCaches)` — all draw calls
+- [ ] Extract **`InputManager`**: ref-based direction queue, keyboard + touch normalization
+- [ ] `GameCanvas` becomes thin orchestrator: RAF, resize, refs, React lifecycle
+- [ ] Add unit tests for `GameEngine` update ticks (movement, collision, damage)
+- [ ] Keep public behavior identical; no gameplay changes in this milestone unless fixing bugs found during extraction
+
+**Files:**
+- `client/src/lib/game/engine/` (new directory)
+- `client/src/components/game/GameCanvas.tsx` (slimmed)
+
+**Exit criteria:**
+- `GameCanvas.tsx` under ~800 lines
+- At least 5 engine unit tests passing
+- No regressions in manual smoke test (move, fight, exit, boss, shop)
+
+**Depends on:** Milestones 1–4 (stabilize hot path before large refactor)
+
+---
+
+## Milestone 9 — Progression & Variety (Optional / Post-Launch)
+
+**Goal:** Deepen roguelike replayability after core perf and feel are solid.
+
+**Tasks:**
+- [ ] Sector modifiers (dark sector, overclocked, etc.) beyond lobby mods
+- [ ] Elite dead-end rooms with guaranteed rare drops
+- [ ] Compendium-linked boss pattern hints during fights
+- [ ] Rebalance mystery box / skip bonuses at high levels
+- [ ] Compact mid-run commerce UI for mobile
+
+**Depends on:** Milestone 8 (easier to add systems cleanly)
+
+---
+
+## Execution Order Summary
+
+```
+M0 Baseline
+  └─► M1 Input & Loop ──┬─► M2 Render Quality
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M6 Balance
+                        └─► M3 Canvas/Fog (after M2)
+                                      └─► M7 AI Perf
+                                                └─► M8 Refactor
+                                                          └─► M9 Variety
+```
+
+| Milestone | Theme | Priority | Risk |
+|-----------|-------|----------|------|
+| M0 | Instrumentation | P0 | Low |
+| M1 | Input & game loop | P0 | Medium |
+| M2 | Mobile render preset | P0 | Low |
+| M3 | Fog/tile cache, DPR | P1 | Medium |
+| M4 | State batching, modifiers | P1 | Medium |
+| M5 | Mobile UX | P1 | Low |
+| M6 | Balance & clarity | P2 | Medium |
+| M7 | AI performance | P2 | Medium |
+| M8 | Architecture split | P2 | High |
+| M9 | Content/variety | P3 | Low |
+
+---
+
+## Testing Checklist (Run After Each Milestone)
+
+- [ ] New game → sector 1: move, pickup, combat, exit
+- [ ] Sector with shop (4) and boss (8)
+- [ ] Mobile D-pad, joystick, and touchpad schemes
+- [ ] Inventory open/close during run; timer behavior verified
+- [ ] Tab backgrounded → loop paused, no runaway audio
+- [ ] Window resize / rotate orientation
+- [ ] Save code load and resume
+- [ ] Active mods: verify stacked modifiers in HUD and actual gameplay
+- [ ] Performance: FPS overlay or Performance tab — compare to M0 baseline
+
+---
+
+## Results (Fill After Milestone 0)
+
+| Metric | Desktop Baseline | Mobile Baseline | Target After M1–M3 |
+|--------|------------------|-----------------|---------------------|
+| Avg frame time (ms) | | | ≤ 16ms mobile |
+| draw() time (ms) | | | 30% reduction |
+| React commits/sec (held input) | | | ~0 |
+| Sector 10 clear time (s) | | | Subjective: less friction |
+
+---
+
+## References
+
+- Prior review: performance hotspots in `GameCanvas.tsx` (shadowBlur, fog gradient, full redraw)
+- Existing docs: `docs/REVIEW_ISSUES.md`, `docs/BALANCE_ANALYSIS.md`
+- Key constants: `client/src/lib/game/constants.ts` (`TILE_SIZE`, `LEVEL_TIME_LIMIT`, `MODS`)
