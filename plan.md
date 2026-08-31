@@ -156,17 +156,21 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator
 - [x] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
 - [x] **Landscape hint:** Portrait recommendation banner on short landscape viewports
+- [x] **Vertical sector timer (mobile):** Right-edge bar drains top → bottom; avoids browser chrome covering bottom bar
 
 **Files:**
 - `client/src/pages/Game.tsx`
 - `client/src/components/game/DirectionalPadControl.tsx`
 - `client/src/components/game/HUD.tsx`
+- `client/src/components/game/SectorTimerBar.tsx`
+- `client/src/components/game/GameCanvas.tsx`
 - `client/src/styles/mobile.css`
 
 **Exit criteria:**
 - Player can heal without opening full inventory on mobile
 - No overlapping touch targets on 375×667 viewport
 - Direction changes during movement feel responsive (buffering)
+- Sector timer visible on mobile Chrome/Safari (not hidden by browser UI)
 
 **Depends on:** Milestone 1, Milestone 4 (timer pause in dialogs)
 

@@ -92,4 +92,30 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(layout?.inLowerBand).toBe(true);
     expect(layout?.aboveDpadCenter).toBe(true);
   });
+
+  test('mobile sector timer bar is on right edge away from browser chrome', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await startSectorRun(page);
+
+    const timer = page.getByTestId('mobile-sector-timer-bar');
+    await expect(timer).toBeVisible();
+    await expect(page.getByTestId('hud-sector-timer')).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const bar = document.querySelector('[data-testid="mobile-sector-timer-bar"]') as HTMLElement | null;
+      if (!bar) return null;
+      const rect = bar.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      return {
+        onRightEdge: rect.right >= vw - 24,
+        notBottomPinned: rect.bottom < vh - 48,
+        hasHeight: rect.height > 80,
+      };
+    });
+
+    expect(layout?.onRightEdge).toBe(true);
+    expect(layout?.notBottomPinned).toBe(true);
+    expect(layout?.hasHeight).toBe(true);
+  });
 });
