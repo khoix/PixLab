@@ -6,15 +6,6 @@
  */
 
 @media (min-width: 768px) {
-  .lobby-page-grid {
-    grid-template-rows: minmax(0, 1fr);
-    align-items: stretch;
-  }
-
-  .lobby-page-shell {
-    max-height: 100%;
-  }
-
   /* Custom Scrollbar Styling - Cyberpunk Theme */
   /* Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {

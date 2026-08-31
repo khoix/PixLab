@@ -58,6 +58,29 @@ test.describe('M5.2 — Viewport-locked lobby layout', () => {
     expect(centered).toBe(true);
   });
 
+  test('lobby title is not clipped and tabs card is not over-stretched', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openLobby(page);
+
+    const layout = await page.evaluate(() => {
+      const title = document.querySelector('.lobby-page-title h1');
+      const tabsCard = document.querySelector('.lobby-page-grid > div:nth-child(2), .lobby-page-grid > div[class*="col-span-2"]');
+      if (!title || !tabsCard) return null;
+
+      const titleRect = title.getBoundingClientRect();
+      const tabsRect = tabsCard.getBoundingClientRect();
+
+      return {
+        titleTop: titleRect.top,
+        tabsHeight: tabsRect.height,
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout!.titleTop).toBeGreaterThanOrEqual(4);
+    expect(layout!.tabsHeight).toBeLessThan(520);
+  });
+
   test('settings tab panel scrolls internally', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await openLobby(page);

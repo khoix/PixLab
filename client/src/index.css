@@ -116,13 +116,16 @@
 
 /* Lobby viewport lock — confine scroll to inner tab panels (M5.2) */
 .lobby-page {
-  height: 100dvh;
-  max-height: 100dvh;
   overflow: hidden;
+  box-sizing: border-box;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
 }
 
-.lobby-page-shell {
-  width: 100%;
+.lobby-page-title {
+  padding-top: 0.5rem;
 }
 
 .lobby-page-grid {
