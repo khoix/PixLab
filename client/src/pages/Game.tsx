@@ -512,7 +512,8 @@ export default function Game() {
     } else if (state.screen === 'shop') {
       audioManager.playMusic('shop');
     } else if (state.screen === 'run') {
-      // Music is handled in GameCanvas when level loads
+      // Stop lobby/shop loop; GameCanvas starts combat/boss when the level loads
+      audioManager.stopMusic();
     } else {
       audioManager.stopMusic();
     }
@@ -791,8 +792,8 @@ export default function Game() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-full min-h-[500px]">
-            <Tabs defaultValue="mission" className="w-full flex-1 flex flex-col">
+          <Card className="md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-full min-h-0 md:min-h-[500px]">
+            <Tabs defaultValue="mission" className="w-full flex-1 flex flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
                 <TabsTrigger value="loadout" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
@@ -806,7 +807,7 @@ export default function Game() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="p-6 flex-1 relative overflow-hidden">
+              <div className="p-6 flex-1 relative min-h-0 overflow-hidden">
                 <TabsContent value="mission" className="h-full flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 relative">
                   <div className="text-center space-y-2">
                     <h2 className="text-2xl text-white font-pixel">SECTOR {state.currentLevel}</h2>
@@ -847,7 +848,7 @@ export default function Game() {
                   </button>
                 </TabsContent>
 
-                <TabsContent value="loadout" className="space-y-4 max-h-[400px] overflow-y-auto">
+                <TabsContent value="loadout" className="space-y-4 max-h-[400px] overflow-y-auto scroll-touch">
                   {/* Equipped Items Section */}
                   <div className="border border-primary/30 p-3 bg-primary/5">
                     <h4 className="font-pixel text-lg text-primary mb-2">EQUIPPED</h4>
@@ -1166,11 +1167,11 @@ export default function Game() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="compendium" className="space-y-4 max-h-[400px] overflow-y-auto">
+                <TabsContent value="compendium" className="space-y-4 max-h-[400px] overflow-y-auto scroll-touch">
                   <Compendium />
                 </TabsContent>
 
-                <TabsContent value="mods" className="space-y-4 max-h-[300px] overflow-y-auto">
+                <TabsContent value="mods" className="space-y-4 max-h-[300px] overflow-y-auto scroll-touch">
                   {MODS.map(mod => (
                     <div 
                       key={mod.id} 
@@ -1191,7 +1192,7 @@ export default function Game() {
                   ))}
                 </TabsContent>
 
-                <TabsContent value="settings" className="space-y-6">
+                <TabsContent value="settings" className="space-y-6 max-h-[400px] overflow-y-auto scroll-touch pb-4">
                   <div className="space-y-4">
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">MUSIC VOLUME</label>
@@ -1406,25 +1407,25 @@ export default function Game() {
     return (
       <div className="h-screen bg-background flex flex-col items-center justify-center p-4 crt">
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/20 via-black to-black pointer-events-none" />
-        <Card className="bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 h-[calc(100vh-2rem)] flex flex-col">
+        <Card className="bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 h-[calc(100vh-2rem)] flex flex-col min-h-0">
           <CardHeader className="flex-shrink-0">
             <CardTitle className="text-primary text-2xl font-pixel">VENDOR STATION</CardTitle>
             <p className="text-xs font-mono text-muted-foreground mt-2">SECTOR {state.currentLevel} • TRADING POST</p>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden">
+          <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden min-h-0">
             <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded flex-shrink-0">
               <p className="text-2xl font-mono text-muted-foreground text-right">
                 COINS: <span className="text-yellow-400 font-bold">${state.stats.coins}</span>
               </p>
             </div>
             
-            <Tabs defaultValue="buy" className="w-full flex-1 flex flex-col overflow-hidden">
+            <Tabs defaultValue="buy" className="w-full flex-1 flex flex-col overflow-hidden min-h-0">
               <TabsList className="vendor-station-tabs w-full bg-black/40 rounded-none border-b border-white/10 flex-shrink-0">
                 <TabsTrigger value="buy" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">PURCHASE</TabsTrigger>
                 <TabsTrigger value="sell" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">SELL ITEMS</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="buy" className="flex-1 flex flex-col overflow-hidden mt-4">
+              <TabsContent value="buy" className="flex-1 flex flex-col min-h-0 overflow-y-auto scroll-touch mt-4">
                 {/* Stat Boosts Section */}
                 <div className="flex-shrink-0">
                   <h4 className="font-pixel text-sm text-primary mb-2">STAT BOOSTS</h4>
@@ -1480,9 +1481,9 @@ export default function Game() {
 
                 {/* Random Items Section */}
                 {(vendorItems.length > 0 || soldItems.length > 0) && (
-                  <div className="vendor-items-section flex-1 flex flex-col overflow-hidden">
+                  <div className="vendor-items-section flex-shrink-0">
                     <h4 className="font-pixel text-sm text-primary mb-2 mt-6 flex-shrink-0">ITEMS</h4>
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <div className="overflow-x-hidden">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[...vendorItems, ...soldItems].map(item => {
                         const rarityColor = RARITY_COLORS[item.rarity];
@@ -1605,14 +1606,14 @@ export default function Game() {
                 )}
               </TabsContent>
 
-              <TabsContent value="sell" className="flex-1 flex flex-col overflow-hidden mt-4">
+              <TabsContent value="sell" className="flex-1 flex flex-col min-h-0 overflow-y-auto scroll-touch mt-4">
                 {state.inventory.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground font-mono text-sm">NO ITEMS TO SELL</p>
                     <p className="text-muted-foreground/60 font-mono text-xs mt-2">Collect items during missions to sell them here</p>
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-2">
+                  <div className="overflow-x-hidden space-y-2 pb-4">
                     {state.inventory.map(item => {
                       const rarityColor = RARITY_COLORS[item.rarity];
                       const sellValue = calculateSellValue(item);
