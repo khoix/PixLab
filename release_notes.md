@@ -174,11 +174,16 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+<<<<<<< HEAD
 ## PWA — Add to Home Screen URL
+=======
+## Milestone 5.2 — Viewport-Locked Lobby Layout
+>>>>>>> c2e60e9 (M5.2: Viewport-locked lobby layout (no main scrollbar))
 
 **Branch:** `cursor/PixLab`  
 **Status:** Ready for review
 
+<<<<<<< HEAD
 ### Fixed
 - **`manifest.json`** — `start_url` and icon paths were root-absolute (`/`), so Chrome/Safari pre-filled `https://khoix.net/` instead of `https://khoix.net/pixlab/` when adding to the home screen. Switched to manifest-relative paths (`./` start URL, scope, and icon `src` values) so the bookmark resolves correctly when the app is mounted at `/pixlab/`.
 
@@ -186,5 +191,15 @@ npm run test:e2e:ui     # interactive UI mode
 - After deploy, open `https://khoix.net/pixlab/manifest.json` and confirm `start_url` resolves to `/pixlab/`.
 - Chrome DevTools → Application → Manifest → Start URL should show `https://khoix.net/pixlab/`.
 - Add to Home Screen should pre-fill the `/pixlab/` URL.
+=======
+### Changed
+- **Lobby shell** — `h-dvh overflow-hidden` replaces `min-h-screen`; no document-level scrollbar
+- **`lobby-page-shell`** — flex column with `justify-center` keeps title + cards vertically centered
+- **`lobby-page-grid`** — `flex-1 min-h-0` height chain; mobile uses `grid-template-rows: auto minmax(0, 1fr)` so tabs card absorbs overflow
+- **Safe-area** — removed duplicate padding on `#root` (kept on `body` only)
+
+### Verification
+- E2e: `e2e/m5-viewport-layout.spec.ts` — no doc scroll (mobile + desktop), vertical centering, settings panel internal scroll
+>>>>>>> c2e60e9 (M5.2: Viewport-locked lobby layout (no main scrollbar))
 
 ---

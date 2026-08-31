@@ -215,6 +215,31 @@ Execution plan for performance optimization and gameplay improvements on web and
 
 ---
 
+## Milestone 5.2 — Viewport-Locked Lobby Layout
+
+**Goal:** Disable the main document scrollbar on the lobby screen and keep content vertically centered; overflow scrolls only inside tab panels.
+
+**Tasks:**
+- [x] Change lobby shell from `min-h-screen` to `h-dvh overflow-hidden` (match shop/run pattern)
+- [x] Add `lobby-page-shell` flex column with `justify-center` and `min-h-0` height chain
+- [x] Constrain `lobby-page-grid` with `flex-1 min-h-0`; mobile `grid-template-rows: auto minmax(0, 1fr)`
+- [x] Remove duplicate safe-area padding on `#root` (kept on `body` only)
+- [x] E2e: no document scroll, vertical centering, inner settings panel scroll
+
+**Files:**
+- `client/src/pages/Game.tsx`
+- `client/src/index.css`, `client/src/styles/mobile.css`, `client/src/styles/web.css`
+- `e2e/m5-viewport-layout.spec.ts`
+
+**Exit criteria:**
+- No window scrollbar on lobby at 375×667 and 1280×720
+- Title + cards centered when content fits viewport
+- Settings / loadout / compendium / mods tabs still scroll internally
+
+**Depends on:** Milestone 5 (inner panel scroll pattern)
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -308,7 +333,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M6 Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf
                                                 └─► M8 Refactor
@@ -324,6 +349,7 @@ M0 Baseline
 | M4 | State batching, modifiers | P1 | Medium |
 | M5 | Mobile UX | P1 | Low |
 | M5.1 | Decentralized touch controls | P1 | Medium |
+| M5.2 | Viewport-locked lobby layout | P1 | Low |
 | M6 | Balance & clarity | P2 | Medium |
 | M7 | AI performance | P2 | Medium |
 | M8 | Architecture split | P2 | High |
@@ -335,7 +361,7 @@ M0 Baseline
 
 - [ ] New game → sector 1: move, pickup, combat, exit
 - [ ] Sector with shop (4) and boss (8)
-- [ ] Mobile D-pad, joystick, and touchpad schemes
+- [ ] Mobile D-pad, floating touch, and touchpad schemes
 - [ ] Inventory open/close during run; timer behavior verified
 - [ ] Tab backgrounded → loop paused, no runaway audio
 - [ ] Window resize / rotate orientation
