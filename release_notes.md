@@ -173,3 +173,18 @@ npm run test:e2e:ui     # interactive UI mode
 - E2e: `e2e/m5-floating-touch.spec.ts` — origin relativity, lift clears direction, layer visibility, legacy joystick migration, lobby setting
 
 ---
+
+## PWA — Add to Home Screen URL
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Fixed
+- **`manifest.json`** — `start_url` and icon paths were root-absolute (`/`), so Chrome/Safari pre-filled `https://khoix.net/` instead of `https://khoix.net/pixlab/` when adding to the home screen. Switched to manifest-relative paths (`./` start URL, scope, and icon `src` values) so the bookmark resolves correctly when the app is mounted at `/pixlab/`.
+
+### Verification
+- After deploy, open `https://khoix.net/pixlab/manifest.json` and confirm `start_url` resolves to `/pixlab/`.
+- Chrome DevTools → Application → Manifest → Start URL should show `https://khoix.net/pixlab/`.
+- Add to Home Screen should pre-fill the `/pixlab/` URL.
+
+---
