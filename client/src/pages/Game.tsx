@@ -793,7 +793,7 @@ export default function Game() {
             </CardContent>
           </Card>
 
-          <Card className="lobby-tabs-card md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-[22rem] md:h-[500px]">
+          <Card className="lobby-tabs-card md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-[24.2rem] md:h-[550px]">
             <Tabs defaultValue="mission" className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
@@ -809,7 +809,7 @@ export default function Game() {
               </TabsList>
 
               <div className="lobby-tab-panels p-6 flex-1 min-h-0 overflow-hidden">
-                <TabsContent value="mission" className="lobby-tab-panel mt-0 h-full flex flex-col items-center justify-center space-y-8 relative pb-14">
+                <TabsContent value="mission" className="lobby-tab-panel mt-0 h-full flex flex-col items-center justify-center gap-6 py-4 relative pb-12">
                   <div className="text-center space-y-2">
                     <h2 className="text-2xl text-white font-pixel">SECTOR {state.currentLevel}</h2>
                     <p className="text-muted-foreground font-mono text-lg">

@@ -135,7 +135,7 @@
 .lobby-tabs-card {
   display: flex;
   flex-direction: column;
-  min-height: 22rem;
+  min-height: 24.2rem;
 }
 
 .lobby-tabs {

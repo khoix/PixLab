@@ -541,9 +541,9 @@
 
   /* Tabs card — fixed height on mobile prevents tab-switch layout shift */
   .lobby-tabs-card {
-    height: 22rem !important;
-    min-height: 22rem !important;
-    max-height: calc(100dvh - 13rem);
+    height: 24.2rem !important;
+    min-height: 24.2rem !important;
+    max-height: calc(100dvh - 12rem);
   }
 
   .lobby-tab-panels {
