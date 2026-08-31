@@ -5,6 +5,7 @@ import { Badge } from '../ui/badge';
 import { getSectorTimeLeftSec } from '../../lib/game/sectorTimer';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { EyeOff } from 'lucide-react';
+import { SectorTimerBar } from './SectorTimerBar';
 
 interface HUDProps {
   isShop: boolean;
@@ -97,6 +98,11 @@ export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
         )}
 
       </div>
+
+      {/* Mobile: vertical sector timer (right edge, safe from browser chrome) */}
+      {isMobile && !isShop && !isBoss && (
+        <SectorTimerBar activeModIds={state.activeMods} timeLeftSec={timeLeft} />
+      )}
 
       {/* Bottom Center: Level badge (Mobile only) */}
       {isMobile && (

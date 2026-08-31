@@ -139,6 +139,7 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Changed
 - **Mobile layout** — safe-area insets, short viewport tuning, D-pad/HUD separation
+- **Mobile sector timer** — vertical right-edge bar (replaces bottom canvas strip hidden by browser chrome)
 - **Controls** — D-pad/joystick use CSS variables for opacity/scale from settings
 - **Landscape** — portrait recommendation hint on short landscape phones
 

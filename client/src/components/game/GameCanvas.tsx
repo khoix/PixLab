@@ -3530,34 +3530,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       ctx.restore();
     }
 
-    // Draw mobile time progress bar at the bottom
-    // Check window width directly for immediate detection (mobile breakpoint is 768px)
-    const isMobileWidth = window.innerWidth < 768;
-    if (isMobileWidth && levelRef.current && !levelRef.current.isShop && !levelRef.current.isBoss && !showBonusSelection) {
-      const timeLimit = getSectorTimeLimitMs(activeModsRef.current);
-      const elapsed = getSectorElapsedMs();
-      const remaining = Math.max(0, timeLimit - elapsed);
-      const progress = Math.min(1, remaining / timeLimit);
-      
-      // Minimal progress bar at the very bottom
-      const barHeight = 3; // Thin bar
-      const barY = logicalHeight - barHeight;
-      const barWidth = logicalWidth;
-      
-      // Background (dark)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.fillRect(0, barY, barWidth, barHeight);
-      
-      // Progress fill (cyan to match game theme)
-      const progressWidth = barWidth * progress;
-      if (progress > 0.3) {
-        ctx.fillStyle = COLORS.player; // Cyan
-      } else {
-        // Red when time is running low
-        ctx.fillStyle = '#ff2a6d'; // Red
-      }
-      ctx.fillRect(0, barY, progressWidth, barHeight);
-    }
+    // Mobile sector timer is rendered in HUD (SectorTimerBar) to avoid browser chrome overlap.
 
     // CRT Scanlines overlay is now handled by GameOverlay component
     // to ensure consistent application across canvas and React UI elements
