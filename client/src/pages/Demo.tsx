@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { GameCanvas } from '@/components/game/GameCanvas';
 import { DemoSidebar } from '@/components/demo/DemoSidebar';
-import { TouchpadControl } from '@/components/game/TouchpadControl';
 import { FloatingTouchControl } from '@/components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '@/components/game/DirectionalPadControl';
+import { normalizeTouchSensitivity, slopPxFromSensitivity } from '@/lib/game/touch/touchSensitivity';
 import { useGame } from '@/lib/store';
 import { Level, Position, MobSubtype, Item } from '@/lib/game/types';
 import { 
@@ -241,12 +241,16 @@ export default function Demo() {
         <>
           {(() => {
             const controlType = state.settings.mobileControlType || 'dpad';
-            if (controlType === 'touchpad') {
-              return <TouchpadControl onMove={handleMove} />;
-            } else if (controlType === 'dpad') {
+            if (controlType === 'dpad') {
               return <DirectionalPadControl onMove={handleMove} />;
-            } else if (controlType === 'floating') {
-              return <FloatingTouchControl onMove={handleMove} />;
+            }
+            if (controlType === 'floating') {
+              return (
+                <FloatingTouchControl
+                  onMove={handleMove}
+                  slopPx={slopPxFromSensitivity(normalizeTouchSensitivity(state.settings.touchSensitivity))}
+                />
+              );
             }
             return null;
           })()}

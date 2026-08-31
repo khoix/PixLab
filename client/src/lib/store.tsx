@@ -4,6 +4,7 @@ import { INITIAL_STATS } from './game/constants';
 import { calculateSellValue } from './game/items';
 import { encodeGameState, decodeGameState } from './game/codec';
 import { normalizeMobileControlType } from './game/normalizeMobileControlType';
+import { normalizeTouchSensitivity } from './game/touch/touchSensitivity';
 import { eventLogger } from './game/eventLogger';
 
 const STORAGE_KEY = 'pixel_labyrinth_save';
@@ -136,6 +137,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               renderQuality: parsed.settings?.renderQuality ?? 'auto',
               controlOpacity: parsed.settings?.controlOpacity ?? 0.85,
               controlSize: parsed.settings?.controlSize ?? 1,
+              touchSensitivity: normalizeTouchSensitivity(parsed.settings?.touchSensitivity),
               hapticsEnabled: parsed.settings?.hapticsEnabled ?? true,
             },
           };
@@ -168,7 +170,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
       temporaryVisionBoost: null,
       pendingScrollAction: null,
-      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'dpad', renderQuality: 'auto', controlOpacity: 0.85, controlSize: 1, hapticsEnabled: true },
+      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'dpad', renderQuality: 'auto', controlOpacity: 0.85, controlSize: 1, touchSensitivity: 0.5, hapticsEnabled: true },
     };
     // Generate code from the default state
     try {
@@ -486,6 +488,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (settingsPatch.mobileControlType !== undefined) {
             settingsPatch.mobileControlType = normalizeMobileControlType(
               settingsPatch.mobileControlType,
+            );
+          }
+          if (settingsPatch.touchSensitivity !== undefined) {
+            settingsPatch.touchSensitivity = normalizeTouchSensitivity(
+              settingsPatch.touchSensitivity,
             );
           }
           newState.settings = { ...prev.settings, ...settingsPatch };

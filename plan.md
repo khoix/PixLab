@@ -207,7 +207,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - No React re-renders during continuous drag (M1 perf parity)
 
 **Open questions (resolved):**
-- **Touchpad:** kept as third option (“absolute zones” alternative to floating touch)
+- **Touchpad:** removed in M5.3; legacy saves migrate to floating touch
 - **Visual feedback:** invisible floating origin (Refraction-style; no origin pulse)
 - **Default scheme:** D-pad for new players (unchanged)
 
@@ -237,6 +237,33 @@ Execution plan for performance optimization and gameplay improvements on web and
 - Settings / loadout / compendium / mods tabs still scroll internally
 
 **Depends on:** Milestone 5 (inner panel scroll pattern)
+
+---
+
+## Milestone 5.3 — Floating Touch Sensitivity & Control Settings
+
+**Goal:** Let players tune floating touch drag sensitivity; remove Touchpad; show context-appropriate control sliders in settings.
+
+**Tasks:**
+- [x] Add `settings.touchSensitivity` (0–1, default 0.5 ≈ 12px slop) persisted in codec
+- [x] Configurable slop in `FloatingTouchRecogniser`; wire via `FloatingTouchControl`
+- [x] Conditional settings UI: floating → sensitivity slider; d-pad → opacity + size sliders
+- [x] Remove Touchpad scheme; migrate saves `'touchpad'` → `'floating'`
+- [x] Delete `TouchpadControl.tsx`
+- [x] E2e: slider visibility toggle, slop behavior, touchpad migration
+
+**Files:**
+- `client/src/lib/game/touch/touchSensitivity.ts`, `floatingTouchRecogniser.ts`
+- `client/src/components/game/FloatingTouchControl.tsx`
+- `client/src/pages/Game.tsx`, `Demo.tsx`, `codec.ts`, `store.tsx`, `types.ts`
+- `e2e/m5-touch-sensitivity.spec.ts`
+
+**Exit criteria:**
+- Sensitivity slider changes drag threshold live during gameplay
+- Touchpad absent from settings and run screen; legacy saves load as floating
+- D-pad and floating modes show the correct slider group (not both)
+
+**Depends on:** Milestone 5.1
 
 ---
 
@@ -333,7 +360,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M6 Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf
                                                 └─► M8 Refactor
@@ -361,7 +388,7 @@ M0 Baseline
 
 - [ ] New game → sector 1: move, pickup, combat, exit
 - [ ] Sector with shop (4) and boss (8)
-- [ ] Mobile D-pad, floating touch, and touchpad schemes
+- [ ] Mobile D-pad and floating touch schemes
 - [ ] Inventory open/close during run; timer behavior verified
 - [ ] Tab backgrounded → loop paused, no runaway audio
 - [ ] Window resize / rotate orientation

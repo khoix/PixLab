@@ -4,9 +4,11 @@ import {
   FloatingTouchRecogniser,
   type FloatingTouchIntent,
 } from '../../lib/game/touch/floatingTouchRecogniser';
+import { DEFAULT_DRAG_SLOP_PX } from '../../lib/game/touch/touchSensitivity';
 
 interface FloatingTouchControlProps {
   onMove: (dir: { x: number; y: number }) => void;
+  slopPx?: number;
   className?: string;
 }
 
@@ -20,14 +22,18 @@ function applyIntents(intents: FloatingTouchIntent[], onMove: (dir: { x: number;
   }
 }
 
-export const FloatingTouchControl: React.FC<FloatingTouchControlProps> = ({ onMove, className }) => {
+export const FloatingTouchControl: React.FC<FloatingTouchControlProps> = ({ onMove, slopPx, className }) => {
   const layerRef = useRef<HTMLDivElement>(null);
-  const recogniserRef = useRef(new FloatingTouchRecogniser());
+  const recogniserRef = useRef(new FloatingTouchRecogniser(slopPx ?? DEFAULT_DRAG_SLOP_PX));
   const onMoveRef = useRef(onMove);
 
   useEffect(() => {
     onMoveRef.current = onMove;
   }, [onMove]);
+
+  useEffect(() => {
+    recogniserRef.current.setSlopPx(slopPx ?? DEFAULT_DRAG_SLOP_PX);
+  }, [slopPx]);
 
   useEffect(() => {
     const layer = layerRef.current;

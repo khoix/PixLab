@@ -187,6 +187,7 @@ export interface GameState {
     renderQuality?: 'auto' | 'high' | 'medium' | 'low';
     controlOpacity?: number;
     controlSize?: number;
+    touchSensitivity?: number;
     hapticsEnabled?: boolean;
   };
 }

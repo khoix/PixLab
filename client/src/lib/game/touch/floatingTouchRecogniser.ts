@@ -1,4 +1,5 @@
 import type { Direction } from '../gameInput';
+import { DEFAULT_DRAG_SLOP_PX, slopPxFromSensitivity } from './touchSensitivity';
 
 export interface PointerSample {
   x: number;
@@ -10,8 +11,8 @@ export type FloatingTouchIntent =
   | { kind: 'direction'; direction: Direction }
   | { kind: 'clear' };
 
-/** Movement ignored until finger travels past this distance from touch origin. */
-export const DRAG_SLOP_PX = 12;
+/** Legacy default slop — use DEFAULT_DRAG_SLOP_PX from touchSensitivity. */
+export const DRAG_SLOP_PX = DEFAULT_DRAG_SLOP_PX;
 
 interface ActiveTouch {
   originX: number;
@@ -21,10 +22,10 @@ interface ActiveTouch {
 }
 
 /** Pick 4-way direction from offset; dominant axis wins. */
-export function directionFromOffset(dx: number, dy: number): Direction | null {
+export function directionFromOffset(dx: number, dy: number, slopPx = DEFAULT_DRAG_SLOP_PX): Direction | null {
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
-  if (ax < DRAG_SLOP_PX && ay < DRAG_SLOP_PX) return null;
+  if (ax < slopPx && ay < slopPx) return null;
   if (ax >= ay) {
     return { x: dx > 0 ? 1 : -1, y: 0 };
   }
@@ -40,7 +41,20 @@ function sameDirection(a: Direction, b: Direction): boolean {
  * Touch-down sets origin silently; drag/swipe direction is relative to that point.
  */
 export class FloatingTouchRecogniser {
+  private slopPx: number;
   private active: ActiveTouch | null = null;
+
+  constructor(slopPx = DEFAULT_DRAG_SLOP_PX) {
+    this.slopPx = slopPx;
+  }
+
+  setSlopPx(slopPx: number): void {
+    this.slopPx = slopPx;
+  }
+
+  getSlopPx(): number {
+    return this.slopPx;
+  }
 
   begin(sample: PointerSample): FloatingTouchIntent[] {
     this.active = {
@@ -57,7 +71,7 @@ export class FloatingTouchRecogniser {
 
     const dx = sample.x - this.active.originX;
     const dy = sample.y - this.active.originY;
-    const direction = directionFromOffset(dx, dy);
+    const direction = directionFromOffset(dx, dy, this.slopPx);
     if (!direction) return [];
 
     if (this.active.lastDirection && sameDirection(this.active.lastDirection, direction)) {
@@ -92,18 +106,20 @@ export function initFloatingTouchApi(): void {
   if (typeof window === 'undefined') return;
 
   window.__PIXLAB_FLOATING_TOUCH__ = {
-    createRecogniser: () => new FloatingTouchRecogniser(),
+    createRecogniser: (slopPx?: number) => new FloatingTouchRecogniser(slopPx ?? DEFAULT_DRAG_SLOP_PX),
     directionFromOffset,
-    DRAG_SLOP_PX,
+    DRAG_SLOP_PX: DEFAULT_DRAG_SLOP_PX,
+    slopPxFromSensitivity,
   };
 }
 
 declare global {
   interface Window {
     __PIXLAB_FLOATING_TOUCH__?: {
-      createRecogniser: () => FloatingTouchRecogniser;
+      createRecogniser: (slopPx?: number) => FloatingTouchRecogniser;
       directionFromOffset: typeof directionFromOffset;
       DRAG_SLOP_PX: number;
+      slopPxFromSensitivity?: (sensitivity: number) => number;
     };
   }
 }
