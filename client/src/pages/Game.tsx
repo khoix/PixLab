@@ -623,9 +623,8 @@ export default function Game() {
 
   if (state.screen === 'lobby') {
     return (
-      <div className="lobby-page h-dvh max-h-dvh overflow-hidden flex flex-col items-center p-4 crt relative">
+      <div className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center crt">
         <MazeBackground />
-        <div className="lobby-page-shell relative z-10 flex flex-1 min-h-0 w-full max-w-4xl flex-col items-center justify-center overflow-hidden">
           <div className="lobby-page-title flex-shrink-0 text-center space-y-2 mb-4 md:mb-8">
           <h1 
             onClick={() => setLocation('/')}
@@ -651,8 +650,8 @@ export default function Game() {
             </span>YRINTH</span>
           </h1>
           </div>
-        <div className="lobby-page-grid w-full flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 overflow-hidden">
-          <Card className="bg-card/90 border-primary/20 pixel-corners min-h-0 overflow-hidden bg-white/5">
+        <div className="lobby-page-grid max-w-4xl w-full grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <Card className="bg-card/90 border-primary/20 pixel-corners bg-white/5">
             <CardHeader className="hidden md:block">
               <CardTitle className="text-primary text-2xl">STATS</CardTitle>
             </CardHeader>
@@ -793,7 +792,7 @@ export default function Game() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col min-h-0 overflow-hidden">
+          <Card className="md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col min-h-0 md:min-h-[500px]">
             <Tabs defaultValue="mission" className="w-full flex-1 flex flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
@@ -1389,7 +1388,7 @@ export default function Game() {
             </Tabs>
           </Card>
         </div>
-        <div className="lobby-page-code hidden md:block flex-shrink-0 mt-4 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full">
+        <div className="lobby-page-code hidden md:block flex-shrink-0 mt-4 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full max-w-4xl">
           <p className="text-lg text-center text-muted-foreground font-mono">
             CODE: <span 
               className="text-primary font-mono break-all cursor-pointer hover:text-primary/80 transition-colors select-none"
@@ -1399,7 +1398,6 @@ export default function Game() {
               {state.uid.length > 50 ? `${state.uid.substring(0, 50)}...` : state.uid}
             </span>
           </p>
-        </div>
         </div>
       </div>
     );

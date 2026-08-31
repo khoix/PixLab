@@ -286,23 +286,21 @@
 
   /* Lobby Page Mobile Optimizations */
   .lobby-page {
-    padding: 2rem 1rem 1rem 1rem !important;
-  }
-
-  .lobby-page-shell {
-    gap: 0;
+    padding: max(1.25rem, env(safe-area-inset-top))
+      max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(1rem, env(safe-area-inset-left)) !important;
   }
 
   .lobby-page-grid {
     gap: 1rem !important;
     width: 100%;
-    grid-template-rows: auto minmax(0, 1fr);
   }
 
-  /* Optimize lobby title spacing on mobile */
+  /* Room for sword emblem above title text */
   .lobby-page-title {
-    margin-bottom: 1.5rem !important;
-    padding: 0 0.5rem;
+    margin-bottom: 1rem !important;
+    padding: 0.75rem 0.5rem 0;
   }
 
   /* Reduce title size on mobile */
@@ -545,7 +543,7 @@
   .lobby-page-grid > div:nth-child(2),
   .lobby-page-grid > div[class*="col-span-2"] {
     min-height: 0 !important;
-    max-height: none;
+    max-height: calc(100dvh - 13rem);
   }
 
   /* Optimize tab buttons for touch */
