@@ -64,21 +64,52 @@ test.describe('M5.2 — Viewport-locked lobby layout', () => {
 
     const layout = await page.evaluate(() => {
       const title = document.querySelector('.lobby-page-title h1');
-      const tabsCard = document.querySelector('.lobby-page-grid > div:nth-child(2), .lobby-page-grid > div[class*="col-span-2"]');
-      if (!title || !tabsCard) return null;
+      const tabsCard = document.querySelector('.lobby-tabs-card');
+      const enterButton = document.querySelector('[data-testid="enter-sector-button"]');
+      if (!title || !tabsCard || !enterButton) return null;
 
       const titleRect = title.getBoundingClientRect();
       const tabsRect = tabsCard.getBoundingClientRect();
+      const enterRect = enterButton.getBoundingClientRect();
 
       return {
         titleTop: titleRect.top,
         tabsHeight: tabsRect.height,
+        enterBottom: enterRect.bottom,
+        tabsBottom: tabsRect.bottom,
       };
     });
 
     expect(layout).not.toBeNull();
     expect(layout!.titleTop).toBeGreaterThanOrEqual(4);
+    expect(layout!.tabsHeight).toBeGreaterThanOrEqual(310);
     expect(layout!.tabsHeight).toBeLessThan(520);
+    expect(layout!.enterBottom).toBeLessThanOrEqual(layout!.tabsBottom + 2);
+  });
+
+  test('lobby layout stays pinned when switching tabs', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openLobby(page);
+
+    const missionTop = await page.evaluate(() => {
+      const body = document.querySelector('.lobby-page-body');
+      return body?.getBoundingClientRect().top ?? 0;
+    });
+
+    await page.getByTestId('lobby-settings-tab').click();
+    const settingsTop = await page.evaluate(() => {
+      const body = document.querySelector('.lobby-page-body');
+      return body?.getBoundingClientRect().top ?? 0;
+    });
+
+    await page.getByRole('tab', { name: 'MISSION' }).click();
+    const backTop = await page.evaluate(() => {
+      const body = document.querySelector('.lobby-page-body');
+      return body?.getBoundingClientRect().top ?? 0;
+    });
+
+    expect(Math.abs(settingsTop - missionTop)).toBeLessThan(2);
+    expect(Math.abs(backTop - missionTop)).toBeLessThan(2);
   });
 
   test('settings tab panel scrolls internally', async ({ page }) => {

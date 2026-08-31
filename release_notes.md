@@ -182,6 +182,7 @@ npm run test:e2e:ui     # interactive UI mode
 ### Changed
 - **Lobby shell** — `fixed inset-0 overflow-hidden` replaces `min-h-screen`; no document-level scrollbar
 - **Natural card heights** — removed flex/grid stretch that elongated the tabs panel; title padding for emblem clearance
+- **Fixed tabs card height** — `22rem` mobile / `500px` desktop so tab switches do not shift the lobby block; inner panels scroll
 - **Safe-area** — padding on `.lobby-page` directly (avoids body `100dvh` + safe-area overflow/clipping)
 
 ### Verification

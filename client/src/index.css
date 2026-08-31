@@ -128,6 +128,28 @@
   padding-top: 0.5rem;
 }
 
-.lobby-page-grid {
+.lobby-page-body {
+  width: 100%;
+}
+
+.lobby-tabs-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+}
+
+.lobby-tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+.lobby-tab-panels {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.lobby-tab-panel {
+  margin-top: 0;
 }
