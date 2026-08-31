@@ -113,3 +113,18 @@
     4px 100%, 4px calc(100% - 4px), 0px calc(100% - 4px)
   );
 }
+
+/* Lobby viewport lock — confine scroll to inner tab panels (M5.2) */
+.lobby-page {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.lobby-page-shell {
+  width: 100%;
+}
+
+.lobby-page-grid {
+  min-height: 0;
+}
