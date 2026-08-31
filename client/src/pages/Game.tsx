@@ -1297,6 +1297,54 @@ export default function Game() {
                         </div>
                       </div>
                     )}
+                    {(state.settings.mobileControlType || 'dpad') === 'dpad' && (
+                      <>
+                        <div className="md:hidden" data-testid="mobile-control-settings">
+                          <label className="text-lg font-pixel text-primary mb-2 block">CONTROL OPACITY</label>
+                          <div className="flex items-center gap-3">
+                            <Slider
+                              value={[state.settings.controlOpacity ?? 0.85]}
+                              onValueChange={(value) => {
+                                dispatch({
+                                  type: 'UPDATE_SETTINGS',
+                                  payload: { controlOpacity: value[0] },
+                                });
+                              }}
+                              min={0.4}
+                              max={1}
+                              step={0.05}
+                              className="flex-1"
+                              data-testid="control-opacity-slider"
+                            />
+                            <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                              {Math.round((state.settings.controlOpacity ?? 0.85) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="md:hidden">
+                          <label className="text-lg font-pixel text-primary mb-2 block">CONTROL SIZE</label>
+                          <div className="flex items-center gap-3">
+                            <Slider
+                              value={[state.settings.controlSize ?? 1]}
+                              onValueChange={(value) => {
+                                dispatch({
+                                  type: 'UPDATE_SETTINGS',
+                                  payload: { controlSize: value[0] },
+                                });
+                              }}
+                              min={0.8}
+                              max={1.2}
+                              step={0.05}
+                              className="flex-1"
+                              data-testid="control-size-slider"
+                            />
+                            <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                              {Math.round((state.settings.controlSize ?? 1) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>
                       <RadioGroup
@@ -1336,54 +1384,6 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
-                    {(state.settings.mobileControlType || 'dpad') === 'dpad' && (
-                      <>
-                    <div className="md:hidden" data-testid="mobile-control-settings">
-                      <label className="text-lg font-pixel text-primary mb-2 block">CONTROL OPACITY</label>
-                      <div className="flex items-center gap-3">
-                        <Slider
-                          value={[state.settings.controlOpacity ?? 0.85]}
-                          onValueChange={(value) => {
-                            dispatch({
-                              type: 'UPDATE_SETTINGS',
-                              payload: { controlOpacity: value[0] },
-                            });
-                          }}
-                          min={0.4}
-                          max={1}
-                          step={0.05}
-                          className="flex-1"
-                          data-testid="control-opacity-slider"
-                        />
-                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                          {Math.round((state.settings.controlOpacity ?? 0.85) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="md:hidden">
-                      <label className="text-lg font-pixel text-primary mb-2 block">CONTROL SIZE</label>
-                      <div className="flex items-center gap-3">
-                        <Slider
-                          value={[state.settings.controlSize ?? 1]}
-                          onValueChange={(value) => {
-                            dispatch({
-                              type: 'UPDATE_SETTINGS',
-                              payload: { controlSize: value[0] },
-                            });
-                          }}
-                          min={0.8}
-                          max={1.2}
-                          step={0.05}
-                          className="flex-1"
-                          data-testid="control-size-slider"
-                        />
-                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                          {Math.round((state.settings.controlSize ?? 1) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                      </>
-                    )}
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">HAPTIC FEEDBACK</label>
                       <RadioGroup
