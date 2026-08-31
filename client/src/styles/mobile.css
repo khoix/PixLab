@@ -645,9 +645,11 @@
   }
 
   /* Improve scrollable areas on mobile */
-  .lobby-page .overflow-y-auto {
+  .lobby-page .overflow-y-auto,
+  .lobby-page .scroll-touch {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    touch-action: pan-y;
   }
 
   /* Optimize card content spacing in lobby tabs card */
@@ -740,6 +742,21 @@
   /* Home page title - mobile text size */
   .home-title-container .home-title {
     font-size: 2.5rem !important;
+  }
+
+  /* Touch-friendly scroll regions (lobby settings, vendor inventory, etc.) */
+  .scroll-touch {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    min-height: 0;
+  }
+
+  .lobby-page .overflow-y-auto,
+  .lobby-page .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   /* M5 — Mobile run controls & HUD layout (375×667 safe) */

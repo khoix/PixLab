@@ -11,6 +11,9 @@ class AudioManager {
   private sfxVolume: number = 0.5;
   private isInitialized: boolean = false;
   private userActivated: boolean = false;
+  /** Bumped on stopMusic so pattern loops exit; cleared timeouts ignored. */
+  private musicGeneration = 0;
+  private musicTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   // Initialize audio context (must be called after user interaction)
   init() {
@@ -79,6 +82,12 @@ class AudioManager {
 
   // Stop current music
   stopMusic() {
+    this.musicGeneration += 1;
+    if (this.musicTimeoutHandle !== null) {
+      clearTimeout(this.musicTimeoutHandle);
+      this.musicTimeoutHandle = null;
+    }
+
     if (this.currentMusicOscillator) {
       try {
         this.currentMusicOscillator.stop();
@@ -106,57 +115,12 @@ class AudioManager {
 
     this.stopMusic();
 
-    // Create a simple ambient melody using oscillators
-    const createMelody = () => {
-      const oscillator = this.audioContext!.createOscillator();
-      const gainNode = this.audioContext!.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(this.musicGainNode!);
-
-      // Different frequencies for different music types
-      const baseFreqs: Record<typeof type, number[]> = {
-        lobby: [220, 261.63, 293.66, 329.63], // A, C, D, E
-        combat: [196, 233.08, 277.18, 311.13], // G, Bb, C#, D#
-        shop: [246.94, 293.66, 329.63, 369.99], // B, D, E, F#
-        boss: [146.83, 174.61, 196, 220], // D, F, G, A (lower, more ominous)
-      };
-
-      const freqs = baseFreqs[type];
-      let currentNote = 0;
-      const noteDuration = type === 'boss' ? 800 : 600;
-
-      const playNote = () => {
-        if (!this.audioContext || !this.musicGainNode) return;
-
-        const freq = freqs[currentNote % freqs.length];
-        oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
-        
-        // Create a soft attack and release
-        const now = this.audioContext.currentTime;
-        gainNode.gain.cancelScheduledValues(now);
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.15, now + 0.1);
-        gainNode.gain.linearRampToValueAtTime(0.1, now + noteDuration / 1000 - 0.1);
-        gainNode.gain.linearRampToValueAtTime(0, now + noteDuration / 1000);
-
-        currentNote++;
-        
-        if (currentNote < 1000) { // Play for a long time
-          setTimeout(playNote, noteDuration);
-        }
-      };
-
-      oscillator.type = type === 'boss' ? 'sawtooth' : 'sine';
-      oscillator.start();
-      playNote();
-      
-      this.currentMusicOscillator = oscillator;
-    };
+    const generation = this.musicGeneration;
 
     // For more complex music, use a pattern-based approach
     const playPattern = () => {
       if (!this.audioContext || !this.musicGainNode) return;
+      if (generation !== this.musicGeneration) return;
 
       const patterns: Record<typeof type, { notes: number[], tempo: number }> = {
         lobby: { notes: [0, 2, 3, 2, 0, 1, 2, 1], tempo: 120 },
@@ -178,6 +142,7 @@ class AudioManager {
       const noteTime = (60 / pattern.tempo) * 1000;
 
       const playNextNote = () => {
+        if (generation !== this.musicGeneration) return;
         if (!this.audioContext || !this.musicGainNode) return;
 
         const note = pattern.notes[noteIndex % pattern.notes.length];
@@ -202,7 +167,7 @@ class AudioManager {
         oscillator.stop(now + noteTime / 1000);
 
         noteIndex++;
-        setTimeout(playNextNote, noteTime);
+        this.musicTimeoutHandle = setTimeout(playNextNote, noteTime);
       };
 
       playNextNote();
