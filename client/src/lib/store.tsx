@@ -3,6 +3,7 @@ import { GameState, Item, PlayerStats } from './game/types';
 import { INITIAL_STATS } from './game/constants';
 import { calculateSellValue } from './game/items';
 import { encodeGameState, decodeGameState } from './game/codec';
+import { normalizeMobileControlType } from './game/normalizeMobileControlType';
 import { eventLogger } from './game/eventLogger';
 
 const STORAGE_KEY = 'pixel_labyrinth_save';
@@ -131,7 +132,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               musicVolume: parsed.settings?.musicVolume ?? 0.5,
               sfxVolume: parsed.settings?.sfxVolume ?? 0.5,
               joystickPosition: parsed.settings?.joystickPosition ?? 'left',
-              mobileControlType: parsed.settings?.mobileControlType ?? 'dpad',
+              mobileControlType: normalizeMobileControlType(parsed.settings?.mobileControlType),
               renderQuality: parsed.settings?.renderQuality ?? 'auto',
               controlOpacity: parsed.settings?.controlOpacity ?? 0.85,
               controlSize: parsed.settings?.controlSize ?? 1,
@@ -480,11 +481,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           newState.uid = encodeGameState(newState);
           debouncedSave(newState);
           break;
-        case 'UPDATE_SETTINGS':
-          newState.settings = { ...prev.settings, ...action.payload };
+        case 'UPDATE_SETTINGS': {
+          const settingsPatch = { ...action.payload };
+          if (settingsPatch.mobileControlType !== undefined) {
+            settingsPatch.mobileControlType = normalizeMobileControlType(
+              settingsPatch.mobileControlType,
+            );
+          }
+          newState.settings = { ...prev.settings, ...settingsPatch };
           newState.uid = encodeGameState(newState);
           debouncedSave(newState);
           break;
+        }
         case 'UNLOCK_COMPENDIUM_CARD':
           // Only add if not already unlocked
           if (!prev.compendium.includes(action.payload)) {

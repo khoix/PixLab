@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { useGame } from '../lib/store';
 import { useLocation } from '../lib/router';
 import { GameCanvas } from '../components/game/GameCanvas';
-import { VirtualJoystick } from '../components/game/VirtualJoystick';
 import { TouchpadControl } from '../components/game/TouchpadControl';
+import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
 import { pushSectorTimerPause, popSectorTimerPause } from '../lib/game/sectorTimer';
@@ -30,7 +30,7 @@ import { recordItemOffer, markOfferPurchased, getSoftAssistAdjustments, getOffer
 import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
-import type { GameState } from '../lib/game/types';
+import type { GameState, MobileControlType } from '../lib/game/types';
 import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
@@ -1243,11 +1243,11 @@ export default function Game() {
                     <div className="md:hidden">
                       <label className="text-lg font-pixel text-primary mb-2 block">MOBILE CONTROLS</label>
                       <RadioGroup
-                        value={(state.settings.mobileControlType || 'dpad') as 'joystick' | 'touchpad' | 'dpad'}
+                        value={(state.settings.mobileControlType || 'dpad') as MobileControlType}
                         onValueChange={(value) => {
                           dispatch({ 
                             type: 'UPDATE_SETTINGS', 
-                            payload: { mobileControlType: value as 'joystick' | 'touchpad' | 'dpad' }
+                            payload: { mobileControlType: value as MobileControlType }
                           });
                         }}
                         className="flex flex-col gap-3"
@@ -1265,9 +1265,9 @@ export default function Game() {
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="joystick" id="joystick" style={{ minWidth: '40px' }} />
-                          <label htmlFor="joystick" className="text-sm font-mono text-foreground cursor-pointer">
-                            Virtual Joystick
+                          <RadioGroupItem value="floating" id="floating-touch" data-testid="floating-touch-settings" style={{ minWidth: '40px' }} />
+                          <label htmlFor="floating-touch" className="text-sm font-mono text-foreground cursor-pointer">
+                            Floating Touch (anywhere)
                           </label>
                         </div>
                       </RadioGroup>
@@ -1773,6 +1773,9 @@ export default function Game() {
                 onTimeOut={handleTimeOut}
                 gameOverState={gameOverState}
               />
+              {!gameOverState && isMobile && (state.settings.mobileControlType || 'dpad') === 'floating' && (
+                <FloatingTouchControl onMove={handleMove} />
+              )}
               {!gameOverState && isMobile && (
                 <div className="mobile-controls-root pointer-events-none absolute inset-0 z-50" style={mobileControlStyle}>
                   {(() => {
@@ -1783,7 +1786,7 @@ export default function Game() {
                     if (controlType === 'dpad') {
                       return <DirectionalPadControl onMove={handleMove} />;
                     }
-                    return <VirtualJoystick onMove={handleMove} />;
+                    return null;
                   })()}
                   <QuickHealButton
                     healAmount={smallestHealingPotion?.stats?.heal ?? null}

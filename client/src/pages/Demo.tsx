@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { GameCanvas } from '@/components/game/GameCanvas';
 import { DemoSidebar } from '@/components/demo/DemoSidebar';
-import { VirtualJoystick } from '@/components/game/VirtualJoystick';
 import { TouchpadControl } from '@/components/game/TouchpadControl';
+import { FloatingTouchControl } from '@/components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '@/components/game/DirectionalPadControl';
 import { useGame } from '@/lib/store';
 import { Level, Position, MobSubtype, Item } from '@/lib/game/types';
@@ -245,13 +245,10 @@ export default function Demo() {
               return <TouchpadControl onMove={handleMove} />;
             } else if (controlType === 'dpad') {
               return <DirectionalPadControl onMove={handleMove} />;
-            } else {
-              return (
-                <VirtualJoystick
-                  onMove={handleMove}
-                />
-              );
+            } else if (controlType === 'floating') {
+              return <FloatingTouchControl onMove={handleMove} />;
             }
+            return null;
           })()}
           {/* Mobile sidebar - render as overlay */}
           <DemoSidebar

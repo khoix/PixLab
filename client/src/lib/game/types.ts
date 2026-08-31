@@ -1,3 +1,7 @@
+import type { MobileControlType } from './normalizeMobileControlType';
+
+export type { MobileControlType } from './normalizeMobileControlType';
+
 export type Position = { x: number; y: number };
 
 export type TileType = 'wall' | 'floor' | 'exit' | 'start';
@@ -179,7 +183,7 @@ export interface GameState {
     musicVolume: number;
     sfxVolume: number;
     joystickPosition: 'left' | 'right';
-    mobileControlType?: 'joystick' | 'dpad' | 'touchpad';
+    mobileControlType?: MobileControlType;
     renderQuality?: 'auto' | 'high' | 'medium' | 'low';
     controlOpacity?: number;
     controlSize?: number;

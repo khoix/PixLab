@@ -145,3 +145,31 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Verification
 - E2e: `e2e/m5-mobile-ux.spec.ts` — buffer API, settings sliders, quick heal, layout overlap
+
+---
+
+## Milestone 5.1 — Decentralized Touch Controls
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Added
+- **`FloatingTouchRecogniser`** — pure TS floating-origin recogniser with 12px drag slop and dominant-axis 4-way direction; exposed via `window.__PIXLAB_FLOATING_TOUCH__` for e2e
+- **`FloatingTouchControl`** — invisible playfield overlay (`z-35`) using pointer events; sits below HUD/controls (`z-40`/`z-50`) so quick-heal, D-pad, and menu stay tappable
+- **`normalizeMobileControlType`** — maps legacy `'joystick'` saves to `'floating'`
+
+### Changed
+- **Retired `VirtualJoystick.tsx`** — replaced by floating touch mode
+- **`mobileControlType`** — now `'dpad' | 'touchpad' | 'floating'`; lobby settings label “Floating Touch (anywhere)”
+- **Save codec** — decode normalizes `'joystick'` → `'floating'`; settings updates normalize on dispatch
+- **Demo sandbox** — uses `FloatingTouchControl` when floating mode selected
+
+### Decisions
+- **Touchpad** kept as third option (absolute zones)
+- **No origin pulse** — invisible Refraction-style drag
+- **Default** remains D-pad for new players
+
+### Verification
+- E2e: `e2e/m5-floating-touch.spec.ts` — origin relativity, lift clears direction, layer visibility, legacy joystick migration, lobby setting
+
+---

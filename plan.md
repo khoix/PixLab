@@ -183,13 +183,13 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Reference:** Refraction Flatland touch model (`src/touch/gestures.ts`, `docs/DESIGN.md` §9.2) — invisible floating-origin drag, not a rendered stick.
 
 **Tasks:**
-- [ ] Extract `FloatingTouchRecogniser` in `client/src/lib/game/touch/` (pure TS, unit-testable; no React in hot path)
-- [ ] Add `FloatingTouchControl` overlay (playfield capture layer; exclude HUD, menu, quick-heal, timer bar)
-- [ ] Wire to existing `gameInput.ts` held-direction + input-buffer path (M1/M5)
-- [ ] Replace `mobileControlType: 'joystick'` with `'floating'` (save-code migration in `codec.ts`)
-- [ ] Update lobby settings copy; optional control diagram in settings
-- [ ] E2e: floating origin relativity, swipe vs hold-drag, no input on excluded UI zones
-- [ ] Decide fate of legacy **Touchpad** (keep as “absolute zones” alternative vs deprecate)
+- [x] Extract `FloatingTouchRecogniser` in `client/src/lib/game/touch/` (pure TS, unit-testable; no React in hot path)
+- [x] Add `FloatingTouchControl` overlay (playfield capture layer; exclude HUD, menu, quick-heal, timer bar)
+- [x] Wire to existing `gameInput.ts` held-direction + input-buffer path (M1/M5)
+- [x] Replace `mobileControlType: 'joystick'` with `'floating'` (save-code migration in `codec.ts`)
+- [x] Update lobby settings copy; optional control diagram in settings
+- [x] E2e: floating origin relativity, swipe vs hold-drag, no input on excluded UI zones
+- [x] Decide fate of legacy **Touchpad** (keep as “absolute zones” alternative vs deprecate)
 
 **Files:**
 - `client/src/lib/game/touch/floatingTouchRecogniser.ts` (new)
@@ -206,10 +206,10 @@ Execution plan for performance optimization and gameplay improvements on web and
 - D-pad mode unchanged for players who prefer it
 - No React re-renders during continuous drag (M1 perf parity)
 
-**Open questions (resolve before implementation):**
-- Keep Touchpad as a third option, or remove when Floating Touch ships?
-- Invisible (Refraction) vs optional origin pulse visual feedback?
-- Default control scheme for new players: D-pad or Floating Touch?
+**Open questions (resolved):**
+- **Touchpad:** kept as third option (“absolute zones” alternative to floating touch)
+- **Visual feedback:** invisible floating origin (Refraction-style; no origin pulse)
+- **Default scheme:** D-pad for new players (unchanged)
 
 **Depends on:** Milestone 1 (input ref path), Milestone 5 (buffering, layout exclusions)
 
