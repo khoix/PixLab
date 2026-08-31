@@ -176,6 +176,45 @@ Execution plan for performance optimization and gameplay improvements on web and
 
 ---
 
+## Milestone 5.1 — Decentralized Touch Controls
+
+**Goal:** Replace the fixed on-screen virtual joystick with Refraction-style floating-origin touch — touch anywhere on the playfield to set center, direction is relative until lift, with directional swipe on the same surface.
+
+**Reference:** Refraction Flatland touch model (`src/touch/gestures.ts`, `docs/DESIGN.md` §9.2) — invisible floating-origin drag, not a rendered stick.
+
+**Tasks:**
+- [ ] Extract `FloatingTouchRecogniser` in `client/src/lib/game/touch/` (pure TS, unit-testable; no React in hot path)
+- [ ] Add `FloatingTouchControl` overlay (playfield capture layer; exclude HUD, menu, quick-heal, timer bar)
+- [ ] Wire to existing `gameInput.ts` held-direction + input-buffer path (M1/M5)
+- [ ] Replace `mobileControlType: 'joystick'` with `'floating'` (save-code migration in `codec.ts`)
+- [ ] Update lobby settings copy; optional control diagram in settings
+- [ ] E2e: floating origin relativity, swipe vs hold-drag, no input on excluded UI zones
+- [ ] Decide fate of legacy **Touchpad** (keep as “absolute zones” alternative vs deprecate)
+
+**Files:**
+- `client/src/lib/game/touch/floatingTouchRecogniser.ts` (new)
+- `client/src/components/game/FloatingTouchControl.tsx` (new)
+- Retire or replace `VirtualJoystick.tsx`
+- `client/src/pages/Game.tsx`, `client/src/lib/game/types.ts`, `client/src/lib/game/codec.ts`
+- `e2e/m5-floating-touch.spec.ts` (or extend `e2e/m5-mobile-ux.spec.ts`)
+- `client/src/pages/Demo.tsx` (if demo uses joystick mode)
+
+**Exit criteria:**
+- Touch down anywhere on playfield → direction relative to that point, not absolute screen position
+- Lifting finger clears movement (no ghost drift; compatible with M5 input buffer)
+- Directional swipe and hold-drag both work on the same layer
+- D-pad mode unchanged for players who prefer it
+- No React re-renders during continuous drag (M1 perf parity)
+
+**Open questions (resolve before implementation):**
+- Keep Touchpad as a third option, or remove when Floating Touch ships?
+- Invisible (Refraction) vs optional origin pulse visual feedback?
+- Default control scheme for new players: D-pad or Floating Touch?
+
+**Depends on:** Milestone 1 (input ref path), Milestone 5 (buffering, layout exclusions)
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -269,7 +308,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M6 Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf
                                                 └─► M8 Refactor
@@ -284,6 +323,7 @@ M0 Baseline
 | M3 | Fog/tile cache, DPR | P1 | Medium |
 | M4 | State batching, modifiers | P1 | Medium |
 | M5 | Mobile UX | P1 | Low |
+| M5.1 | Decentralized touch controls | P1 | Medium |
 | M6 | Balance & clarity | P2 | Medium |
 | M7 | AI performance | P2 | Medium |
 | M8 | Architecture split | P2 | High |
