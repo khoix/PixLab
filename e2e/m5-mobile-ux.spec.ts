@@ -117,5 +117,15 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(layout?.onRightEdge).toBe(true);
     expect(layout?.notBottomPinned).toBe(true);
     expect(layout?.hasHeight).toBe(true);
+
+    const anchoredBottom = await page.evaluate(() => {
+      const track = document.querySelector('.mobile-sector-timer-track') as HTMLElement | null;
+      const fill = document.querySelector('[data-testid="mobile-sector-timer-fill"]') as HTMLElement | null;
+      if (!track || !fill) return false;
+      const trackRect = track.getBoundingClientRect();
+      const fillRect = fill.getBoundingClientRect();
+      return Math.abs(fillRect.bottom - trackRect.bottom) <= 3;
+    });
+    expect(anchoredBottom).toBe(true);
   });
 });
