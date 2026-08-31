@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useGame } from '../lib/store';
 import { useLocation } from '../lib/router';
 import { GameCanvas } from '../components/game/GameCanvas';
-import { TouchpadControl } from '../components/game/TouchpadControl';
 import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
@@ -39,6 +38,10 @@ import { QuickHealButton } from '../components/game/QuickHealButton';
 import { findSmallestHealingPotion } from '../lib/game/quickHeal';
 import { triggerHaptic } from '../lib/game/haptics';
 import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
+import {
+  normalizeTouchSensitivity,
+  slopPxFromSensitivity,
+} from '../lib/game/touch/touchSensitivity';
 
 // Helper function to format item names with initial caps
 function formatItemName(itemName: string): string {
@@ -1260,12 +1263,6 @@ export default function Game() {
                           </label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="touchpad" id="touchpad" style={{ minWidth: '40px' }} />
-                          <label htmlFor="touchpad" className="text-sm font-mono text-foreground cursor-pointer">
-                            Touchpad (Swipe & Tap)
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="floating" id="floating-touch" data-testid="floating-touch-settings" style={{ minWidth: '40px' }} />
                           <label htmlFor="floating-touch" className="text-sm font-mono text-foreground cursor-pointer">
                             Floating Touch (anywhere)
@@ -1273,6 +1270,33 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
+                    {(state.settings.mobileControlType || 'dpad') === 'floating' && (
+                      <div className="md:hidden" data-testid="touch-sensitivity-settings">
+                        <label className="text-lg font-pixel text-primary mb-2 block">TOUCH SENSITIVITY</label>
+                        <p className="text-xs font-mono text-muted-foreground mb-2">
+                          How far you drag before movement registers
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Slider
+                            value={[normalizeTouchSensitivity(state.settings.touchSensitivity)]}
+                            onValueChange={(value) => {
+                              dispatch({
+                                type: 'UPDATE_SETTINGS',
+                                payload: { touchSensitivity: value[0] },
+                              });
+                            }}
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            className="flex-1"
+                            data-testid="touch-sensitivity-slider"
+                          />
+                          <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                            {Math.round(normalizeTouchSensitivity(state.settings.touchSensitivity) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>
                       <RadioGroup
@@ -1312,6 +1336,8 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
+                    {(state.settings.mobileControlType || 'dpad') === 'dpad' && (
+                      <>
                     <div className="md:hidden" data-testid="mobile-control-settings">
                       <label className="text-lg font-pixel text-primary mb-2 block">CONTROL OPACITY</label>
                       <div className="flex items-center gap-3">
@@ -1356,6 +1382,8 @@ export default function Game() {
                         </span>
                       </div>
                     </div>
+                      </>
+                    )}
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">HAPTIC FEEDBACK</label>
                       <RadioGroup
@@ -1776,20 +1804,16 @@ export default function Game() {
                 gameOverState={gameOverState}
               />
               {!gameOverState && isMobile && (state.settings.mobileControlType || 'dpad') === 'floating' && (
-                <FloatingTouchControl onMove={handleMove} />
+                <FloatingTouchControl
+                  onMove={handleMove}
+                  slopPx={slopPxFromSensitivity(normalizeTouchSensitivity(state.settings.touchSensitivity))}
+                />
               )}
               {!gameOverState && isMobile && (
                 <div className="mobile-controls-root pointer-events-none absolute inset-0 z-50" style={mobileControlStyle}>
-                  {(() => {
-                    const controlType = state.settings.mobileControlType || 'dpad';
-                    if (controlType === 'touchpad') {
-                      return <TouchpadControl onMove={handleMove} />;
-                    }
-                    if (controlType === 'dpad') {
-                      return <DirectionalPadControl onMove={handleMove} />;
-                    }
-                    return null;
-                  })()}
+                  {(state.settings.mobileControlType || 'dpad') === 'dpad' && (
+                    <DirectionalPadControl onMove={handleMove} />
+                  )}
                   <QuickHealButton
                     healAmount={smallestHealingPotion?.stats?.heal ?? null}
                     disabled={!!gameOverState || showInventory || showMenu || showCommerceVendor}

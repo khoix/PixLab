@@ -190,6 +190,28 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Milestone 5.3 — Floating Touch Sensitivity & Control Settings
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Added
+- **`touchSensitivity` setting** — 0–100% slider maps to drag slop (6–20px); default 50% ≈ legacy 12px feel
+- **`touchSensitivity.ts`** — slop mapping helpers; persisted in save codec (`S['9']`)
+
+### Changed
+- **Conditional control sliders** — floating touch shows sensitivity; D-pad shows opacity + size
+- **Removed Touchpad** — scheme retired; legacy `'touchpad'` saves migrate to floating
+- **`FloatingTouchRecogniser`** — configurable slop via constructor/`setSlopPx`
+
+### Removed
+- **`TouchpadControl.tsx`**
+
+### Verification
+- E2e: `e2e/m5-touch-sensitivity.spec.ts`
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  

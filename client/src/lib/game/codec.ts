@@ -1,6 +1,7 @@
 import { GameState, Item } from './types';
 import { INITIAL_STATS } from './constants';
 import { normalizeMobileControlType } from './normalizeMobileControlType';
+import { DEFAULT_TOUCH_SENSITIVITY, normalizeTouchSensitivity } from './touch/touchSensitivity';
 
 /**
  * Base128 encoding with URL-safe, copy-friendly characters
@@ -479,6 +480,9 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.controlOpacity !== undefined && state.settings.controlOpacity !== 0.85) settings['6'] = state.settings.controlOpacity;
       if (state.settings.controlSize !== undefined && state.settings.controlSize !== 1) settings['7'] = state.settings.controlSize;
       if (state.settings.hapticsEnabled === false) settings['8'] = 0;
+      if (state.settings.touchSensitivity !== undefined && state.settings.touchSensitivity !== DEFAULT_TOUCH_SENSITIVITY) {
+        settings['9'] = state.settings.touchSensitivity;
+      }
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -575,6 +579,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         controlOpacity: saveData.S?.['6'] ?? 0.85,
         controlSize: saveData.S?.['7'] ?? 1,
         hapticsEnabled: saveData.S?.['8'] !== 0,
+        touchSensitivity: normalizeTouchSensitivity(saveData.S?.['9']),
       },
     };
     
