@@ -753,12 +753,6 @@
     min-height: 0;
   }
 
-  .lobby-page .overflow-y-auto,
-  .lobby-page .scroll-touch {
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
-  }
-
   /* M5 — Mobile run controls & HUD layout (375×667 safe) */
   .safe-area-top {
     padding-top: max(1rem, env(safe-area-inset-top));
