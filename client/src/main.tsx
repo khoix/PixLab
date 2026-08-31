@@ -11,6 +11,7 @@ import { initSectorTimerApi } from "./lib/game/sectorTimer";
 import { initGameLoopBatchApi } from "./lib/game/gameLoopBatch";
 import { initHapticsApi } from "./lib/game/haptics";
 import { initRuntimeRefsApi } from "./lib/game/runtimeRefs";
+import { initFloatingTouchApi } from "./lib/game/touch/floatingTouchRecogniser";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -23,6 +24,7 @@ initSectorTimerApi();
 initGameLoopBatchApi();
 initHapticsApi();
 initRuntimeRefsApi();
+initFloatingTouchApi();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

@@ -1,5 +1,6 @@
 import { GameState, Item } from './types';
 import { INITIAL_STATS } from './constants';
+import { normalizeMobileControlType } from './normalizeMobileControlType';
 
 /**
  * Base128 encoding with URL-safe, copy-friendly characters
@@ -495,7 +496,7 @@ export function encodeGameState(state: GameState): string {
     Lo: { w: null, a: null, u: null },
     m: [],
     b: [],
-    S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'joystick' },
+    S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'dpad' },
   });
   
   try {
@@ -569,7 +570,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         musicVolume: saveData.S?.['1'] ?? 0.5,
         sfxVolume: saveData.S?.['2'] ?? 0.5,
         joystickPosition: saveData.S?.['3'] ?? 'left',
-        mobileControlType: saveData.S?.['4'] ?? 'dpad',
+        mobileControlType: normalizeMobileControlType(saveData.S?.['4']),
         renderQuality: saveData.S?.['5'] ?? 'auto',
         controlOpacity: saveData.S?.['6'] ?? 0.85,
         controlSize: saveData.S?.['7'] ?? 1,
