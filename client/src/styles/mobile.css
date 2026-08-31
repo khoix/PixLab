@@ -539,11 +539,21 @@
     font-size: 1.25rem !important;
   }
 
-  /* Tabs Card Mobile Optimizations */
+  /* Tabs card — fixed height on mobile prevents tab-switch layout shift */
+  .lobby-tabs-card {
+    height: 22rem !important;
+    min-height: 22rem !important;
+    max-height: calc(100dvh - 13rem);
+  }
+
+  .lobby-tab-panels {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
   .lobby-page-grid > div:nth-child(2),
   .lobby-page-grid > div[class*="col-span-2"] {
     min-height: 0 !important;
-    max-height: calc(100dvh - 13rem);
   }
 
   /* Optimize tab buttons for touch */
@@ -561,7 +571,7 @@
   }
 
   /* Reduce padding in tab content area */
-  .lobby-page .p-6.flex-1 {
+  .lobby-tab-panels {
     padding: 1rem !important;
   }
 

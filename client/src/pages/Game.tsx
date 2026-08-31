@@ -625,6 +625,7 @@ export default function Game() {
     return (
       <div className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center crt">
         <MazeBackground />
+        <div className="lobby-page-body w-full max-w-4xl flex flex-col items-center flex-shrink-0">
           <div className="lobby-page-title flex-shrink-0 text-center space-y-2 mb-4 md:mb-8">
           <h1 
             onClick={() => setLocation('/')}
@@ -792,8 +793,8 @@ export default function Game() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col min-h-0 md:min-h-[500px]">
-            <Tabs defaultValue="mission" className="w-full flex-1 flex flex-col min-h-0">
+          <Card className="lobby-tabs-card md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-[22rem] md:h-[500px]">
+            <Tabs defaultValue="mission" className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
                 <TabsTrigger value="loadout" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
@@ -807,8 +808,8 @@ export default function Game() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="p-6 flex-1 relative min-h-0 overflow-hidden">
-                <TabsContent value="mission" className="h-full flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 relative">
+              <div className="lobby-tab-panels p-6 flex-1 min-h-0 overflow-hidden">
+                <TabsContent value="mission" className="lobby-tab-panel mt-0 h-full flex flex-col items-center justify-center space-y-8 relative pb-14">
                   <div className="text-center space-y-2">
                     <h2 className="text-2xl text-white font-pixel">SECTOR {state.currentLevel}</h2>
                     <p className="text-muted-foreground font-mono text-lg">
@@ -848,7 +849,7 @@ export default function Game() {
                   </button>
                 </TabsContent>
 
-                <TabsContent value="loadout" className="space-y-4 max-h-[400px] overflow-y-auto scroll-touch">
+                <TabsContent value="loadout" className="lobby-tab-panel mt-0 h-full overflow-y-auto scroll-touch space-y-4">
                   {/* Equipped Items Section */}
                   <div className="border border-primary/30 p-3 bg-primary/5">
                     <h4 className="font-pixel text-lg text-primary mb-2">EQUIPPED</h4>
@@ -1167,11 +1168,11 @@ export default function Game() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="compendium" className="space-y-4 max-h-[400px] overflow-y-auto scroll-touch">
+                <TabsContent value="compendium" className="lobby-tab-panel mt-0 h-full overflow-y-auto scroll-touch space-y-4">
                   <Compendium />
                 </TabsContent>
 
-                <TabsContent value="mods" className="space-y-4 max-h-[300px] overflow-y-auto scroll-touch">
+                <TabsContent value="mods" className="lobby-tab-panel mt-0 h-full overflow-y-auto scroll-touch space-y-4">
                   {MODS.map(mod => (
                     <div 
                       key={mod.id} 
@@ -1192,7 +1193,7 @@ export default function Game() {
                   ))}
                 </TabsContent>
 
-                <TabsContent value="settings" data-testid="lobby-settings-panel" className="space-y-6 max-h-[400px] overflow-y-auto scroll-touch pb-4">
+                <TabsContent value="settings" data-testid="lobby-settings-panel" className="lobby-tab-panel mt-0 h-full overflow-y-auto scroll-touch space-y-6 pb-4">
                   <div className="space-y-4">
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">MUSIC VOLUME</label>
@@ -1388,7 +1389,7 @@ export default function Game() {
             </Tabs>
           </Card>
         </div>
-        <div className="lobby-page-code hidden md:block flex-shrink-0 mt-4 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full max-w-4xl">
+        <div className="lobby-page-code hidden md:block flex-shrink-0 mt-4 p-4 border border-dashed border-white/10 bg-black/40 rounded w-full">
           <p className="text-lg text-center text-muted-foreground font-mono">
             CODE: <span 
               className="text-primary font-mono break-all cursor-pointer hover:text-primary/80 transition-colors select-none"
@@ -1398,6 +1399,7 @@ export default function Game() {
               {state.uid.length > 50 ? `${state.uid.substring(0, 50)}...` : state.uid}
             </span>
           </p>
+        </div>
         </div>
       </div>
     );
