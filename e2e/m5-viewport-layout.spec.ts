@@ -82,8 +82,8 @@ test.describe('M5.2 — Viewport-locked lobby layout', () => {
 
     expect(layout).not.toBeNull();
     expect(layout!.titleTop).toBeGreaterThanOrEqual(4);
-    expect(layout!.tabsHeight).toBeGreaterThanOrEqual(310);
-    expect(layout!.tabsHeight).toBeLessThan(520);
+    expect(layout!.tabsHeight).toBeGreaterThanOrEqual(340);
+    expect(layout!.tabsHeight).toBeLessThan(580);
     expect(layout!.enterBottom).toBeLessThanOrEqual(layout!.tabsBottom + 2);
   });
 
