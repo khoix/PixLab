@@ -185,4 +185,21 @@ test.describe('M5 — Mobile UX & controls', () => {
 
     expect(paddingTop).toBeGreaterThanOrEqual(40);
   });
+
+  test('toast viewport stacks below global CRT blinds overlay', async ({ page }) => {
+    await page.goto('/');
+
+    const stacking = await page.evaluate(() => {
+      const toast = document.querySelector('[data-testid="toast-viewport"]') as HTMLElement | null;
+      const blinds = document.querySelector('[data-testid="crt-blinds-overlay"]') as HTMLElement | null;
+      if (!toast || !blinds) return null;
+      return {
+        toastZ: Number(getComputedStyle(toast).zIndex),
+        blindsZ: Number(getComputedStyle(blinds).zIndex),
+      };
+    });
+
+    expect(stacking).not.toBeNull();
+    expect(stacking!.toastZ).toBeLessThan(stacking!.blindsZ);
+  });
 });

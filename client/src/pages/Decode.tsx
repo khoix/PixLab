@@ -78,7 +78,6 @@ export default function Decode() {
         }}
       />
       <div className="absolute inset-0 bg-black/40 z-0" />
-      <div className="crt absolute inset-0 pointer-events-none z-50" />
 
       <div className="relative z-10 w-full max-w-5xl space-y-3">
         <div className="text-center space-y-1">
