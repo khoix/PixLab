@@ -1449,10 +1449,10 @@ export default function Game() {
               </div>
               {isMobile && (
                 <p
-                  className="font-mono text-xs text-muted-foreground flex-shrink-0 text-right pt-1"
+                  className="font-mono text-lg text-muted-foreground flex-shrink-0 text-right pt-1"
                   data-testid="vendor-coins-header"
                 >
-                  COINS: <span className="text-yellow-400 font-bold text-base">${state.stats.coins}</span>
+                  COINS: <span className="text-yellow-400 font-bold text-2xl">${state.stats.coins}</span>
                 </p>
               )}
             </div>

@@ -233,6 +233,7 @@ npm run test:e2e:ui     # interactive UI mode
 ### Fixed
 - **CRT overlay gap** — vendor station uses `fixed inset-0` + `100dvh` card height so scanlines cover the full screen on mobile
 - **Compact header** — coins moved to top-right; yellow coins bar replaced with a stylized cyan divider on mobile
+- **Coin display size** — mobile header coins scaled 50% larger (`text-lg` / `text-2xl`)
 - **Desktop unchanged** — coins bar remains below the header on wider viewports
 
 ### Verification
