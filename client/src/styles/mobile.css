@@ -259,17 +259,7 @@
     max-width: 400px;
   }
 
-  /* Mobile toast positioning */
-  /* Top positioning for mobile toasts */
-  .mobile-toast {
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    width: auto;
-  }
-
   /* Game canvas touch optimizations */
-  /* Prevent default touch behaviors on game canvas */
   canvas.game-canvas {
     touch-action: none;
     -webkit-touch-callout: none;

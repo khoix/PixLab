@@ -157,6 +157,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
 - [x] **Landscape hint:** Portrait recommendation banner on short landscape viewports
 - [x] **Vertical sector timer (mobile):** Right-edge bar drains top → bottom; avoids browser chrome covering bottom bar
+- [x] **Toast safe-area:** Top toast viewport offset below status bar / notch on mobile
 
 **Files:**
 - `client/src/pages/Game.tsx`

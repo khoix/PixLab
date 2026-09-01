@@ -128,4 +128,16 @@ test.describe('M5 — Mobile UX & controls', () => {
     });
     expect(anchoredBottom).toBe(true);
   });
+
+  test('toast viewport clears mobile status bar', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+
+    const paddingTop = await page.evaluate(() => {
+      const viewport = document.querySelector('[data-testid="toast-viewport"]') as HTMLElement | null;
+      return viewport ? parseFloat(getComputedStyle(viewport).paddingTop) : 0;
+    });
+
+    expect(paddingTop).toBeGreaterThanOrEqual(40);
+  });
 });
