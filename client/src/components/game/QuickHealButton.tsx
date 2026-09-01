@@ -27,9 +27,8 @@ export const QuickHealButton: React.FC<QuickHealButtonProps> = ({
         'transition-all active:scale-95',
         disabled || healAmount === null
           ? 'opacity-40 cursor-not-allowed'
-          : 'opacity-[var(--mobile-control-opacity,0.85)] hover:bg-primary/20',
+          : 'hover:bg-primary/20',
       )}
-      style={{ transform: 'scale(var(--mobile-control-scale, 1))' }}
     >
       <FlaskConical className="w-6 h-6 text-cyan-400" />
       {healAmount !== null && (

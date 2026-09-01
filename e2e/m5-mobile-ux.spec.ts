@@ -39,16 +39,16 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(result.buffered).toBeNull();
   });
 
-  test('mobile control settings sliders are available in lobby', async ({ page }) => {
+  test('mobile HUD settings sliders are available in lobby', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
     await page.getByTestId('start-run-button').click();
     await page.waitForURL('**/play**');
     await page.getByTestId('lobby-settings-tab').click();
 
-    await expect(page.getByTestId('mobile-control-settings')).toBeVisible();
-    await expect(page.getByTestId('control-opacity-slider')).toBeVisible();
-    await expect(page.getByTestId('control-size-slider')).toBeVisible();
+    await expect(page.getByTestId('mobile-hud-settings')).toBeVisible();
+    await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
+    await expect(page.getByTestId('hud-size-slider')).toBeVisible();
     await expect(page.getByTestId('haptics-settings')).toBeVisible();
   });
 
@@ -69,7 +69,14 @@ test.describe('M5 — Mobile UX & controls', () => {
 
   test('sector badge sits in lower HUD band on short viewport', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await startSectorRun(page);
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.updateSettings({ mobileControlType: 'dpad' });
+    });
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
 
     const dpad = page.getByTestId('mobile-dpad-control');
     await expect(dpad).toBeVisible();
@@ -127,6 +134,38 @@ test.describe('M5 — Mobile UX & controls', () => {
       return Math.abs(fillRect.bottom - trackRect.bottom) <= 3;
     });
     expect(anchoredBottom).toBe(true);
+  });
+
+  test('mobile sector timer and quick heal use HUD opacity and size variables', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.updateSettings({ controlOpacity: 0.6, controlSize: 1.1 });
+      window.__PIXLAB_TEST__?.addHealingPotion();
+    });
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    const styles = await page.evaluate(() => {
+      const root = document.querySelector('.relative.w-full.h-screen') as HTMLElement | null;
+      const timer = document.querySelector('.mobile-sector-timer') as HTMLElement | null;
+      const quickHeal = document.querySelector('.mobile-quick-heal') as HTMLElement | null;
+      if (!root || !timer || !quickHeal) return null;
+      const rootStyle = getComputedStyle(root);
+      return {
+        hudOpacity: rootStyle.getPropertyValue('--mobile-hud-opacity').trim(),
+        hudScale: rootStyle.getPropertyValue('--mobile-hud-scale').trim(),
+        timerOpacity: getComputedStyle(timer).opacity,
+        quickHealOpacity: getComputedStyle(quickHeal).opacity,
+      };
+    });
+
+    expect(styles?.hudOpacity).toBe('0.6');
+    expect(styles?.hudScale).toBe('1.1');
+    expect(Number(styles?.timerOpacity)).toBeCloseTo(0.6, 1);
+    expect(Number(styles?.quickHealOpacity)).toBeCloseTo(0.6, 1);
   });
 
   test('toast viewport clears mobile status bar', async ({ page }) => {

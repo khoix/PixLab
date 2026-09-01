@@ -34,7 +34,18 @@ test.describe('M5.3 — Floating touch sensitivity & settings', () => {
     expect(floatingSelected).toBeTruthy();
   });
 
-  test('floating mode shows sensitivity slider, hides opacity/size', async ({ page }) => {
+  test('floating touch is the default control scheme', async ({ page }) => {
+    await openLobbySettings(page);
+
+    const floatingSelected = await page.evaluate(() => {
+      const el = document.querySelector('#floating-touch') as HTMLButtonElement | null;
+      return el?.getAttribute('data-state') === 'checked';
+    });
+
+    expect(floatingSelected).toBeTruthy();
+  });
+
+  test('floating mode shows sensitivity slider and HUD sliders, hides d-pad size', async ({ page }) => {
     await openLobbySettings(page);
 
     await page.evaluate(() => {
@@ -43,20 +54,23 @@ test.describe('M5.3 — Floating touch sensitivity & settings', () => {
 
     await expect(page.getByTestId('touch-sensitivity-settings')).toBeVisible();
     await expect(page.getByTestId('touch-sensitivity-slider')).toBeVisible();
-    await expect(page.getByTestId('control-opacity-slider')).toHaveCount(0);
-    await expect(page.getByTestId('control-size-slider')).toHaveCount(0);
+    await expect(page.getByTestId('mobile-hud-settings')).toBeVisible();
+    await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
+    await expect(page.getByTestId('hud-size-slider')).toBeVisible();
+    await expect(page.getByTestId('dpad-size-slider')).toHaveCount(0);
   });
 
-  test('dpad mode shows opacity/size sliders, hides sensitivity', async ({ page }) => {
+  test('dpad mode shows d-pad size slider, hides sensitivity, keeps HUD sliders', async ({ page }) => {
     await openLobbySettings(page);
 
     await page.evaluate(() => {
       window.__PIXLAB_TEST__?.updateSettings({ mobileControlType: 'dpad' });
     });
 
-    await expect(page.getByTestId('mobile-control-settings')).toBeVisible();
-    await expect(page.getByTestId('control-opacity-slider')).toBeVisible();
-    await expect(page.getByTestId('control-size-slider')).toBeVisible();
+    await expect(page.getByTestId('dpad-size-settings')).toBeVisible();
+    await expect(page.getByTestId('dpad-size-slider')).toBeVisible();
+    await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
+    await expect(page.getByTestId('hud-size-slider')).toBeVisible();
     await expect(page.getByTestId('touch-sensitivity-slider')).toHaveCount(0);
   });
 

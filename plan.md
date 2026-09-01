@@ -154,7 +154,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Layout pass:** Resolve D-pad / HUD overlap on short viewports (iPhone SE class); use safe-area insets consistently
 - [x] **Haptic feedback:** `navigator.vibrate()` on hit, pickup, sector clear (respect reduced-motion / user setting)
 - [x] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator
-- [x] **Settings:** Control scheme picker already exists; add control opacity/size sliders for accessibility
+- [x] **Settings:** Control scheme picker; HUD opacity/size sliders; D-pad size slider (D-pad mode only)
 - [x] **Landscape hint:** Portrait recommendation banner on short landscape viewports
 - [x] **Vertical sector timer (mobile):** Right-edge bar drains top → bottom; avoids browser chrome covering bottom bar
 - [x] **Toast safe-area:** Top toast viewport offset below status bar / notch on mobile
@@ -211,7 +211,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Open questions (resolved):**
 - **Touchpad:** removed in M5.3; legacy saves migrate to floating touch
 - **Visual feedback:** invisible floating origin (Refraction-style; no origin pulse)
-- **Default scheme:** D-pad for new players (unchanged)
+- **Default scheme:** Floating touch for new players; D-pad remains available
 
 **Depends on:** Milestone 1 (input ref path), Milestone 5 (buffering, layout exclusions)
 

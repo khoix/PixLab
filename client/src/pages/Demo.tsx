@@ -240,7 +240,7 @@ export default function Demo() {
       {isMobile && (
         <>
           {(() => {
-            const controlType = state.settings.mobileControlType || 'dpad';
+            const controlType = state.settings.mobileControlType || 'floating';
             if (controlType === 'dpad') {
               return <DirectionalPadControl onMove={handleMove} />;
             }
