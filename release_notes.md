@@ -212,6 +212,19 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Mobile UX — Toast Safe-Area
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Fixed
+- **Toast overlap** — mobile toast viewport now uses `max(3rem, safe-area-inset-top + 1rem)` top padding so notifications (e.g. “SECTOR CLEARED”) sit below the phone status bar instead of under it
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts` — toast viewport padding on mobile
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  
