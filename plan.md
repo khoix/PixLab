@@ -78,7 +78,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Medium:** Shadows on player, bosses, exit only
 - [x] **High:** Current behavior
 - [x] Add `game-canvas` class to canvas element (fixes dead CSS in `mobile.css`)
-- [ ] Optionally cap canvas backing store resolution on mobile (see Milestone 3)
+- [x] Cap canvas backing store resolution on mobile: `MOBILE_MAX_BUFFER_PIXELS` budget (~1.2MP) in `canvasSizing.ts` scales effective DPR down on large high-DPR phones; compact phones keep full 2x
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`
@@ -104,7 +104,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Fog layer cache:** Render fog radial gradient to offscreen canvas; redraw only when vision radius, debuff, lightswitch, scroll effects, or canvas size change
 - [x] **Static tile cache (optional):** Pre-render wall/floor tiles for current sector to offscreen buffer; blit each frame instead of redrawing every tile
 - [x] **Per-frame dedup:** Compute `getModifiers()` + `getEffectiveStats()` once per frame into a snapshot object; use `activeModsRef` inside loop
-- [ ] Consider fixed logical viewport (11×15 tiles from constants) instead of full window if full-screen canvas remains costly
+- [x] Fixed logical viewport — **resolved: keep full-window canvas.** The mobile backing-store pixel budget (M2 wrap-up) bounds worst-case buffer size to ~1.2MP, which is what a fixed 11×15-tile viewport would have saved, without changing visible tile range per device or requiring letterboxing
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`

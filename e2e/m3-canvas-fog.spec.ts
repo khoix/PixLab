@@ -40,3 +40,69 @@ test.describe('M3 — Canvas DPR and fog cache', () => {
     expect(stats!.blitCount).toBeGreaterThan(stats!.rebuildCount);
   });
 });
+
+test.describe('M2/M3 — mobile backing-store pixel budget', () => {
+  test.describe('large high-DPR phone', () => {
+    test.use({ viewport: { width: 430, height: 932 }, deviceScaleFactor: 3 });
+
+    test('backing store is capped to the mobile pixel budget', async ({ page }) => {
+      await startSectorRun(page);
+
+      const info = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+        const dims = window.__PIXLAB_CANVAS__!.getDimensions(canvas);
+        return {
+          dims,
+          budget: window.__PIXLAB_CANVAS__!.mobileMaxBufferPixels,
+          bufferPixels: canvas.width * canvas.height,
+        };
+      });
+
+      expect(info.bufferPixels).toBeLessThanOrEqual(info.budget);
+      expect(info.dims.dpr).toBeLessThan(2);
+      expect(info.dims.dpr).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  test.describe('compact phone', () => {
+    test.use({ viewport: { width: 375, height: 667 }, deviceScaleFactor: 2 });
+
+    test('small viewports keep (nearly) full DPR under the budget', async ({ page }) => {
+      await startSectorRun(page);
+
+      const info = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+        const dims = window.__PIXLAB_CANVAS__!.getDimensions(canvas);
+        return {
+          dims,
+          budget: window.__PIXLAB_CANVAS__!.mobileMaxBufferPixels,
+          bufferPixels: canvas.width * canvas.height,
+        };
+      });
+
+      expect(info.bufferPixels).toBeLessThanOrEqual(info.budget);
+      expect(info.dims.dpr).toBeGreaterThan(1.9);
+    });
+  });
+
+  test.describe('high-DPR desktop', () => {
+    test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 2 });
+
+    test('desktop viewports are not budget-capped', async ({ page }) => {
+      await startSectorRun(page);
+
+      const info = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+        const dims = window.__PIXLAB_CANVAS__!.getDimensions(canvas);
+        return {
+          dims,
+          budget: window.__PIXLAB_CANVAS__!.mobileMaxBufferPixels,
+          bufferPixels: canvas.width * canvas.height,
+        };
+      });
+
+      expect(info.dims.dpr).toBe(2);
+      expect(info.bufferPixels).toBeGreaterThan(info.budget);
+    });
+  });
+});

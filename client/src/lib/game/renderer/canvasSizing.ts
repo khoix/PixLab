@@ -1,4 +1,14 @@
+import { MOBILE_BREAKPOINT } from '../renderQuality';
+
 export const MAX_DPR = 2;
+
+/**
+ * M2: backing-store pixel budget for mobile viewports. Roughly a small phone
+ * at 2x (375×667 ≈ 1.0MP), so compact devices keep full DPR while large
+ * high-DPR phones get their effective DPR scaled down instead of paying for
+ * a 1.6MP+ full-window buffer.
+ */
+export const MOBILE_MAX_BUFFER_PIXELS = 1_200_000;
 
 export interface CanvasDimensions {
   logicalWidth: number;
@@ -8,31 +18,39 @@ export interface CanvasDimensions {
   bufferHeight: number;
 }
 
+function isMobileViewport(logicalWidth: number): boolean {
+  return logicalWidth < MOBILE_BREAKPOINT || window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+function clampDprToBudget(dpr: number, logicalWidth: number, logicalHeight: number): number {
+  if (!isMobileViewport(logicalWidth)) return dpr;
+
+  const logicalPixels = logicalWidth * logicalHeight;
+  if (logicalPixels <= 0) return dpr;
+
+  const budgetDpr = Math.sqrt(MOBILE_MAX_BUFFER_PIXELS / logicalPixels);
+  return Math.max(1, Math.min(dpr, budgetDpr));
+}
+
 export function getCanvasDimensions(canvas?: HTMLCanvasElement | null): CanvasDimensions {
-  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  const rawDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+
+  let logicalWidth: number;
+  let logicalHeight: number;
 
   if (canvas) {
     const rect = canvas.getBoundingClientRect();
-    const logicalWidth = Math.max(
-      1,
-      Math.floor(rect.width) || canvas.clientWidth || window.innerWidth,
-    );
-    const logicalHeight = Math.max(
+    logicalWidth = Math.max(1, Math.floor(rect.width) || canvas.clientWidth || window.innerWidth);
+    logicalHeight = Math.max(
       1,
       Math.floor(rect.height) || canvas.clientHeight || window.innerHeight,
     );
-
-    return {
-      logicalWidth,
-      logicalHeight,
-      dpr,
-      bufferWidth: Math.max(1, Math.floor(logicalWidth * dpr)),
-      bufferHeight: Math.max(1, Math.floor(logicalHeight * dpr)),
-    };
+  } else {
+    logicalWidth = window.innerWidth;
+    logicalHeight = window.innerHeight;
   }
 
-  const logicalWidth = window.innerWidth;
-  const logicalHeight = window.innerHeight;
+  const dpr = clampDprToBudget(rawDpr, logicalWidth, logicalHeight);
 
   return {
     logicalWidth,
@@ -64,6 +82,7 @@ export function initCanvasSizing(): void {
   window.__PIXLAB_CANVAS__ = {
     getDimensions: getCanvasDimensions,
     maxDpr: MAX_DPR,
+    mobileMaxBufferPixels: MOBILE_MAX_BUFFER_PIXELS,
   };
 }
 
@@ -72,6 +91,7 @@ declare global {
     __PIXLAB_CANVAS__?: {
       getDimensions: typeof getCanvasDimensions;
       maxDpr: number;
+      mobileMaxBufferPixels: number;
     };
   }
 }
