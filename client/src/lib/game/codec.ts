@@ -475,7 +475,7 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.musicVolume !== 0.5) settings['1'] = state.settings.musicVolume;
       if (state.settings.sfxVolume !== 0.5) settings['2'] = state.settings.sfxVolume;
       if (state.settings.joystickPosition !== 'left') settings['3'] = state.settings.joystickPosition;
-      if (state.settings.mobileControlType && state.settings.mobileControlType !== 'dpad') settings['4'] = state.settings.mobileControlType;
+      if (state.settings.mobileControlType && state.settings.mobileControlType !== 'floating') settings['4'] = state.settings.mobileControlType;
       if (state.settings.renderQuality && state.settings.renderQuality !== 'auto') settings['5'] = state.settings.renderQuality;
       if (state.settings.controlOpacity !== undefined && state.settings.controlOpacity !== 0.85) settings['6'] = state.settings.controlOpacity;
       if (state.settings.controlSize !== undefined && state.settings.controlSize !== 1) settings['7'] = state.settings.controlSize;
@@ -483,6 +483,7 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.touchSensitivity !== undefined && state.settings.touchSensitivity !== DEFAULT_TOUCH_SENSITIVITY) {
         settings['9'] = state.settings.touchSensitivity;
       }
+      if (state.settings.dpadSize !== undefined && state.settings.dpadSize !== 1) settings['10'] = state.settings.dpadSize;
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -500,7 +501,7 @@ export function encodeGameState(state: GameState): string {
     Lo: { w: null, a: null, u: null },
     m: [],
     b: [],
-    S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'dpad' },
+    S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'floating' },
   });
   
   try {
@@ -555,7 +556,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
       Lo: { w: null, a: null, u: null },
       m: [],
       b: [],
-      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'dpad' },
+      S: { '1': 0.5, '2': 0.5, '3': 'left', '4': 'floating' },
     });
     
     // Expand short property names to full names and restore items
@@ -580,6 +581,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         controlSize: saveData.S?.['7'] ?? 1,
         hapticsEnabled: saveData.S?.['8'] !== 0,
         touchSensitivity: normalizeTouchSensitivity(saveData.S?.['9']),
+        dpadSize: saveData.S?.['10'] ?? 1,
       },
     };
     

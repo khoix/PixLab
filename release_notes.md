@@ -241,6 +241,21 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Mobile UX — HUD Settings & Floating Default
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Changed
+- **Default control scheme** — floating touch for new players (was D-pad)
+- **HUD opacity / HUD size** — always visible; control quick heal button and sector timer bar (and D-pad opacity)
+- **D-pad size** — separate slider, visible only in D-pad mode; persisted as `S['10']`
+
+### Verification
+- E2e: `e2e/m5-touch-sensitivity.spec.ts`, `e2e/m5-mobile-ux.spec.ts`
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  
