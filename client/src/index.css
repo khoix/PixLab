@@ -202,3 +202,11 @@
 .vendor-station-divider::after {
   right: 0.5rem;
 }
+
+.vendor-station-item-btn {
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vendor-station-item-btn:not(:disabled):hover {
+  box-shadow: 0 0 14px rgba(0, 255, 245, 0.22);
+}
