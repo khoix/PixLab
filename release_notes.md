@@ -75,7 +75,7 @@ npm run test:e2e:ui     # interactive UI mode
 - E2e: `e2e/m2-render-quality.spec.ts` (auto mobile/desktop + user override + canvas class)
 
 ### Notes
-- DPR / canvas backing-store cap deferred to M3.
+- DPR / canvas backing-store cap deferred to M3; completed in **M2/M3 wrap-up** below.
 
 ---
 
@@ -101,7 +101,7 @@ npm run test:e2e:ui     # interactive UI mode
 ### Notes
 - Fixed tile-cache alignment: blit per tile at grid positions instead of fractional scroll offset (prevents player appearing inside walls).
 - Canvas logical size now measured from the canvas element via `ResizeObserver`, not `window.innerWidth/Height`.
-- Fixed logical viewport deferred; full-window canvas retained with caching optimizations.
+- Fixed logical viewport deferred; resolved in **M2/M3 wrap-up** below (full-window canvas retained, mobile pixel budget added).
 
 ---
 
@@ -284,5 +284,23 @@ npm run test:e2e:ui     # interactive UI mode
 - After deploy, open `https://khoix.net/pixlab/manifest.json` and confirm `start_url` resolves to `/pixlab/`.
 - Chrome DevTools → Application → Manifest → Start URL should show `https://khoix.net/pixlab/`.
 - Add to Home Screen should pre-fill the `/pixlab/` URL.
+
+---
+
+## Milestone 2/3 Wrap-Up — Mobile Backing-Store Cap & Fixed Viewport Decision
+
+**Branch:** `cursor/wrap-up-m2-m3-2c0e`  
+**Status:** Ready for review
+
+### Added
+- **`MOBILE_MAX_BUFFER_PIXELS`** (~1.2MP) in `canvasSizing.ts` — on mobile viewports (`< 768px`), the effective DPR is scaled down (never below 1) so the canvas backing store stays within the pixel budget. Compact phones (375×667 @ 2x ≈ 1.0MP) keep full DPR; large high-DPR phones (430×932) drop from 2x to ~1.73x instead of allocating a 1.6MP buffer. Desktop is unaffected.
+- The clamped DPR flows through `CanvasDimensions` into the fog and tile layer caches, so offscreen buffers shrink proportionally.
+- `window.__PIXLAB_CANVAS__.mobileMaxBufferPixels` exposed for tests.
+
+### Decided
+- **Fixed logical viewport (11×15 tiles) rejected; full-window canvas retained.** The pixel budget bounds worst-case buffer cost to roughly what a fixed viewport would have saved, without per-device changes to visible tile range or letterboxing.
+
+### Verification
+- E2e: `e2e/m3-canvas-fog.spec.ts` — budget cap on large high-DPR phone, near-full DPR on compact phone, no cap on high-DPR desktop.
 
 ---
