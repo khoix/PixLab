@@ -206,6 +206,9 @@ export default function Game() {
       setScreen: (screen: GameState['screen']) => {
         dispatch({ type: 'SET_SCREEN', payload: screen });
       },
+      setCoins: (coins: number) => {
+        dispatch({ type: 'UPDATE_STATS', payload: { coins } });
+      },
     };
     return () => {
       delete window.__PIXLAB_TEST__;
@@ -1495,7 +1498,7 @@ export default function Game() {
                 <TabsTrigger value="sell" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">SELL ITEMS</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="buy" className="flex-1 flex flex-col min-h-0 overflow-y-auto scroll-touch mt-4">
+              <TabsContent value="buy" data-testid="vendor-buy-panel" className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden scroll-touch mt-4">
                 {/* Stat Boosts Section */}
                 <div className="flex-shrink-0">
                   <h4 className="font-pixel text-sm text-primary mb-2">STAT BOOSTS</h4>
@@ -1506,9 +1509,9 @@ export default function Game() {
                         <button
                           key={item.id}
                           className={cn(
-                            "p-4 border transition-all text-left relative overflow-hidden",
+                            "vendor-station-item-btn p-4 border transition-all text-left relative overflow-hidden",
                             canAfford 
-                              ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105" 
+                              ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50" 
                               : "border-gray-700/50 opacity-60 cursor-not-allowed"
                           )}
                           disabled={!canAfford}
@@ -1571,9 +1574,9 @@ export default function Game() {
                         const itemContent = (
                           <button
                             className={cn(
-                              "p-4 border transition-all text-left relative overflow-hidden w-full",
+                              "vendor-station-item-btn p-4 border transition-all text-left relative overflow-hidden w-full",
                               canAfford 
-                                ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105" 
+                                ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50" 
                                 : "border-gray-700/50 opacity-60 cursor-not-allowed"
                             )}
                             disabled={!canAfford}
@@ -1676,7 +1679,7 @@ export default function Game() {
                 )}
               </TabsContent>
 
-              <TabsContent value="sell" className="flex-1 flex flex-col min-h-0 overflow-y-auto scroll-touch mt-4">
+              <TabsContent value="sell" className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden scroll-touch mt-4">
                 {state.inventory.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground font-mono text-sm">NO ITEMS TO SELL</p>
@@ -2264,9 +2267,9 @@ export default function Game() {
                       <button
                         key={item.id}
                         className={cn(
-                          "p-4 border transition-all text-left relative overflow-hidden",
+                          "vendor-station-item-btn p-4 border transition-all text-left relative overflow-hidden",
                           canAfford 
-                            ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105" 
+                            ? "border-primary/30 hover:bg-primary/10 hover:border-primary/50" 
                             : "border-gray-700/50 opacity-60 cursor-not-allowed"
                         )}
                         disabled={!canAfford}

@@ -7,6 +7,7 @@ declare global {
       setActiveMods: (mods: string[]) => void;
       addHealingPotion: () => void;
       setScreen: (screen: GameState['screen']) => void;
+      setCoins: (coins: number) => void;
     };
   }
 }

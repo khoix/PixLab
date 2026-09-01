@@ -236,6 +236,7 @@ npm run test:e2e:ui     # interactive UI mode
 - **Compact header** — coins moved to top-right; yellow coins bar replaced with a stylized cyan divider on mobile
 - **Coin display size** — mobile header coins scaled 50% larger (`text-lg` / `text-2xl`)
 - **Desktop unchanged** — coins bar remains below the header on wider viewports
+- **Item hover** — removed scale-up hover on vendor buttons (replaced with glow) so scroll panel does not overflow and clip buttons
 
 ### Verification
 - E2e: `e2e/m5-vendor-station.spec.ts`
