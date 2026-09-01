@@ -52,6 +52,14 @@ test.describe('M5.3 — Floating touch sensitivity & settings', () => {
       window.__PIXLAB_TEST__?.updateSettings({ mobileControlType: 'floating' });
     });
 
+    const order = await page.evaluate(() => {
+      const sensitivity = document.querySelector('[data-testid="touch-sensitivity-settings"]');
+      const hud = document.querySelector('[data-testid="mobile-hud-settings"]');
+      if (!sensitivity || !hud) return null;
+      return sensitivity.compareDocumentPosition(hud) & Node.DOCUMENT_POSITION_FOLLOWING;
+    });
+
+    expect(order).toBeTruthy();
     await expect(page.getByTestId('touch-sensitivity-settings')).toBeVisible();
     await expect(page.getByTestId('touch-sensitivity-slider')).toBeVisible();
     await expect(page.getByTestId('mobile-hud-settings')).toBeVisible();
@@ -60,13 +68,21 @@ test.describe('M5.3 — Floating touch sensitivity & settings', () => {
     await expect(page.getByTestId('dpad-size-slider')).toHaveCount(0);
   });
 
-  test('dpad mode shows d-pad size slider, hides sensitivity, keeps HUD sliders', async ({ page }) => {
+  test('dpad mode shows d-pad size slider before HUD sliders, hides sensitivity', async ({ page }) => {
     await openLobbySettings(page);
 
     await page.evaluate(() => {
       window.__PIXLAB_TEST__?.updateSettings({ mobileControlType: 'dpad' });
     });
 
+    const order = await page.evaluate(() => {
+      const dpad = document.querySelector('[data-testid="dpad-size-settings"]');
+      const hud = document.querySelector('[data-testid="mobile-hud-settings"]');
+      if (!dpad || !hud) return null;
+      return dpad.compareDocumentPosition(hud) & Node.DOCUMENT_POSITION_FOLLOWING;
+    });
+
+    expect(order).toBeTruthy();
     await expect(page.getByTestId('dpad-size-settings')).toBeVisible();
     await expect(page.getByTestId('dpad-size-slider')).toBeVisible();
     await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
