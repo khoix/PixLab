@@ -153,3 +153,52 @@
 .lobby-tab-panel {
   margin-top: 0;
 }
+
+/* Vendor station — full viewport shell (M5 mobile) */
+.vendor-station-page {
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.vendor-station-card {
+  height: calc(100vh - 2rem);
+  max-height: calc(100vh - 2rem);
+}
+
+.vendor-station-divider {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(180 100% 50% / 0.25) 15%,
+    hsl(180 100% 50% / 0.7) 50%,
+    hsl(180 100% 50% / 0.25) 85%,
+    transparent
+  );
+}
+
+.vendor-station-divider::before,
+.vendor-station-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  background: hsl(180 100% 50% / 0.85);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 0 6px hsl(180 100% 50% / 0.5);
+}
+
+.vendor-station-divider::before {
+  left: 0.5rem;
+}
+
+.vendor-station-divider::after {
+  right: 0.5rem;
+}

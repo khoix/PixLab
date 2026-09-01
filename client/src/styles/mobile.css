@@ -560,6 +560,24 @@
     min-height: 0px !important;
   }
 
+  .vendor-station-card {
+    height: calc(100dvh - 2rem) !important;
+    max-height: calc(100dvh - 2rem) !important;
+  }
+
+  .vendor-station-card [data-testid="vendor-coins-bar"] {
+    display: none;
+  }
+
+  .vendor-station-card .insufficient-funds-text {
+    font-size: 1.125rem !important;
+  }
+
+  .vendor-station-card button[class*="py-6"] {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
   /* Reduce padding in tab content area */
   .lobby-tab-panels {
     padding: 1rem !important;
