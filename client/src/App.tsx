@@ -32,6 +32,11 @@ function App() {
       <GameProvider>
         <TooltipProvider>
           <Toaster />
+          <div
+            className="crt fixed inset-0 pointer-events-none z-50"
+            aria-hidden="true"
+            data-testid="crt-blinds-overlay"
+          />
           <AppRouter />
         </TooltipProvider>
       </GameProvider>

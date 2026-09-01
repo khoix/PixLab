@@ -629,7 +629,7 @@ export default function Game() {
 
   if (state.screen === 'lobby') {
     return (
-      <div className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center crt">
+      <div className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center">
         <MazeBackground />
         <div className="lobby-page-body w-full max-w-4xl flex flex-col items-center flex-shrink-0">
           <div className="lobby-page-title flex-shrink-0 text-center space-y-2 mb-4 md:mb-8">
@@ -1458,7 +1458,7 @@ export default function Game() {
 
   if (state.screen === 'shop') {
     return (
-      <div className="vendor-station-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center crt">
+      <div className="vendor-station-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/20 via-black to-black pointer-events-none" />
         <Card className="vendor-station-card bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 flex flex-col min-h-0">
           <CardHeader className="flex-shrink-0 pb-3 md:pb-6">

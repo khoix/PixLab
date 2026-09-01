@@ -219,6 +219,7 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Fixed
 - **Toast overlap** — mobile toast viewport now uses `max(3rem, safe-area-inset-top + 1rem)` top padding so notifications (e.g. “SECTOR CLEARED”) sit below the phone status bar instead of under it
+- **Toast CRT blinds** — global scanline overlay (`z-50`) sits above toasts (`z-40`); removed duplicate per-page `.crt` layers on home/decode/lobby/vendor
 
 ### Verification
 - E2e: `e2e/m5-mobile-ux.spec.ts` — toast viewport padding on mobile

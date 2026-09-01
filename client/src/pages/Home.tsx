@@ -60,7 +60,6 @@ export default function Home() {
         }}
       />
       <div className="absolute inset-0 bg-black/40 z-0" />
-      <div className="crt absolute inset-0 pointer-events-none z-50" />
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
         <div className="home-title-container text-center space-y-4 relative">
