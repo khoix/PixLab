@@ -65,6 +65,40 @@ test.describe('M5 — Mobile UX & controls', () => {
     const quickHeal = page.getByTestId('quick-heal-button');
     await expect(quickHeal).toBeVisible();
     await expect(quickHeal).toBeEnabled();
+    await expect(page.getByTestId('quick-consumables-button')).toHaveCount(0);
+    await expect(page.locator('.consumables-panel')).toHaveCount(0);
+  });
+
+  test('mobile quick consumables menu appears with multiple consumables', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.addHealingPotion();
+      window.__PIXLAB_TEST__?.addHealingPotion();
+    });
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    const menuButton = page.getByTestId('quick-consumables-button');
+    await expect(menuButton).toBeVisible();
+    await expect(page.locator('.consumables-panel')).toHaveCount(0);
+
+    const layout = await page.evaluate(() => {
+      const menu = document.querySelector('[data-testid="quick-consumables-button"]') as HTMLElement | null;
+      const heal = document.querySelector('[data-testid="quick-heal-button"]') as HTMLElement | null;
+      if (!menu || !heal) return null;
+      const menuBox = menu.getBoundingClientRect();
+      const healBox = heal.getBoundingClientRect();
+      return { menuAboveHeal: menuBox.bottom <= healBox.top + 2 };
+    });
+    expect(layout?.menuAboveHeal).toBe(true);
+
+    await menuButton.click();
+    await expect(page.getByTestId('quick-consumables-menu')).toBeVisible();
+    await expect(page.getByTestId('quick-consumables-menu').locator('button')).toHaveCount(2);
   });
 
   test('sector badge sits in lower HUD band on short viewport', async ({ page }) => {

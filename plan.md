@@ -151,6 +151,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Tasks:**
 - [x] **Input buffering:** Queue next direction during tile interpolation; apply on next legal move tick
 - [x] **Quick-heal button:** Floating mobile button (smallest healing potion), equivalent to desktop `Q`
+- [x] **Quick consumables menu (mobile):** Second button above quick heal opens picker when multiple/non-heal consumables; hides side panel on mobile
 - [x] **Layout pass:** Resolve D-pad / HUD overlap on short viewports (iPhone SE class); use safe-area insets consistently
 - [x] **Haptic feedback:** `navigator.vibrate()` on hit, pickup, sector clear (respect reduced-motion / user setting)
 - [x] **Debuff UI:** Persistent icon for vision debuff (Nyx moth) with severity indicator

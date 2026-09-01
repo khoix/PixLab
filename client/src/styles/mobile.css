@@ -770,6 +770,7 @@
   .mobile-hud-sector-badge,
   .mobile-sector-timer,
   .mobile-hud-consumables,
+  .mobile-quick-actions,
   .mobile-quick-heal {
     opacity: var(--mobile-hud-opacity, 0.85);
   }
@@ -838,12 +839,20 @@
     display: none !important;
   }
 
-  .mobile-quick-heal {
+  .mobile-quick-actions {
     position: absolute;
     right: max(0.75rem, env(safe-area-inset-right, 0px));
     bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
     transform: scale(var(--mobile-hud-scale, 1));
     transform-origin: bottom right;
+  }
+
+  .mobile-quick-heal {
+    position: static;
   }
 
   .mobile-hud-consumables {
@@ -852,8 +861,16 @@
   }
 
   @media (max-height: 700px) {
-    .mobile-quick-heal {
+    .mobile-quick-actions {
       bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+    }
+
+    .mobile-quick-heal {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .mobile-quick-actions [data-testid='quick-consumables-button'] {
       width: 3rem;
       height: 3rem;
     }

@@ -35,7 +35,9 @@ import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { useIsMobile } from '../hooks/use-mobile';
 import { QuickHealButton } from '../components/game/QuickHealButton';
+import { QuickConsumablesButton } from '../components/game/QuickConsumablesButton';
 import { findSmallestHealingPotion } from '../lib/game/quickHeal';
+import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quickConsumables';
 import { triggerHaptic } from '../lib/game/haptics';
 import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
 import {
@@ -203,6 +205,21 @@ export default function Game() {
           },
         });
       },
+      addConsumable: (overrides) => {
+        dispatch({
+          type: 'ADD_ITEM',
+          payload: {
+            id: overrides?.id ?? `test-consumable-${Date.now()}`,
+            name: overrides?.name ?? 'Test Stim',
+            type: 'consumable',
+            rarity: overrides?.rarity ?? 'common',
+            stats: overrides?.stats ?? { speed: 0.5 },
+            price: overrides?.price ?? 10,
+            description: overrides?.description ?? 'E2e test consumable',
+            ...overrides,
+          },
+        });
+      },
       setScreen: (screen: GameState['screen']) => {
         dispatch({ type: 'SET_SCREEN', payload: screen });
       },
@@ -357,6 +374,47 @@ export default function Game() {
       toast({
         title: 'USED',
         description: `${smallestPotion.name} - Healed ${smallestPotion.stats.heal} HP`,
+        className: 'bg-green-900 border-green-500 text-green-100',
+      });
+    }
+  }, [
+    gameOverState,
+    showInventory,
+    showMenu,
+    showCommerceVendor,
+    state.inventory,
+    state.settings.hapticsEnabled,
+    dispatch,
+    toast,
+  ]);
+
+  const handleUseConsumable = React.useCallback((itemId: string) => {
+    if (gameOverState || showInventory || showMenu || showCommerceVendor) {
+      return;
+    }
+
+    const consumable = state.inventory.find((item) => item.id === itemId);
+    if (!consumable || consumable.type !== 'consumable') return;
+
+    dispatch({ type: 'USE_CONSUMABLE', payload: { itemId } });
+    triggerHaptic('success', { enabled: state.settings.hapticsEnabled !== false });
+
+    if (consumable.stats?.heal) {
+      toast({
+        title: 'USED',
+        description: `${consumable.name} - Healed ${consumable.stats.heal} HP`,
+        className: 'bg-green-900 border-green-500 text-green-100',
+      });
+    } else if (consumable.stats?.speed) {
+      toast({
+        title: 'USED',
+        description: `${consumable.name} - Speed boost active`,
+        className: 'bg-blue-900 border-blue-500 text-blue-100',
+      });
+    } else {
+      toast({
+        title: 'USED',
+        description: consumable.name,
         className: 'bg-green-900 border-green-500 text-green-100',
       });
     }
@@ -1822,7 +1880,8 @@ export default function Game() {
   }
 
   if (state.screen === 'run') {
-    const consumables = state.inventory.filter(item => item.type === 'consumable');
+    const consumables = getConsumables(state.inventory);
+    const showQuickConsumablesMenu = shouldShowQuickConsumablesMenu(state.inventory);
     const smallestHealingPotion = findSmallestHealingPotion(state.inventory);
     const mobileHudStyle = {
       '--mobile-hud-opacity': state.settings.controlOpacity ?? 0.85,
@@ -1862,11 +1921,20 @@ export default function Game() {
                   {(state.settings.mobileControlType || 'floating') === 'dpad' && (
                     <DirectionalPadControl onMove={handleMove} />
                   )}
-                  <QuickHealButton
-                    healAmount={smallestHealingPotion?.stats?.heal ?? null}
-                    disabled={!!gameOverState || showInventory || showMenu || showCommerceVendor}
-                    onHeal={handleQuickHeal}
-                  />
+                  <div className="mobile-quick-actions pointer-events-none">
+                    {showQuickConsumablesMenu && (
+                      <QuickConsumablesButton
+                        consumables={consumables}
+                        disabled={!!gameOverState || showInventory || showMenu || showCommerceVendor}
+                        onUseConsumable={handleUseConsumable}
+                      />
+                    )}
+                    <QuickHealButton
+                      healAmount={smallestHealingPotion?.stats?.heal ?? null}
+                      disabled={!!gameOverState || showInventory || showMenu || showCommerceVendor}
+                      onHeal={handleQuickHeal}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -2198,8 +2266,8 @@ export default function Game() {
               </div>
               )}
 
-              {/* Consumables Panel - hidden during game over */}
-              {!gameOverState && consumables.length > 0 && (
+              {/* Consumables Panel - desktop only; mobile uses quick consumables menu */}
+              {!gameOverState && !isMobile && consumables.length > 0 && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 md:z-50 flex flex-col gap-2 pointer-events-auto consumables-panel mobile-hud-consumables">
             <div className="text-xs font-pixel text-white mb-1 text-right">CONSUMABLES</div>
             {consumables.map(consumable => {
@@ -2209,14 +2277,7 @@ export default function Game() {
                   key={consumable.id}
                   className="consumable-button p-2 border border-white/20 bg-black/70 hover:bg-primary/20 transition-all pixel-corners min-w-[80px] flex flex-col items-center gap-1"
                   onClick={() => {
-                    dispatch({ type: 'USE_CONSUMABLE', payload: { itemId: consumable.id } });
-                    if (consumable.stats?.heal) {
-                      toast({ 
-                        title: "USED", 
-                        description: `${consumable.name} - Healed ${consumable.stats.heal} HP`,
-                        className: "bg-green-900 border-green-500 text-green-100"
-                      });
-                    }
+                    handleUseConsumable(consumable.id);
                   }}
                 >
                   <div className="consumable-icon-wrapper flex items-center justify-center">

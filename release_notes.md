@@ -258,6 +258,20 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Mobile UX — Quick Consumables Menu
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Changed
+- **Mobile consumables** — side panel removed on mobile; when the player has multiple consumables (or a non-heal consumable), a quick consumables button appears above quick heal and opens a picker menu
+- **Desktop unchanged** — right-edge consumables panel remains
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts`
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  

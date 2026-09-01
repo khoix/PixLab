@@ -1,4 +1,4 @@
-import type { GameState } from '../lib/game/types';
+import type { GameState, Item } from '../lib/game/types';
 
 declare global {
   interface Window {
@@ -6,6 +6,7 @@ declare global {
       updateSettings: (payload: Partial<GameState['settings']>) => void;
       setActiveMods: (mods: string[]) => void;
       addHealingPotion: () => void;
+      addConsumable: (item?: Partial<Item>) => void;
       setScreen: (screen: GameState['screen']) => void;
       setCoins: (coins: number) => void;
     };
