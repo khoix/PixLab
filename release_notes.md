@@ -219,7 +219,7 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Fixed
 - **Toast overlap** — mobile toast viewport now uses `max(3rem, safe-area-inset-top + 1rem)` top padding so notifications (e.g. “SECTOR CLEARED”) sit below the phone status bar instead of under it
-- **Toast CRT blinds** — global scanline overlay (`z-50`) sits above toasts (`z-40`); removed duplicate per-page `.crt` layers on home/decode/lobby/vendor
+- **Toast CRT blinds** — global scanline overlay (`z-50`) sits above toasts (`z-40`); mobile HUD chrome lowered to `z-30` so toasts are not covered
 
 ### Verification
 - E2e: `e2e/m5-mobile-ux.spec.ts` — toast viewport padding on mobile
@@ -255,6 +255,20 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Verification
 - E2e: `e2e/m5-touch-sensitivity.spec.ts`, `e2e/m5-mobile-ux.spec.ts`
+
+---
+
+## Mobile UX — Quick Consumables Menu
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Changed
+- **Mobile consumables** — side panel removed on mobile; when the player has multiple consumables (or a non-heal consumable), a quick consumables button appears above quick heal and opens a picker menu
+- **Desktop unchanged** — right-edge consumables panel remains
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts`
 
 ---
 
