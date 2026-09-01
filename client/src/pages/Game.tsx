@@ -2200,7 +2200,7 @@ export default function Game() {
 
               {/* Consumables Panel - hidden during game over */}
               {!gameOverState && consumables.length > 0 && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 pointer-events-auto consumables-panel mobile-hud-consumables">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 md:z-50 flex flex-col gap-2 pointer-events-auto consumables-panel mobile-hud-consumables">
             <div className="text-xs font-pixel text-white mb-1 text-right">CONSUMABLES</div>
             {consumables.map(consumable => {
               const rarityColor = RARITY_COLORS[consumable.rarity];

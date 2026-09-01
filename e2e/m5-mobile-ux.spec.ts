@@ -202,4 +202,32 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(stacking).not.toBeNull();
     expect(stacking!.toastZ).toBeLessThan(stacking!.blindsZ);
   });
+
+  test('mobile toast stacks above HUD chrome during run', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => window.__PIXLAB_TEST__?.setCoins(500));
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    const stacking = await page.evaluate(() => {
+      const toast = document.querySelector('[data-testid="toast-viewport"]') as HTMLElement | null;
+      const stats = document.querySelector('.mobile-hud-stats') as HTMLElement | null;
+      const timer = document.querySelector('.mobile-sector-timer') as HTMLElement | null;
+      const badge = document.querySelector('.mobile-hud-sector-badge') as HTMLElement | null;
+      if (!toast || !stats || !timer || !badge) return null;
+      const toastZ = Number(getComputedStyle(toast).zIndex);
+      const hudZ = Math.max(
+        Number(getComputedStyle(stats).zIndex),
+        Number(getComputedStyle(timer).zIndex),
+        Number(getComputedStyle(badge).zIndex),
+      );
+      return { toastZ, hudZ };
+    });
+
+    expect(stacking).not.toBeNull();
+    expect(stacking!.toastZ).toBeGreaterThan(stacking!.hudZ);
+  });
 });

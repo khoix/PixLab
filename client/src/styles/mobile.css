@@ -789,7 +789,7 @@
     right: max(0.25rem, env(safe-area-inset-right, 0px));
     top: calc(env(safe-area-inset-top, 0px) + 3.5rem);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
-    z-index: 45;
+    z-index: 30;
     display: flex;
     flex-direction: column;
     align-items: center;
