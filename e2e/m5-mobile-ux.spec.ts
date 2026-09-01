@@ -152,13 +152,17 @@ test.describe('M5 — Mobile UX & controls', () => {
       const root = document.querySelector('.relative.w-full.h-screen') as HTMLElement | null;
       const timer = document.querySelector('.mobile-sector-timer') as HTMLElement | null;
       const quickHeal = document.querySelector('.mobile-quick-heal') as HTMLElement | null;
-      if (!root || !timer || !quickHeal) return null;
+      const stats = document.querySelector('.mobile-hud-stats') as HTMLElement | null;
+      const badge = document.querySelector('.mobile-hud-sector-badge') as HTMLElement | null;
+      if (!root || !timer || !quickHeal || !stats || !badge) return null;
       const rootStyle = getComputedStyle(root);
       return {
         hudOpacity: rootStyle.getPropertyValue('--mobile-hud-opacity').trim(),
         hudScale: rootStyle.getPropertyValue('--mobile-hud-scale').trim(),
         timerOpacity: getComputedStyle(timer).opacity,
         quickHealOpacity: getComputedStyle(quickHeal).opacity,
+        statsOpacity: getComputedStyle(stats).opacity,
+        badgeOpacity: getComputedStyle(badge).opacity,
       };
     });
 
@@ -166,6 +170,8 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(styles?.hudScale).toBe('1.1');
     expect(Number(styles?.timerOpacity)).toBeCloseTo(0.6, 1);
     expect(Number(styles?.quickHealOpacity)).toBeCloseTo(0.6, 1);
+    expect(Number(styles?.statsOpacity)).toBeCloseTo(0.6, 1);
+    expect(Number(styles?.badgeOpacity)).toBeCloseTo(0.6, 1);
   });
 
   test('toast viewport clears mobile status bar', async ({ page }) => {

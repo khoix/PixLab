@@ -44,7 +44,7 @@ export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
 
   return (
     <>
-      <div className="absolute top-0 left-0 w-full p-4 pointer-events-none z-40 flex items-start safe-area-top">
+      <div className={`absolute top-0 left-0 w-full p-4 pointer-events-none z-40 flex items-start safe-area-top ${isMobile ? 'mobile-hud-stats' : ''}`}>
         {/* Top Left: Stats */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">

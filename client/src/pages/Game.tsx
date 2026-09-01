@@ -1273,50 +1273,6 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
-                    <div className="md:hidden" data-testid="mobile-hud-settings">
-                      <label className="text-lg font-pixel text-primary mb-2 block">HUD OPACITY</label>
-                      <div className="flex items-center gap-3">
-                        <Slider
-                          value={[state.settings.controlOpacity ?? 0.85]}
-                          onValueChange={(value) => {
-                            dispatch({
-                              type: 'UPDATE_SETTINGS',
-                              payload: { controlOpacity: value[0] },
-                            });
-                          }}
-                          min={0.4}
-                          max={1}
-                          step={0.05}
-                          className="flex-1"
-                          data-testid="hud-opacity-slider"
-                        />
-                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                          {Math.round((state.settings.controlOpacity ?? 0.85) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="md:hidden">
-                      <label className="text-lg font-pixel text-primary mb-2 block">HUD SIZE</label>
-                      <div className="flex items-center gap-3">
-                        <Slider
-                          value={[state.settings.controlSize ?? 1]}
-                          onValueChange={(value) => {
-                            dispatch({
-                              type: 'UPDATE_SETTINGS',
-                              payload: { controlSize: value[0] },
-                            });
-                          }}
-                          min={0.8}
-                          max={1.2}
-                          step={0.05}
-                          className="flex-1"
-                          data-testid="hud-size-slider"
-                        />
-                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                          {Math.round((state.settings.controlSize ?? 1) * 100)}%
-                        </span>
-                      </div>
-                    </div>
                     {(state.settings.mobileControlType || 'floating') === 'floating' && (
                       <div className="md:hidden" data-testid="touch-sensitivity-settings">
                         <label className="text-lg font-pixel text-primary mb-2 block">TOUCH SENSITIVITY</label>
@@ -1368,6 +1324,50 @@ export default function Game() {
                         </div>
                       </div>
                     )}
+                    <div className="md:hidden" data-testid="mobile-hud-settings">
+                      <label className="text-lg font-pixel text-primary mb-2 block">HUD OPACITY</label>
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          value={[state.settings.controlOpacity ?? 0.85]}
+                          onValueChange={(value) => {
+                            dispatch({
+                              type: 'UPDATE_SETTINGS',
+                              payload: { controlOpacity: value[0] },
+                            });
+                          }}
+                          min={0.4}
+                          max={1}
+                          step={0.05}
+                          className="flex-1"
+                          data-testid="hud-opacity-slider"
+                        />
+                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                          {Math.round((state.settings.controlOpacity ?? 0.85) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="md:hidden">
+                      <label className="text-lg font-pixel text-primary mb-2 block">HUD SIZE</label>
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          value={[state.settings.controlSize ?? 1]}
+                          onValueChange={(value) => {
+                            dispatch({
+                              type: 'UPDATE_SETTINGS',
+                              payload: { controlSize: value[0] },
+                            });
+                          }}
+                          min={0.8}
+                          max={1.2}
+                          step={0.05}
+                          className="flex-1"
+                          data-testid="hud-size-slider"
+                        />
+                        <span className="text-lg font-mono text-muted-foreground w-12 text-right">
+                          {Math.round((state.settings.controlSize ?? 1) * 100)}%
+                        </span>
+                      </div>
+                    </div>
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>
                       <RadioGroup
@@ -2197,7 +2197,7 @@ export default function Game() {
 
               {/* Consumables Panel - hidden during game over */}
               {!gameOverState && consumables.length > 0 && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 pointer-events-auto consumables-panel">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 pointer-events-auto consumables-panel mobile-hud-consumables">
             <div className="text-xs font-pixel text-white mb-1 text-right">CONSUMABLES</div>
             {consumables.map(consumable => {
               const rarityColor = RARITY_COLORS[consumable.rarity];

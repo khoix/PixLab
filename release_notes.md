@@ -248,7 +248,7 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Changed
 - **Default control scheme** — floating touch for new players (was D-pad)
-- **HUD opacity / HUD size** — always visible; control quick heal button and sector timer bar (and D-pad opacity)
+- **HUD opacity / HUD size** — always visible; control all mobile HUD chrome (stats, sector badge, timer, consumables, quick heal) plus D-pad opacity
 - **D-pad size** — separate slider, visible only in D-pad mode; persisted as `S['10']`
 
 ### Verification
