@@ -203,6 +203,9 @@ export default function Game() {
           },
         });
       },
+      setScreen: (screen: GameState['screen']) => {
+        dispatch({ type: 'SET_SCREEN', payload: screen });
+      },
     };
     return () => {
       delete window.__PIXLAB_TEST__;
@@ -1435,19 +1438,36 @@ export default function Game() {
 
   if (state.screen === 'shop') {
     return (
-      <div className="h-screen bg-background flex flex-col items-center justify-center p-4 crt">
+      <div className="vendor-station-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center crt">
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/20 via-black to-black pointer-events-none" />
-        <Card className="bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 h-[calc(100vh-2rem)] flex flex-col min-h-0">
-          <CardHeader className="flex-shrink-0">
-            <CardTitle className="text-primary text-2xl font-pixel">VENDOR STATION</CardTitle>
-            <p className="text-xs font-mono text-muted-foreground mt-2">SECTOR {state.currentLevel} • TRADING POST</p>
+        <Card className="vendor-station-card bg-card/90 border-primary/20 pixel-corners w-full max-w-4xl relative z-10 animate-in fade-in zoom-in-95 duration-500 flex flex-col min-h-0">
+          <CardHeader className="flex-shrink-0 pb-3 md:pb-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="text-primary text-2xl font-pixel">VENDOR STATION</CardTitle>
+                <p className="text-xs font-mono text-muted-foreground mt-2">SECTOR {state.currentLevel} • TRADING POST</p>
+              </div>
+              {isMobile && (
+                <p
+                  className="font-mono text-xs text-muted-foreground flex-shrink-0 text-right pt-1"
+                  data-testid="vendor-coins-header"
+                >
+                  COINS: <span className="text-yellow-400 font-bold text-base">${state.stats.coins}</span>
+                </p>
+              )}
+            </div>
+            {isMobile && (
+              <div className="vendor-station-divider mt-3" aria-hidden="true" data-testid="vendor-station-divider" />
+            )}
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden min-h-0">
-            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded flex-shrink-0">
+          <CardContent className="flex-1 flex flex-col space-y-4 md:space-y-6 overflow-hidden min-h-0 pt-0">
+            {!isMobile && (
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded flex-shrink-0" data-testid="vendor-coins-bar">
               <p className="text-2xl font-mono text-muted-foreground text-right">
                 COINS: <span className="text-yellow-400 font-bold">${state.stats.coins}</span>
               </p>
             </div>
+            )}
             
             <Tabs defaultValue="buy" className="w-full flex-1 flex flex-col overflow-hidden min-h-0">
               <TabsList className="vendor-station-tabs w-full bg-black/40 rounded-none border-b border-white/10 flex-shrink-0">
@@ -1764,7 +1784,7 @@ export default function Game() {
             </Tabs>
 
             <Button 
-              className="w-full mt-6 bg-secondary text-black hover:bg-secondary/80 font-pixel text-lg py-6 flex-shrink-0"
+              className="w-full mt-4 md:mt-6 bg-secondary text-black hover:bg-secondary/80 font-pixel text-lg py-4 md:py-6 flex-shrink-0"
               onClick={() => {
                 dispatch({ type: 'NEXT_LEVEL' });
                 dispatch({ type: 'SET_SCREEN', payload: 'lobby' });

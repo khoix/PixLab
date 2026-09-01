@@ -158,6 +158,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 - [x] **Landscape hint:** Portrait recommendation banner on short landscape viewports
 - [x] **Vertical sector timer (mobile):** Right-edge bar drains top → bottom; avoids browser chrome covering bottom bar
 - [x] **Toast safe-area:** Top toast viewport offset below status bar / notch on mobile
+- [x] **Vendor station (mobile):** Full-viewport shell; coins in header; stylized divider replaces coins bar
 
 **Files:**
 - `client/src/pages/Game.tsx`

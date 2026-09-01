@@ -225,6 +225,21 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Mobile UX — Vendor Station Layout
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Fixed
+- **CRT overlay gap** — vendor station uses `fixed inset-0` + `100dvh` card height so scanlines cover the full screen on mobile
+- **Compact header** — coins moved to top-right; yellow coins bar replaced with a stylized cyan divider on mobile
+- **Desktop unchanged** — coins bar remains below the header on wider viewports
+
+### Verification
+- E2e: `e2e/m5-vendor-station.spec.ts`
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  
