@@ -272,6 +272,21 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## PWA / Social Preview — PixLab Open Graph Image
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Fixed
+- **Link previews** — replaced stale Neon Olympus `opengraph.jpg` with PixLab sword/shield logo (`pixlab2.PNG`) on a dark 1200×630 canvas
+- **Subpath deploy** — `og:image` / `twitter:image` use `%BASE_URL%opengraph.jpg` so previews resolve under `/pixlab/`
+
+### Verification
+- `generate-icons.js` regenerates `client/public/opengraph.jpg`
+- E2e: `e2e/home.spec.ts` — OG image meta resolves and returns JPEG
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  

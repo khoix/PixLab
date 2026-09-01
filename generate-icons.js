@@ -60,6 +60,29 @@ async function generateIcons() {
       })
       .toFile(join(publicDir, 'favicon-512x512.png'));
     console.log('✓ Created favicon-512x512.png');
+
+    const ogWidth = 1200;
+    const ogHeight = 630;
+    const logoBuffer = await sharp(sourceImage)
+      .resize(480, 480, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .png()
+      .toBuffer();
+
+    await sharp({
+      create: {
+        width: ogWidth,
+        height: ogHeight,
+        channels: 3,
+        background: { r: 10, g: 10, b: 20 },
+      },
+    })
+      .composite([{ input: logoBuffer, gravity: 'center' }])
+      .jpeg({ quality: 92 })
+      .toFile(join(publicDir, 'opengraph.jpg'));
+    console.log('✓ Created opengraph.jpg (1200x630)');
     
     console.log('\nAll icons generated successfully!');
   } catch (error) {
