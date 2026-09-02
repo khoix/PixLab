@@ -10,6 +10,7 @@ import mazeMusicAac from '../assets/audio/Enter The Catacombs.m4a';
 import vendorMusicAac from '../assets/audio/Uncanny Times.m4a';
 import lobbyReturnMusicAac from '../assets/audio/Uncanny Times (Extended).m4a';
 import { detectMusicFormat, selectMusicFormat, type MusicFormat, type MusicFormatEnv } from './musicFormat';
+import { musicPreloader, type MusicPreloadState } from './musicPreload';
 
 export type MusicTrack = 'theme' | 'maze' | 'vendor' | 'lobbyReturn';
 
@@ -32,6 +33,9 @@ declare global {
       getMusicFormat: () => MusicFormat;
       getMusicSourceUrl: () => string | null;
       selectMusicFormat: (env: MusicFormatEnv) => MusicFormat;
+      getGraphKickCount: () => number;
+      getPreloadState: () => MusicPreloadState;
+      getTrackSources: () => Record<MusicTrack, string>;
     };
   }
 }
@@ -50,6 +54,7 @@ class AudioManager {
   private musicPausedForVisibility = false;
   private musicFormat: MusicFormat | null = null;
   private graphRoutingFailed = false;
+  private graphKicks = 0;
 
   init() {
     if (this.isInitialized) return;
@@ -121,16 +126,37 @@ class AudioManager {
     }
   }
 
+  // WebKit does not start pulling samples from a MediaElementAudioSourceNode
+  // until some other node has rendered into the graph — which is why nudging
+  // the SFX slider (it plays a tone) used to be what made the theme audible on
+  // Safari. A one-sample silent buffer spins the render thread up instead.
+  private kickGraph() {
+    if (!this.audioContext) return;
+    try {
+      const buffer = this.audioContext.createBuffer(1, 1, this.audioContext.sampleRate);
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+      this.graphKicks++;
+    } catch {
+      // Purely a wake-up nudge; failure is harmless.
+    }
+  }
+
   async resume() {
     if (!this.audioContext) {
       return;
     }
-    if (this.audioContext.state === 'suspended') {
+    // Fire synchronously while still inside the user gesture's call stack.
+    this.kickGraph();
+    if (this.audioContext.state !== 'running') {
       try {
         await this.audioContext.resume();
       } catch {
         // Resume may be blocked until a user gesture
       }
+      this.kickGraph();
     }
 
     if (this.musicElement && this.currentTrack && this.musicPausedForVisibility) {
@@ -200,7 +226,7 @@ class AudioManager {
     this.ensureMusicElement();
     if (!this.musicElement) return;
 
-    const nextSrc = TRACK_SOURCES[type][this.getMusicFormat()];
+    const nextSrc = musicPreloader.getPreloadedUrl(type) ?? TRACK_SOURCES[type][this.getMusicFormat()];
     const sameSource = this.loadedMusicSrc === nextSrc;
 
     this.currentTrack = type;
@@ -213,6 +239,7 @@ class AudioManager {
       this.loadedMusicSrc = nextSrc;
     }
 
+    this.kickGraph();
     void this.musicElement.play().catch((error) => {
       console.warn('Music playback failed:', error);
     });
@@ -248,6 +275,21 @@ class AudioManager {
 
   getMusicSourceUrl() {
     return this.loadedMusicSrc;
+  }
+
+  getGraphKickCount() {
+    return this.graphKicks;
+  }
+
+  /** Asset URLs for every track in the rendition this browser will play. */
+  getTrackSources(): Record<MusicTrack, string> {
+    const format = this.getMusicFormat();
+    return {
+      theme: TRACK_SOURCES.theme[format],
+      maze: TRACK_SOURCES.maze[format],
+      vendor: TRACK_SOURCES.vendor[format],
+      lobbyReturn: TRACK_SOURCES.lobbyReturn[format],
+    };
   }
 
   playSound(type: 'move' | 'attack' | 'enemyDeath' | 'itemPickup' | 'damage' | 'levelComplete' | 'gameOver' | 'coin' | 'purchase') {
@@ -349,6 +391,10 @@ export function startThemeMusic() {
   audioManager.playMusic('theme');
 }
 
+export function preloadAllMusic(): Promise<void> {
+  return musicPreloader.start(audioManager.getTrackSources());
+}
+
 if (typeof window !== 'undefined') {
   window.__PIXLAB_AUDIO__ = {
     getCurrentTrack: () => audioManager.getCurrentTrack(),
@@ -360,6 +406,9 @@ if (typeof window !== 'undefined') {
     getMusicFormat: () => audioManager.getActiveMusicFormat(),
     getMusicSourceUrl: () => audioManager.getMusicSourceUrl(),
     selectMusicFormat,
+    getGraphKickCount: () => audioManager.getGraphKickCount(),
+    getPreloadState: () => musicPreloader.getState(),
+    getTrackSources: () => audioManager.getTrackSources(),
   };
 
   const initAudio = async () => {
