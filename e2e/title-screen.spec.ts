@@ -110,32 +110,58 @@ test.describe('Title screen — music preload gate', () => {
 });
 
 test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
-  test('glitch pulse flags the title screen and overlay, then clears', async ({ page }) => {
+  async function openLobbyScreen(page: Page) {
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    const lobby = page.getByTestId('lobby-screen');
+    await expect(lobby).toHaveAttribute('data-glitching', 'false');
+    return lobby;
+  }
+
+  test('title screen has no broadcast glitch — only the glimmer', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId('start-run-button').waitFor();
 
     const screen = page.getByTestId('title-screen');
-    const overlay = page.getByTestId('broadcast-glitch');
+    await expect(page.getByTestId('broadcast-glitch')).toHaveCount(0);
+    await expect(screen).not.toHaveAttribute('data-glitching', /.*/);
+
+    // A glitch trigger must leave the title screen untouched.
+    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch', 'tear'));
+    await page.waitForTimeout(150);
+    await expect(page.getByTestId('broadcast-glitch')).toHaveCount(0);
+    await expect(screen).not.toHaveAttribute('data-glitching', /.*/);
+    expect(await page.locator('[data-testid="title-screen"] .glitch-title').count()).toBe(0);
+    expect(await page.locator('[data-testid="title-screen"] .glitch-jitter').count()).toBe(0);
+    expect(await page.evaluate(() => window.__PIXLAB_FX__?.isActive('glitch'))).toBe(false);
+
+    // Glimmer still works there.
+    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glimmer'));
+    await expect(screen).toHaveAttribute('data-glimmer', 'true');
+  });
+
+  test('glitch pulse flags the lobby and overlay, then clears', async ({ page }) => {
+    const lobby = await openLobbyScreen(page);
+    const overlay = lobby.getByTestId('broadcast-glitch');
     await expect(overlay).toHaveAttribute('data-active', 'false');
 
     await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch', 'tear'));
-    await expect(screen).toHaveAttribute('data-glitching', 'true');
-    await expect(screen).toHaveAttribute('data-glitch-variant', 'tear');
+    await expect(lobby).toHaveAttribute('data-glitching', 'true');
+    await expect(lobby).toHaveAttribute('data-glitch-variant', 'tear');
     await expect(overlay).toHaveAttribute('data-active', 'true');
     await expect(overlay).toHaveAttribute('data-variant', 'tear');
-    const titleAnimation = await page
-      .locator('[data-testid="title-screen"] .glitch-title')
-      .evaluate((el) => getComputedStyle(el).animationName);
-    expect(titleAnimation).toBe('broadcast-title-tear');
+    expect(
+      await lobby.locator('.glitch-title').evaluate((el) => getComputedStyle(el).animationName),
+    ).toBe('broadcast-title-tear');
 
-    await expect(screen).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
-    await expect(screen).toHaveAttribute('data-glitch-variant', '');
+    await expect(lobby).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
+    await expect(lobby).toHaveAttribute('data-glitch-variant', '');
     await expect(overlay).toHaveAttribute('data-active', 'false');
   });
 
   test('five distinct glitch variants each drive their own title and overlay animations', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId('start-run-button').waitFor();
+    const lobby = await openLobbyScreen(page);
 
     const expected: Record<string, { title: string; layer: string; layerAnimation: string }> = {
       tear: { title: 'broadcast-title-tear', layer: '.broadcast-glitch__band', layerAnimation: 'broadcast-band-sweep' },
@@ -148,11 +174,11 @@ test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
     const seenTitleAnimations = new Set<string>();
     for (const [variant, want] of Object.entries(expected)) {
       await page.evaluate((v) => window.__PIXLAB_FX__?.trigger('glitch', v), variant);
-      await expect(page.getByTestId('title-screen')).toHaveAttribute('data-glitch-variant', variant);
-      await expect(page.getByTestId('broadcast-glitch')).toHaveAttribute('data-variant', variant);
+      await expect(lobby).toHaveAttribute('data-glitch-variant', variant);
+      await expect(lobby.getByTestId('broadcast-glitch')).toHaveAttribute('data-variant', variant);
 
       const [titleAnimation, layerAnimation] = await page.evaluate((selector) => {
-        const title = document.querySelector('[data-testid="title-screen"] .glitch-title') as HTMLElement;
+        const title = document.querySelector('[data-testid="lobby-screen"] .glitch-title') as HTMLElement;
         const layer = document.querySelector(`[data-testid="broadcast-glitch"] ${selector}`) as HTMLElement;
         return [getComputedStyle(title).animationName, getComputedStyle(layer).animationName];
       }, want.layer);
@@ -160,7 +186,7 @@ test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
       expect(layerAnimation, `${variant} overlay layer`).toBe(want.layerAnimation);
       seenTitleAnimations.add(titleAnimation);
 
-      await expect(page.getByTestId('title-screen')).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
+      await expect(lobby).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
     }
     expect(seenTitleAnimations.size).toBe(5);
   });
@@ -188,23 +214,6 @@ test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
     expect(result.repeats).toBe(0);
     expect(result.variants).toEqual(['chroma', 'hsync', 'roll', 'static', 'tear']);
     expect(['chroma', 'hsync', 'roll', 'static']).toContain(result.edge);
-  });
-
-  test('glitch pulse also runs on the lobby (main menu)', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId('start-run-button').click();
-    await page.waitForURL('**/play**');
-
-    const lobby = page.getByTestId('lobby-screen');
-    await expect(lobby).toHaveAttribute('data-glitching', 'false');
-    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch', 'roll'));
-    await expect(lobby).toHaveAttribute('data-glitching', 'true');
-    await expect(lobby).toHaveAttribute('data-glitch-variant', 'roll');
-    await expect(lobby.getByTestId('broadcast-glitch')).toHaveAttribute('data-active', 'true');
-    expect(
-      await lobby.locator('.glitch-title').evaluate((el) => getComputedStyle(el).animationName),
-    ).toBe('broadcast-roll-title');
-    await expect(lobby).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
   });
 
   test('sword and shield glint is masked to the artwork and animates on a glimmer pulse', async ({ page }) => {

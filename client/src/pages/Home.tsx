@@ -8,7 +8,6 @@ import pixlabImage from '../assets/pixlab3.PNG';
 import { audioManager, startThemeMusic } from '../lib/audio';
 import { useMusicPreload } from '../hooks/use-music-preload';
 import { useRandomPulse } from '../hooks/use-random-pulse';
-import { BroadcastGlitchOverlay, glitchDataAttributes, useBroadcastGlitch } from '../components/BroadcastGlitch';
 import { MusicPreloadBar } from '../components/MusicPreloadBar';
 
 export default function Home() {
@@ -17,7 +16,7 @@ export default function Home() {
   const [codeInput, setCodeInput] = React.useState('');
   const { toast } = useToast();
   const { state: preload, ready: menuReady } = useMusicPreload();
-  const glitch = useBroadcastGlitch();
+  // Title screen ambience is the artwork glimmer only; the broadcast glitch runs on the lobby.
   const { active: glimmering } = useRandomPulse('glimmer', {
     minDelayMs: 5000,
     maxDelayMs: 11000,
@@ -81,10 +80,8 @@ export default function Home() {
     <div
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-purple-950 via-black to-cyan-950"
       data-testid="title-screen"
-      {...glitchDataAttributes(glitch)}
       data-glimmer={glimmering ? 'true' : 'false'}
     >
-      <BroadcastGlitchOverlay active={glitch.active} variant={glitch.variant} />
       {/* Animated background grid */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 
@@ -95,7 +92,7 @@ export default function Home() {
       />
       <div className="absolute inset-0 bg-black/40 z-0" />
 
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000 glitch-jitter">
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
         <div className="home-title-container text-center space-y-4 relative">
             <div className="home-title-bg absolute -z-10" 
               style={{
@@ -113,7 +110,7 @@ export default function Home() {
                 style={{ ['--glint-mask' as string]: `url(${pixlabImage})` }}
               />
             </div>
-            <h1 className="glitch-title text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
+            <h1 className="text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
                 PIXEL<br/><span className="text-secondary" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8)' }}>LABYRINTH</span>
             </h1>
             <p className="text-muted-foreground font-mono text-lg tracking-widest">ROGUE PROTOCOL // V.1.0</p>
