@@ -172,6 +172,7 @@ export default function Game() {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [showMenu, setShowMenu] = useState(false);
+  const [lobbyTab, setLobbyTab] = useState('mission');
   const [showInventory, setShowInventory] = useState(false);
   const [lastItemCount, setLastItemCount] = useState(state.inventory.length);
   const [gameOverState, setGameOverState] = useState<{ type: 'death' | 'timeout' } | null>(null);
@@ -227,6 +228,9 @@ export default function Game() {
       },
       setCoins: (coins: number) => {
         dispatch({ type: 'UPDATE_STATS', payload: { coins } });
+      },
+      setLobbyTab: (tab: string) => {
+        setLobbyTab(tab);
       },
     };
     return () => {
@@ -863,7 +867,7 @@ export default function Game() {
           </Card>
 
           <Card className="lobby-tabs-card md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-[24.2rem] md:h-[550px]">
-            <Tabs defaultValue="mission" className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
+            <Tabs value={lobbyTab} onValueChange={setLobbyTab} className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
                 <TabsTrigger value="loadout" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
@@ -872,7 +876,7 @@ export default function Game() {
                 </TabsTrigger>
                 <TabsTrigger value="compendium" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">COMPENDIUM</TabsTrigger>
                 <TabsTrigger value="mods" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MODS</TabsTrigger>
-                <TabsTrigger value="settings" data-testid="lobby-settings-tab" className="w-auto aspect-square font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
+                <TabsTrigger value="settings" data-testid="lobby-settings-tab" className="relative z-20 w-auto aspect-square min-w-[40px] min-h-[40px] font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
                   <Settings className="w-4 h-4" />
                 </TabsTrigger>
               </TabsList>

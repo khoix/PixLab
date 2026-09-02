@@ -9,6 +9,7 @@ declare global {
       addConsumable: (item?: Partial<Item>) => void;
       setScreen: (screen: GameState['screen']) => void;
       setCoins: (coins: number) => void;
+      setLobbyTab: (tab: string) => void;
     };
   }
 }

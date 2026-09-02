@@ -298,10 +298,11 @@ npm run test:e2e:ui     # interactive UI mode
 
 ### Changed
 - **Mobile small fonts** — `.text-xs`, `text-[10px]`, and compact `0.625rem` overrides scaled up 30% for readability
+- **Lobby background canvas** — `pointer-events: none` on `MazeBackground` so settings tabs are clickable in e2e and on device
 
 ### Verification
-- E2e: `e2e/m5-mobile-ux.spec.ts` — timer left edge, font scale
-- E2e: `e2e/m5-touch-sensitivity.spec.ts` — 150% sensitivity / 3px slop
+- E2e: `e2e/m5-mobile-ux.spec.ts` — timer left edge, font scale, sector timer setting in lobby
+- E2e: `e2e/m5-touch-sensitivity.spec.ts` — 150% sensitivity / 3px slop, lobby settings via `setLobbyTab` hook
 
 ---
 

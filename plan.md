@@ -388,7 +388,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf
                                                 └─► M8 Refactor

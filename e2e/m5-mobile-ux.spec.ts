@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openLobbySettings } from './helpers';
 import { startSectorRun } from './helpers';
 
 test.describe('M5 — Mobile UX & controls', () => {
@@ -40,15 +41,14 @@ test.describe('M5 — Mobile UX & controls', () => {
   });
 
   test('mobile HUD settings sliders are available in lobby', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
-    await page.getByTestId('start-run-button').click();
-    await page.waitForURL('**/play**');
-    await page.getByTestId('lobby-settings-tab').click();
+    await openLobbySettings(page, true);
 
     await expect(page.getByTestId('mobile-hud-settings')).toBeVisible();
     await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
     await expect(page.getByTestId('hud-size-slider')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-side-settings')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-left')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-right')).toBeVisible();
     await expect(page.getByTestId('haptics-settings')).toBeVisible();
   });
 
