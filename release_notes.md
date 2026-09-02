@@ -352,3 +352,29 @@ npm run test:e2e:ui     # interactive UI mode
 - E2e: `e2e/m3-canvas-fog.spec.ts` — budget cap on large high-DPR phone, near-full DPR on compact phone, no cap on high-DPR desktop.
 
 ---
+
+## Background Music — WEBM Tracks
+
+**Branch:** `cursor/background-music-webm`  
+**Status:** Ready for review
+
+### Added
+- **Four WEBM background tracks** in `client/src/assets/audio/` — theme, maze, vendor, and post-sector lobby return music.
+- **`audio.ts` refactor** — file-based looping music via `HTMLAudioElement` routed through the existing music gain node; procedural SFX unchanged.
+- **`window.__PIXLAB_AUDIO__`** — test hook exposing `getCurrentTrack()` and `isMusicPlaying()`.
+
+### Behavior
+| Screen / transition | Track |
+|---------------------|-------|
+| Title (`/`) after user gesture | Glitched Catacombs (Theme) |
+| Lobby (first visit) | Glitched Catacombs (Theme) |
+| Enter maze (`run`) | Enter The Catacombs |
+| Vendor station (`shop`) | Uncanny Times |
+| Return to lobby from maze or vendor | Uncanny Times (Extended) |
+
+Music starts after a user gesture (browser autoplay policy). Title **START RUN** / **LOAD** and the global click/touch/key listener initialize audio.
+
+### Verification
+- E2e: `e2e/audio.spec.ts` — theme on lobby after start; maze track after entering sector.
+
+---

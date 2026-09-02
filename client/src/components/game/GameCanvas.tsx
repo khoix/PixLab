@@ -394,14 +394,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     bonusSelectionRef.current = null;
     setShowBonusSelection(false);
     
-    // Play combat music when entering a level
+    // Play maze music when entering a sector
     if (state.screen === 'run') {
       audioManager.resume();
-      if (level.isBoss) {
-        audioManager.playMusic('boss');
-      } else {
-        audioManager.playMusic('combat');
-      }
+      audioManager.playMusic('maze');
       
       // Log sector start event
       eventLogger.logEvent('progression', `Sector ${state.currentLevel} started`, {

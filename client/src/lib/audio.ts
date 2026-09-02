@@ -1,66 +1,113 @@
-// Audio Manager using Web Audio API for procedural sound generation
-// This creates sounds programmatically without requiring audio files
+// Audio manager: WEBM background music + procedural SFX via Web Audio API
+
+import themeMusicUrl from '../assets/audio/Glitched Catacombs (Theme).webm';
+import mazeMusicUrl from '../assets/audio/Enter The Catacombs.webm';
+import vendorMusicUrl from '../assets/audio/Uncanny Times.webm';
+import lobbyReturnMusicUrl from '../assets/audio/Uncanny Times (Extended).webm';
+
+export type MusicTrack = 'theme' | 'maze' | 'vendor' | 'lobbyReturn';
+
+const TRACK_URLS: Record<MusicTrack, string> = {
+  theme: themeMusicUrl,
+  maze: mazeMusicUrl,
+  vendor: vendorMusicUrl,
+  lobbyReturn: lobbyReturnMusicUrl,
+};
+
+declare global {
+  interface Window {
+    __PIXLAB_AUDIO__?: {
+      getCurrentTrack: () => MusicTrack | null;
+      isMusicPlaying: () => boolean;
+    };
+  }
+}
 
 class AudioManager {
   private audioContext: AudioContext | null = null;
   private musicGainNode: GainNode | null = null;
   private sfxGainNode: GainNode | null = null;
-  private currentMusicOscillator: OscillatorNode | null = null;
-  private currentMusicSource: AudioBufferSourceNode | null = null;
+  private musicElement: HTMLAudioElement | null = null;
+  private musicMediaSource: MediaElementAudioSourceNode | null = null;
   private musicVolume: number = 0.5;
   private sfxVolume: number = 0.5;
   private isInitialized: boolean = false;
-  private userActivated: boolean = false;
-  /** Bumped on stopMusic so pattern loops exit; cleared timeouts ignored. */
-  private musicGeneration = 0;
-  private musicTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  private currentTrack: MusicTrack | null = null;
+  private loadedMusicSrc: string | null = null;
+  private musicPausedForVisibility = false;
 
-  // Initialize audio context (must be called after user interaction)
   init() {
     if (this.isInitialized) return;
-    
+
     try {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       this.musicGainNode = this.audioContext.createGain();
       this.sfxGainNode = this.audioContext.createGain();
-      
+
       this.musicGainNode.connect(this.audioContext.destination);
       this.sfxGainNode.connect(this.audioContext.destination);
-      
+
       this.musicGainNode.gain.value = this.musicVolume;
       this.sfxGainNode.gain.value = this.sfxVolume;
-      
+
+      this.ensureMusicElement();
+
       this.isInitialized = true;
-      this.userActivated = true; // Mark as user-activated when init is called from user gesture
     } catch (error) {
       console.warn('Audio initialization failed:', error);
     }
   }
 
-  // Resume audio context (required after user interaction)
+  get initialized() {
+    return this.isInitialized;
+  }
+
+  private ensureMusicElement() {
+    if (!this.musicElement) {
+      this.musicElement = new Audio();
+      this.musicElement.loop = true;
+      this.musicElement.preload = 'auto';
+    }
+
+    if (this.audioContext && this.musicGainNode && !this.musicMediaSource) {
+      this.musicMediaSource = this.audioContext.createMediaElementSource(this.musicElement);
+      this.musicMediaSource.connect(this.musicGainNode);
+    }
+  }
+
   async resume() {
     if (!this.audioContext) {
-      // Don't auto-initialize here - wait for user gesture
       return;
     }
-    // Try to resume if suspended (userActivated is set when init is called from user gesture)
     if (this.audioContext.state === 'suspended') {
       try {
         await this.audioContext.resume();
-      } catch (error) {
-        // Silently fail if resume is not allowed
-        // This can happen if the context was suspended after initialization
+      } catch {
+        // Resume may be blocked until a user gesture
+      }
+    }
+
+    if (this.musicElement && this.currentTrack && this.musicPausedForVisibility) {
+      this.musicPausedForVisibility = false;
+      try {
+        await this.musicElement.play();
+      } catch {
+        // Ignore autoplay failures
       }
     }
   }
 
-  /** Suspend audio context when tab is hidden (M1 visibility gating). */
   async suspend() {
+    if (this.musicElement && !this.musicElement.paused) {
+      this.musicElement.pause();
+      this.musicPausedForVisibility = true;
+    }
+
     if (!this.audioContext) return;
     if (this.audioContext.state === 'running') {
       try {
         await this.audioContext.suspend();
-      } catch (error) {
+      } catch {
         // Ignore suspend failures
       }
     }
@@ -80,145 +127,99 @@ class AudioManager {
     }
   }
 
-  // Stop current music
   stopMusic() {
-    this.musicGeneration += 1;
-    if (this.musicTimeoutHandle !== null) {
-      clearTimeout(this.musicTimeoutHandle);
-      this.musicTimeoutHandle = null;
+    if (this.musicElement) {
+      this.musicElement.pause();
+      this.musicElement.currentTime = 0;
     }
-
-    if (this.currentMusicOscillator) {
-      try {
-        this.currentMusicOscillator.stop();
-      } catch (e) {
-        // Already stopped
-      }
-      this.currentMusicOscillator = null;
-    }
-    if (this.currentMusicSource) {
-      try {
-        this.currentMusicSource.stop();
-      } catch (e) {
-        // Already stopped
-      }
-      this.currentMusicSource = null;
-    }
+    this.currentTrack = null;
+    this.loadedMusicSrc = null;
+    this.musicPausedForVisibility = false;
   }
 
-  // Play ambient background music
-  playMusic(type: 'lobby' | 'combat' | 'shop' | 'boss') {
+  playMusic(type: MusicTrack) {
     if (!this.audioContext || !this.musicGainNode) {
       this.init();
+      if (!this.audioContext || !this.musicGainNode) return;
+    }
+
+    if (
+      this.currentTrack === type &&
+      this.musicElement &&
+      !this.musicElement.paused &&
+      !this.musicPausedForVisibility
+    ) {
       return;
     }
 
-    this.stopMusic();
+    this.ensureMusicElement();
+    if (!this.musicElement) return;
 
-    const generation = this.musicGeneration;
+    const nextSrc = TRACK_URLS[type];
+    const sameSource = this.loadedMusicSrc === nextSrc;
 
-    // For more complex music, use a pattern-based approach
-    const playPattern = () => {
-      if (!this.audioContext || !this.musicGainNode) return;
-      if (generation !== this.musicGeneration) return;
+    this.currentTrack = type;
+    this.musicPausedForVisibility = false;
 
-      const patterns: Record<typeof type, { notes: number[], tempo: number }> = {
-        lobby: { notes: [0, 2, 3, 2, 0, 1, 2, 1], tempo: 120 },
-        combat: { notes: [0, 1, 2, 0, 1, 2, 3, 2], tempo: 140 },
-        shop: { notes: [0, 2, 3, 4, 3, 2, 0, 1], tempo: 100 },
-        boss: { notes: [0, 1, 0, 2, 0, 1, 0, 3], tempo: 90 },
-      };
+    if (!sameSource) {
+      this.musicElement.pause();
+      this.musicElement.src = nextSrc;
+      this.musicElement.load();
+      this.loadedMusicSrc = nextSrc;
+    }
 
-      const pattern = patterns[type];
-      const baseFreqs: Record<typeof type, number[]> = {
-        lobby: [220, 261.63, 293.66, 329.63, 349.23],
-        combat: [196, 233.08, 277.18, 311.13, 349.23],
-        shop: [246.94, 293.66, 329.63, 369.99, 392],
-        boss: [146.83, 174.61, 196, 220, 246.94],
-      };
-
-      const freqs = baseFreqs[type];
-      let noteIndex = 0;
-      const noteTime = (60 / pattern.tempo) * 1000;
-
-      const playNextNote = () => {
-        if (generation !== this.musicGeneration) return;
-        if (!this.audioContext || !this.musicGainNode) return;
-
-        const note = pattern.notes[noteIndex % pattern.notes.length];
-        const freq = freqs[note];
-
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = type === 'boss' ? 'sawtooth' : 'triangle';
-        oscillator.frequency.value = freq;
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.musicGainNode);
-
-        const now = this.audioContext.currentTime;
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.12, now + 0.05);
-        gainNode.gain.linearRampToValueAtTime(0.08, now + (noteTime * 0.7) / 1000);
-        gainNode.gain.linearRampToValueAtTime(0, now + noteTime / 1000);
-
-        oscillator.start(now);
-        oscillator.stop(now + noteTime / 1000);
-
-        noteIndex++;
-        this.musicTimeoutHandle = setTimeout(playNextNote, noteTime);
-      };
-
-      playNextNote();
-    };
-
-    playPattern();
+    void this.musicElement.play().catch((error) => {
+      console.warn('Music playback failed:', error);
+    });
   }
 
-  // Sound effects
+  getCurrentTrack() {
+    return this.currentTrack;
+  }
+
+  isMusicPlaying() {
+    return Boolean(this.musicElement && this.currentTrack && !this.musicElement.paused);
+  }
+
   playSound(type: 'move' | 'attack' | 'enemyDeath' | 'itemPickup' | 'damage' | 'levelComplete' | 'gameOver' | 'coin' | 'purchase') {
     if (!this.audioContext || !this.sfxGainNode) {
       this.init();
       return;
     }
 
-    const now = this.audioContext.currentTime;
-
-    // Create sound based on type
     switch (type) {
       case 'move':
         this.playTone(200, 0.05, 0.1, 'sine');
         break;
-      
+
       case 'attack':
         this.playTone(400, 0.1, 0.15, 'square');
         break;
-      
+
       case 'enemyDeath':
         this.playTone(300, 0.1, 0.2, 'sawtooth', true);
         break;
-      
+
       case 'itemPickup':
         this.playTone(600, 0.15, 0.2, 'sine', true);
         break;
-      
+
       case 'damage':
         this.playTone(150, 0.2, 0.3, 'sawtooth');
         break;
-      
+
       case 'levelComplete':
-        this.playMelody([523.25, 659.25, 783.99], 0.15, 0.1); // C, E, G
+        this.playMelody([523.25, 659.25, 783.99], 0.15, 0.1);
         break;
-      
+
       case 'gameOver':
-        this.playMelody([196, 174.61, 155.56], 0.2, 0.15); // Descending
+        this.playMelody([196, 174.61, 155.56], 0.2, 0.15);
         break;
-      
+
       case 'coin':
         this.playTone(800, 0.1, 0.15, 'sine', true);
         break;
-      
+
       case 'purchase':
         this.playMelody([523.25, 659.25], 0.15, 0.1);
         break;
@@ -271,21 +272,26 @@ class AudioManager {
   }
 }
 
-// Singleton instance
 export const audioManager = new AudioManager();
 
-// Initialize on first user interaction
+export function startThemeMusic() {
+  audioManager.init();
+  void audioManager.resume();
+  audioManager.playMusic('theme');
+}
+
 if (typeof window !== 'undefined') {
+  window.__PIXLAB_AUDIO__ = {
+    getCurrentTrack: () => audioManager.getCurrentTrack(),
+    isMusicPlaying: () => audioManager.isMusicPlaying(),
+  };
+
   const initAudio = async () => {
     audioManager.init();
     await audioManager.resume();
-    window.removeEventListener('click', initAudio);
-    window.removeEventListener('touchstart', initAudio);
-    window.removeEventListener('keydown', initAudio);
   };
 
   window.addEventListener('click', initAudio, { once: true });
   window.addEventListener('touchstart', initAudio, { once: true });
   window.addEventListener('keydown', initAudio, { once: true });
 }
-
