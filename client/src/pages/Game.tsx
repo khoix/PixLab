@@ -238,6 +238,12 @@ export default function Game() {
       setCoins: (coins: number) => {
         dispatch({ type: 'UPDATE_STATS', payload: { coins } });
       },
+      setCurrentLevel: (level: number) => {
+        dispatch({ type: 'SET_CURRENT_LEVEL', payload: level });
+      },
+      updateStats: (payload) => {
+        dispatch({ type: 'UPDATE_STATS', payload });
+      },
       setLobbyTab: (tab: string) => {
         setLobbyTab(tab);
       },

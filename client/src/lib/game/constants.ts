@@ -273,5 +273,9 @@ export const MOB_TYPES: MobTypeDef[] = [
   },
 ];
 
+export const MOB_TYPE_BY_SUBTYPE: ReadonlyMap<string, MobTypeDef> = new Map(
+  MOB_TYPES.map((mob) => [mob.subtype, mob]),
+);
+
 // Re-export color theme utilities
 export { getThemeForLevel, generateColorPalette, type ColorPalette } from './colorThemes';

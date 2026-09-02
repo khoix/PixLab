@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
-import { generateLevel, checkCollision, getEntitiesInRadius, hasLineOfSight, getAttackablePositions } from '../../lib/game/engine';
-import { TILE_SIZE, COLORS, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL, LOW_TIME_ASSIST_SEC } from '../../lib/game/constants';
+import { generateLevel, checkCollision, getEntitiesInRadius, getAttackablePositions } from '../../lib/game/engine';
+import { TILE_SIZE, COLORS, MODS, RARITY_COLORS, MOB_TYPE_BY_SUBTYPE, SHOP_INTERVAL, BOSS_INTERVAL, LOW_TIME_ASSIST_SEC } from '../../lib/game/constants';
+import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
+import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
+import { spawnMobEntity } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Footprint } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
@@ -85,7 +88,7 @@ function formatEntityName(mobSubtype: MobSubtype | undefined, isBoss: boolean = 
   }
   
   // For regular mobs, try to get the display name from MOB_TYPES
-  const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
+  const mobType = MOB_TYPE_BY_SUBTYPE.get(mobSubtype);
   if (mobType && mobType.name) {
     return mobType.name;
   }
@@ -387,6 +390,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Reset damage cooldowns when level changes
     enemyDamageCooldownRef.current.clear();
     enemyMoveTimersRef.current.clear();
+    aiScheduler.reset();
     previousEnemyIdsRef.current = new Set(level.entities.map(e => e.id));
     projectileIdCounterRef.current = 0;
     afterimageIdCounterRef.current = 0;
@@ -442,6 +446,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     }
   }, [state.currentLevel, state.screen]);
+
+  // E2e/debug hook: read-only view of the live level plus controlled mob spawning,
+  // so AI scheduling can be verified without relying on random level layouts.
+  useEffect(() => {
+    window.__PIXLAB_LEVEL__ = {
+      getPlayerPos: () => ({ ...playerPosRef.current }),
+      getEntities: () =>
+        (levelRef.current?.entities ?? []).map((e) => ({
+          id: e.id,
+          type: e.type,
+          mobSubtype: e.mobSubtype ?? null,
+          pos: { ...e.pos },
+          hp: e.hp,
+        })),
+      getExitPos: () => (levelRef.current ? { ...levelRef.current.exitPos } : null),
+      isFloor: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'floor',
+      spawnMob: (subtype, pos) => {
+        const level = levelRef.current;
+        if (!level) return null;
+        const entity = spawnMobEntity(level, subtype, { ...pos }, level.levelNumber, statsRef.current, loadoutRef.current);
+        if (!entity) return null;
+        level.entities = [...level.entities, entity];
+        return entity.id;
+      },
+      clearMobs: () => {
+        const level = levelRef.current;
+        if (!level) return;
+        level.entities = level.entities.filter((e) => e.type !== 'enemy' && e.type !== 'boss_enemy');
+      },
+      getLosCacheStats: () => (levelRef.current ? getLosCacheStats(levelRef.current) : null),
+    };
+    return () => {
+      delete window.__PIXLAB_LEVEL__;
+    };
+  }, []);
 
   // Handle canvas resize — measure display size from the canvas element, not window
   useEffect(() => {
@@ -801,7 +840,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             // Check line of sight - prevent attacks through walls
             // Spear has special wall-piercing logic handled later, but still check LOS here
             if (levelRef.current) {
-              const hasLOS = hasLineOfSight(nextPos, enemy.pos, levelRef.current);
+              const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
               // For non-spear weapons, require line of sight
               // For spear, allow it through (wall-piercing logic handles it later)
               if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
@@ -817,7 +856,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             attackableEnemies.forEach(enemy => {
             // Spear: Check if enemy is behind a wall (10% chance to pierce through)
             if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
-              const hasLOS = hasLineOfSight(nextPos, enemy.pos, levelRef.current);
+              const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
               if (!hasLOS) {
                 // Enemy is behind a wall - only 10% chance to hit
                 if (Math.random() >= 0.10) {
@@ -937,6 +976,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       levelRef.current.tiles[exitY][exitX] = 'floor';
                     }
                     levelRef.current.tiles[exitY][exitX] = 'exit';
+                    invalidateLosCache(levelRef.current);
                     // Update exit position
                     levelRef.current.exitPos = { x: exitX, y: exitY };
                   }
@@ -953,7 +993,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 if (enemy.isBoss) {
                   coinReward = 100;
                 } else if (enemy.mobSubtype) {
-                  const mobType = MOB_TYPES.find((m: typeof MOB_TYPES[0]) => m.subtype === enemy.mobSubtype);
+                  const mobType = MOB_TYPE_BY_SUBTYPE.get(enemy.mobSubtype);
                   if (mobType) {
                     coinReward = mobType.coinReward;
                     // Add level scaling if coinPerLevel is defined
@@ -1138,6 +1178,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                         levelRef.current.tiles[exitY][exitX] = 'floor';
                       }
                       levelRef.current.tiles[exitY][exitX] = 'exit';
+                      invalidateLosCache(levelRef.current);
                       // Update exit position
                       levelRef.current.exitPos = { x: exitX, y: exitY };
                     }
@@ -1305,17 +1346,77 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     }
 
-    // Advanced enemy AI with unique behaviors per mob type
+    // Advanced enemy AI with unique behaviors per mob type.
+    // The scheduler decides per mob whether it gets a tick this frame (see
+    // lib/game/ai/aiScheduler.ts): far-away mobs sleep, mid-range mobs are
+    // staggered across frames, nearby / mid-attack mobs run every frame.
+    aiScheduler.beginFrame();
+    // Anything inside this radius is visible to the player and must keep animating.
+    const awakeRadiusTiles = activeScrollEffectsRef.current.threatSense
+      ? Infinity
+      : buildDrawFrameSnapshot({
+          stats: baseStats,
+          loadout: loadoutRef.current,
+          activeMods: activeModsRef.current,
+          temporaryVisionBoost: temporaryVisionBoostRef.current,
+          lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
+          visionDebuffLevel: visionDebuffLevelRef.current,
+          logicalWidth: canvasSizeRef.current.logicalWidth,
+          logicalHeight: canvasSizeRef.current.logicalHeight,
+          tileSize: TILE_SIZE,
+          isMobileViewport: false,
+          now,
+        }).fogRadius / TILE_SIZE;
+    const playerTileX = playerPosRef.current.x;
+    const playerTileY = playerPosRef.current.y;
+
+    // Tile → mob occupancy, built lazily on the first move attempt this frame,
+    // so mob-vs-mob collision is O(1) instead of a scan of every entity.
+    let mobOccupancy: Map<number, Entity[]> | null = null;
+    const occupancyKey = (x: number, y: number) => y * 4096 + x;
+    const getMobOccupancy = (): Map<number, Entity[]> => {
+      if (mobOccupancy) return mobOccupancy;
+      mobOccupancy = new Map();
+      const all = levelRef.current!.entities;
+      for (let i = 0; i < all.length; i++) {
+        const e = all[i];
+        if (e.type !== 'enemy' && e.type !== 'boss_enemy') continue;
+        const key = occupancyKey(Math.floor(e.pos.x), Math.floor(e.pos.y));
+        const bucket = mobOccupancy.get(key);
+        if (bucket) bucket.push(e);
+        else mobOccupancy.set(key, [e]);
+      }
+      return mobOccupancy;
+    };
+
     const updatedEntities = levelRef.current.entities.map(entity => {
       if (entity.type === 'enemy' || entity.type === 'boss_enemy') {
-        const updatedEntity = { ...entity };
         const mobSubtype = entity.mobSubtype || 'drone';
+        const mobType = MOB_TYPE_BY_SUBTYPE.get(mobSubtype);
+        const aggroRange = mobType?.aggroRange ?? Infinity;
+
+        const scheduleDx = entity.pos.x - playerTileX;
+        const scheduleDy = entity.pos.y - playerTileY;
+        const aiDelta = aiScheduler.schedule(
+          entity,
+          {
+            distToPlayer: Math.sqrt(scheduleDx * scheduleDx + scheduleDy * scheduleDy),
+            aggroRange,
+            awakeRadius: awakeRadiusTiles,
+            timingSensitive: isTimingSensitive(entity, now),
+          },
+          now,
+          deltaTime,
+        );
+        if (aiDelta === null) return entity;
+
+        const updatedEntity = { ...entity };
         const moveSpeed = entity.moveSpeed || 1.0;
         const baseMoveDelay = 1000 / (moveSpeed * 4); // Base movement delay
         
         // Update move timer for this entity
         const currentTimer = enemyMoveTimersRef.current.get(entity.id) || 0;
-        enemyMoveTimersRef.current.set(entity.id, currentTimer + deltaTime);
+        enemyMoveTimersRef.current.set(entity.id, currentTimer + aiDelta);
         
         // Stationary mobs don't move
         if (entity.isStationary) {
@@ -1325,10 +1426,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               Math.pow(entity.pos.x - playerPosRef.current.x, 2) +
               Math.pow(entity.pos.y - playerPosRef.current.y, 2)
             );
-            
-            // Check aggro range first
-            const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
-            const aggroRange = mobType?.aggroRange ?? Infinity;
             
             // Only attack if player is within aggro range and attack range
             if (distToPlayer <= aggroRange && distToPlayer <= entity.range) {
@@ -1382,10 +1479,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const dx = playerPosRef.current.x - entity.pos.x;
           const dy = playerPosRef.current.y - entity.pos.y;
           const distToPlayer = Math.sqrt(dx * dx + dy * dy);
-          
-          // Get mob type and aggro range
-          const mobType = MOB_TYPES.find(m => m.subtype === mobSubtype);
-          const aggroRange = mobType?.aggroRange ?? Infinity;
           
           // Helper function for idle roaming behavior
           const performIdleRoaming = (): { x: number; y: number } | null => {
@@ -2029,19 +2122,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 }
                 
                 // Check for mob collision - prevent stacking unless one can phase or one is stationary
-                const mobsAtTarget = levelRef.current.entities.filter(e => {
-                  if (e.id === entity.id) return false; // Skip self
-                  if (e.type !== 'enemy' && e.type !== 'boss_enemy') return false; // Only check other mobs
-                  const otherTileX = Math.floor(e.pos.x);
-                  const otherTileY = Math.floor(e.pos.y);
-                  return otherTileX === tileX && otherTileY === tileY;
-                });
+                const occupants = getMobOccupancy().get(occupancyKey(tileX, tileY));
+                const targetMob = occupants?.find(e => e.id !== entity.id) ?? null;
                 
                 // Allow movement if no mobs at target, or if stacking is allowed
                 let canStack = true;
-                if (mobsAtTarget.length > 0) {
+                if (targetMob) {
                   // Check if stacking is allowed: moving mob can phase OR target mob is stationary
-                  const targetMob = mobsAtTarget[0];
                   canStack = entity.canPhase || (targetMob.isStationary === true);
                 }
                 
@@ -2206,6 +2293,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               levelRef.current.tiles[exitY][exitX] = 'floor';
             }
             levelRef.current.tiles[exitY][exitX] = 'exit';
+            invalidateLosCache(levelRef.current);
             // Update exit position
             levelRef.current.exitPos = { x: exitX, y: exitY };
           }
@@ -2536,8 +2624,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       // Continue rendering even if projectiles fail
     }
 
-    // Draw Entities with unique appearances
+    // Draw Entities with unique appearances. Mobs well outside the camera are
+    // skipped; the margin covers telegraph aim lines (longest ranged reach is
+    // ~8 tiles) drawn from an off-screen mob toward the player.
+    const ENTITY_CULL_MARGIN = TILE_SIZE * 10;
+    const cullMinX = camX - ENTITY_CULL_MARGIN;
+    const cullMaxX = camX + logicalWidth + ENTITY_CULL_MARGIN;
+    const cullMinY = camY - ENTITY_CULL_MARGIN;
+    const cullMaxY = camY + logicalHeight + ENTITY_CULL_MARGIN;
     levelRef.current.entities.forEach(entity => {
+      const entityPx = entity.pos.x * TILE_SIZE;
+      const entityPy = entity.pos.y * TILE_SIZE;
+      if (entityPx < cullMinX || entityPx > cullMaxX || entityPy < cullMinY || entityPy > cullMaxY) {
+        return;
+      }
       setShadowTier(entity.isBoss ? 'boss' : 'generic');
       let color = COLORS.enemy;
       let size = TILE_SIZE - 8;
