@@ -399,3 +399,24 @@ Music starts after a user gesture (browser autoplay policy). Title **START RUN**
 - E2e: `e2e/audio.spec.ts` — theme on lobby after start; maze track after entering sector.
 
 ---
+
+## Music Volume — Settings Slider Controls Background Music
+
+**Branch:** `cursor/music-volume-aa59`  
+**Status:** Ready for review
+
+### Problem
+The settings **MUSIC VOLUME** slider set the music `GainNode`, but on iPhone it had no audible effect. Root cause is upstream: WebKit cannot change the volume of a **WebM/Opus** `<audio>` element routed through `createMediaElementSource` ([WebKit 276813](https://bugs.webkit.org/show_bug.cgi?id=276813), open, reproduced on iOS 17.5). MP4/AAC through the same graph works. `HTMLMediaElement.volume` is read-only on iOS, so the gain node is the only usable control path there.
+
+### Added
+- **AAC renditions** (`.m4a`, 128 kbps) of all four tracks alongside the WebM files.
+- **`client/src/lib/musicFormat.ts`** — pure `selectMusicFormat()` picks `aac` on WebKit engines (desktop Safari and every iOS browser) and `webm` elsewhere, with `canPlayType` guards for browsers missing either codec.
+- **`audio.ts`** — a single `applyMusicVolume()` sets the gain node and keeps `element.volume` at 1 while routed (so the two paths never multiply); if `createMediaElementSource` throws, it falls back to `element.volume`. Volume is applied before every `play()`.
+- **`Home.tsx`** — pushes the persisted music/SFX volume into the audio manager so the title theme respects the saved setting on a fresh load (previously it played at the default 50% until the lobby mounted).
+- `window.__PIXLAB_AUDIO__` gained `getMusicVolume`, `getEffectiveMusicGain`, `getMusicElementVolume`, `isMusicRoutedThroughGraph`, `getMusicFormat`, `getMusicSourceUrl`, `selectMusicFormat`; the slider has `data-testid="music-volume-slider"`.
+
+### Verification
+- E2e (`e2e/audio.spec.ts`): setting drives the gain node (0.2 → 0 → persists across track switch); lobby slider Home/End moves live gain to 0/1; persisted volume applied to title theme after reload; Chromium loads `.webm`; format selection matrix for iOS Safari / iOS Chrome / macOS Safari / desktop Chrome / Firefox.
+- Manual: Chromium under an iPhone UA selects `aac` and Vite serves the `.m4a` as `audio/mp4`. On-device iOS confirmation still recommended.
+
+---
