@@ -1,4 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import {
+  PRELOAD_STATUS_DEGRADED,
+  PRELOAD_STATUS_LINES,
+  pickPreloadStatusLine,
+} from '../client/src/lib/preloadStatus';
 
 // Match the media bytes only — in dev Vite also serves `X.webm?import` JS modules.
 const AUDIO_ASSET = /\.(webm|m4a)$/;
@@ -23,6 +28,13 @@ test.describe('Title screen — music preload gate', () => {
     await expect(page.getByTestId('start-run-button')).toHaveCount(0);
     await expect(page.getByPlaceholder('ENTER CODE')).toHaveCount(0);
     await expect(page.getByTestId('music-preload')).toContainText('TUNING BROADCAST');
+
+    // The log under the bar is fictional flavour, never a literal file/track count.
+    const status = page.getByTestId('music-preload-status');
+    await expect(status).toBeVisible();
+    const statusText = (await status.innerText()).replace(/[>▌]/g, '').trim();
+    expect(PRELOAD_STATUS_LINES as readonly string[]).toContain(statusText);
+    expect(statusText).not.toMatch(/TRACK|FILE|CACHE|MB|BYTES/i);
 
     await expect(page.getByTestId('start-run-button')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByPlaceholder('ENTER CODE')).toBeVisible();
@@ -62,6 +74,19 @@ test.describe('Title screen — music preload gate', () => {
     await expect(page.getByTestId('start-run-button')).toBeVisible({ timeout: 20_000 });
     const state = await preloadState(page);
     expect(state?.status).toBe('error');
+  });
+
+  test('boot log marches with progress and time but only reports lock-on when settled', () => {
+    const last = PRELOAD_STATUS_LINES[PRELOAD_STATUS_LINES.length - 1];
+    expect(pickPreloadStatusLine(0, 0, 'loading')).toBe(PRELOAD_STATUS_LINES[0]);
+    expect(pickPreloadStatusLine(0.5, 0, 'loading')).toBe(PRELOAD_STATUS_LINES[4]);
+    // A stalled download still advances the log over time…
+    expect(pickPreloadStatusLine(0, 3, 'loading')).toBe(PRELOAD_STATUS_LINES[3]);
+    // …but never past the final in-progress line, and never to the done line.
+    expect(pickPreloadStatusLine(1, 999, 'loading')).toBe(last);
+    expect(pickPreloadStatusLine(1, 0, 'done')).toBe('SIGNAL LOCKED');
+    expect(pickPreloadStatusLine(0.2, 0, 'error')).toBe(PRELOAD_STATUS_DEGRADED);
+    expect(pickPreloadStatusLine(Number.NaN, -5, 'loading')).toBe(PRELOAD_STATUS_LINES[0]);
   });
 
   test('returning to the title screen skips the progress bar', async ({ page }) => {

@@ -463,6 +463,22 @@
   animation: preload-label-flicker 2.4s steps(1, end) infinite;
 }
 
+.preload-status__prompt {
+  color: hsl(var(--primary) / 0.7);
+}
+
+.preload-status__cursor {
+  display: inline-block;
+  margin-left: 0.15em;
+  color: hsl(var(--primary) / 0.85);
+  animation: preload-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes preload-cursor-blink {
+  0%, 49%  { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
 @keyframes preload-label-flicker {
   0%, 92%, 100% { opacity: 1; }
   94%           { opacity: 0.45; }
@@ -475,6 +491,7 @@
   .home-title-glint,
   .preload-bar__sweep,
   .preload-label,
+  .preload-status__cursor,
   [data-glitching="true"] .glitch-title,
   [data-glitching="true"] .glitch-jitter {
     animation: none !important;
