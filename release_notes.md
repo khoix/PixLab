@@ -355,7 +355,7 @@ npm run test:e2e:ui     # interactive UI mode
 
 ## Background Music — WEBM Tracks
 
-**Branch:** `cursor/background-music-webm`  
+**Branch:** `cursor/PixLab`  
 **Status:** Ready for review
 
 ### Added
