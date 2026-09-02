@@ -177,6 +177,7 @@ test.describe('M5 — Mobile UX & controls', () => {
     await page.waitForURL('**/play**');
     await page.evaluate(() => {
       window.__PIXLAB_TEST__?.updateSettings({ sectorTimerSide: 'left' });
+      window.__PIXLAB_TEST__?.addHealingPotion();
     });
     await page.getByTestId('enter-sector-button').click();
     await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
@@ -220,6 +221,25 @@ test.describe('M5 — Mobile UX & controls', () => {
     });
 
     expect(hudClearance?.timerBelowHud).toBe(true);
+
+    const healAlignment = await page.evaluate(() => {
+      const timer = document.querySelector('.mobile-sector-timer--left') as HTMLElement | null;
+      const heal = document.querySelector('[data-testid="quick-heal-button"]') as HTMLElement | null;
+      const label = document.querySelector('[data-testid="hud-sector-timer"]') as HTMLElement | null;
+      if (!timer || !heal || !label) return null;
+      const timerRect = timer.getBoundingClientRect();
+      const healRect = heal.getBoundingClientRect();
+      const labelRect = label.getBoundingClientRect();
+      return {
+        bottomsAligned: Math.abs(timerRect.bottom - healRect.bottom) <= 4,
+        labelOnScreen: labelRect.left >= 2,
+        labelFullyVisible: labelRect.right <= window.innerWidth - 2,
+      };
+    });
+
+    expect(healAlignment?.bottomsAligned).toBe(true);
+    expect(healAlignment?.labelOnScreen).toBe(true);
+    expect(healAlignment?.labelFullyVisible).toBe(true);
   });
 
   test('operator preview is at top of lobby inventory tab', async ({ page }) => {
