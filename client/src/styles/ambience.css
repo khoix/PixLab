@@ -1,0 +1,230 @@
+/* Ambient menu effects: broadcast glitch, artwork glimmer, music preload bar. */
+
+/* ---------- Broadcast glitch ---------- */
+
+.broadcast-glitch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 30;
+  opacity: 0;
+}
+
+.broadcast-glitch[data-active="true"] {
+  opacity: 1;
+}
+
+.broadcast-glitch__band {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 0;
+  height: 16%;
+  transform: translateY(-40vh);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 255, 245, 0.13) 25%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 51, 204, 0.15) 75%,
+    transparent 100%
+  );
+  box-shadow: 3px 0 0 rgba(255, 51, 204, 0.25), -3px 0 0 rgba(0, 255, 245, 0.25);
+  mix-blend-mode: screen;
+}
+
+.broadcast-glitch__band--sync {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 6px rgba(0, 255, 245, 0.9);
+}
+
+.broadcast-glitch__scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.18) 0 2px,
+    transparent 2px 4px
+  );
+  opacity: 0;
+}
+
+.broadcast-glitch[data-active="true"] .broadcast-glitch__band {
+  animation: broadcast-band-sweep 0.38s steps(7, end) both;
+}
+
+.broadcast-glitch[data-active="true"] .broadcast-glitch__band--sync {
+  animation: broadcast-band-sweep 0.30s steps(9, end) both;
+  animation-delay: 0.04s;
+}
+
+.broadcast-glitch[data-active="true"] .broadcast-glitch__scanlines {
+  animation: broadcast-scanline-flicker 0.38s steps(3, end) both;
+}
+
+@keyframes broadcast-band-sweep {
+  from { transform: translateY(-40vh) skewX(-8deg); }
+  to   { transform: translateY(140vh) skewX(6deg); }
+}
+
+@keyframes broadcast-scanline-flicker {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.9; transform: translateY(0); }
+  50%  { opacity: 0.35; transform: translateY(1px); }
+  80%  { opacity: 0.7; transform: translateY(-1px); }
+  100% { opacity: 0; }
+}
+
+/* Titles and panels tagged .glitch-title / .glitch-jitter jitter with the band. */
+[data-glitching="true"] .glitch-title {
+  animation: broadcast-title-tear 0.36s steps(2, end) both;
+}
+
+[data-glitching="true"] .glitch-jitter {
+  animation: broadcast-jitter 0.36s steps(3, end) both;
+}
+
+@keyframes broadcast-title-tear {
+  0%   { transform: translate(0, 0); text-shadow: none; }
+  20%  { transform: translate(-3px, 1px) skewX(-3deg);
+         text-shadow: 3px 0 rgba(255, 51, 204, 0.85), -3px 0 rgba(0, 255, 245, 0.85); }
+  40%  { transform: translate(3px, -1px) skewX(2deg);
+         text-shadow: -3px 0 rgba(255, 51, 204, 0.85), 3px 0 rgba(0, 255, 245, 0.85); }
+  60%  { transform: translate(-1px, 0);
+         text-shadow: 2px 0 rgba(255, 51, 204, 0.6), -2px 0 rgba(0, 255, 245, 0.6); }
+  80%  { transform: translate(1px, 1px) skewX(-1deg); text-shadow: none; }
+  100% { transform: translate(0, 0); text-shadow: none; }
+}
+
+@keyframes broadcast-jitter {
+  0%   { transform: translate(0, 0); }
+  30%  { transform: translate(-1.5px, 0.5px); }
+  60%  { transform: translate(1.5px, -0.5px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ---------- Title artwork glimmer (sword & shield) ---------- */
+
+.home-title-art,
+.home-title-glint {
+  position: absolute;
+  inset: 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.home-title-art {
+  opacity: 0.4;
+}
+
+.home-title-glint {
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-image: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0) 45%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(190, 255, 255, 0.45) 53%,
+    transparent 60%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-mask-image: var(--glint-mask);
+  mask-image: var(--glint-mask);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+[data-glimmer="true"] .home-title-glint {
+  animation: title-glint-sweep 1.2s ease-in-out both;
+}
+
+@keyframes title-glint-sweep {
+  0%   { background-position: 130% 0; opacity: 0; }
+  15%  { opacity: 0.75; }
+  85%  { opacity: 0.75; }
+  100% { background-position: -30% 0; opacity: 0; }
+}
+
+/* ---------- Music preload bar ---------- */
+
+.preload-bar {
+  position: relative;
+  height: 3.5rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.65);
+  border: 2px solid hsl(var(--primary) / 0.55);
+  box-shadow: inset 0 0 18px rgba(0, 255, 245, 0.18), 0 0 20px rgba(0, 255, 245, 0.25);
+}
+
+.preload-bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: repeating-linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0 10px,
+    hsl(var(--primary) / 0.35) 10px 12px,
+    transparent 12px 14px
+  );
+  box-shadow: 0 0 14px rgba(0, 255, 245, 0.85);
+  transition: width 0.18s steps(3, end);
+}
+
+.preload-bar__scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.28) 0 2px,
+    transparent 2px 4px
+  );
+  pointer-events: none;
+}
+
+.preload-bar__sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  left: -30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: preload-sweep 1.4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes preload-sweep {
+  to { left: 130%; }
+}
+
+.preload-label {
+  animation: preload-label-flicker 2.4s steps(1, end) infinite;
+}
+
+@keyframes preload-label-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  94%           { opacity: 0.45; }
+  96%           { opacity: 1; }
+  98%           { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .broadcast-glitch,
+  .home-title-glint,
+  .preload-bar__sweep,
+  .preload-label,
+  [data-glitching="true"] .glitch-title,
+  [data-glitching="true"] .glitch-jitter {
+    animation: none !important;
+  }
+  .broadcast-glitch[data-active="true"] * {
+    animation: none !important;
+  }
+}

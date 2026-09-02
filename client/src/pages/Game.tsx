@@ -34,6 +34,7 @@ import type { GameState, MobileControlType } from '../lib/game/types';
 import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
+import { BroadcastGlitchScope } from '../components/BroadcastGlitch';
 import { useIsMobile } from '../hooks/use-mobile';
 import { QuickHealButton } from '../components/game/QuickHealButton';
 import { QuickConsumablesButton } from '../components/game/QuickConsumablesButton';
@@ -712,13 +713,16 @@ export default function Game() {
 
   if (state.screen === 'lobby') {
     return (
-      <div className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center">
+      <BroadcastGlitchScope
+        className="lobby-page fixed inset-0 z-10 overflow-hidden flex flex-col items-center justify-center"
+        data-testid="lobby-screen"
+      >
         <MazeBackground />
         <div className="lobby-page-body w-full max-w-4xl flex flex-col items-center flex-shrink-0">
           <div className="lobby-page-title flex-shrink-0 text-center space-y-2 mb-4 md:mb-8">
           <h1 
             onClick={() => setLocation('/')}
-            className="text-3xl md:text-5xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight cursor-pointer transition-opacity hover:opacity-80 active:opacity-60 select-none"
+            className="glitch-title text-3xl md:text-5xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight cursor-pointer transition-opacity hover:opacity-80 active:opacity-60 select-none"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             PIXEL<span className="text-secondary" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8)' }}><span className="relative inline-block">
@@ -1592,7 +1596,7 @@ export default function Game() {
           </p>
         </div>
         </div>
-      </div>
+      </BroadcastGlitchScope>
     );
   }
 

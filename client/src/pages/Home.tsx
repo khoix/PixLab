@@ -6,12 +6,24 @@ import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { audioManager, startThemeMusic } from '../lib/audio';
+import { useMusicPreload } from '../hooks/use-music-preload';
+import { useRandomPulse } from '../hooks/use-random-pulse';
+import { BroadcastGlitchOverlay, useBroadcastGlitch } from '../components/BroadcastGlitch';
+import { MusicPreloadBar } from '../components/MusicPreloadBar';
 
 export default function Home() {
   const { state, dispatch, resetGame, loadFromCode } = useGame();
   const [, setLocation] = useLocation();
   const [codeInput, setCodeInput] = React.useState('');
   const { toast } = useToast();
+  const { state: preload, ready: menuReady } = useMusicPreload();
+  const glitching = useBroadcastGlitch();
+  const glimmering = useRandomPulse('glimmer', {
+    minDelayMs: 5000,
+    maxDelayMs: 11000,
+    durationMs: 1200,
+    initialDelayMs: 1800,
+  });
 
   // The title theme starts here, before the lobby settings effects run, so the
   // persisted volume has to be pushed into the audio manager up front.
@@ -66,7 +78,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-purple-950 via-black to-cyan-950">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-purple-950 via-black to-cyan-950"
+      data-testid="title-screen"
+      data-glitching={glitching ? 'true' : 'false'}
+      data-glimmer={glimmering ? 'true' : 'false'}
+    >
+      <BroadcastGlitchOverlay active={glitching} />
       {/* Animated background grid */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 
@@ -77,29 +95,32 @@ export default function Home() {
       />
       <div className="absolute inset-0 bg-black/40 z-0" />
 
-      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000">
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full p-6 animate-in fade-in zoom-in duration-1000 glitch-jitter">
         <div className="home-title-container text-center space-y-4 relative">
             <div className="home-title-bg absolute -z-10" 
               style={{
-                backgroundImage: `url(${pixlabImage})`,
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
                 width: '100%',
                 height: '100%',
                 left: '50%',
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
-                opacity: 0.4,
               }}
-            />
-            <h1 className="text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
+            >
+              <div className="home-title-art" style={{ backgroundImage: `url(${pixlabImage})` }} />
+              <div
+                className="home-title-glint"
+                data-testid="title-glint"
+                style={{ ['--glint-mask' as string]: `url(${pixlabImage})` }}
+              />
+            </div>
+            <h1 className="glitch-title text-4xl md:text-6xl font-pixel text-primary drop-shadow-[0_0_10px_rgba(0,255,245,0.8)] leading-tight">
                 PIXEL<br/><span className="text-secondary" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.8)' }}>LABYRINTH</span>
             </h1>
             <p className="text-muted-foreground font-mono text-lg tracking-widest">ROGUE PROTOCOL // V.1.0</p>
         </div>
 
-        <div className="w-full space-y-4 mt-8">
+        {menuReady ? (
+          <div className="w-full space-y-4 mt-8" data-testid="title-menu">
             <Button 
                 data-testid="start-run-button"
                 className="w-full h-14 text-xl font-pixel bg-primary text-black hover:bg-primary/80 pixel-corners shadow-[0_0_20px_rgba(0,255,245,0.4)] transition-all hover:scale-105"
@@ -119,7 +140,10 @@ export default function Home() {
                     LOAD
                 </Button>
             </div>
-        </div>
+          </div>
+        ) : (
+          <MusicPreloadBar state={preload} />
+        )}
       </div>
     </div>
   );
