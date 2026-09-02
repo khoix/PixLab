@@ -277,7 +277,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Tasks:**
 - [x] `settings.sectorTimerSide` (`left` | `right`, default `right`) — lobby radio + CSS `--left` variant
 - [x] Extend `touchSensitivity` slider to 150% (1.5) with 3px slop at max
-- [x] Bump mobile `.text-xs`, `text-[10px]`, and compact `0.625rem` overrides by 30%
+- [x] Bump mobile toast copy and mission type labels (e.g. COMBAT ZONE) by 30%; revert broad `.text-xs` scaling
 - [x] E2e: timer left edge, 150% sensitivity, font scale
 
 **Files:**
@@ -289,7 +289,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Exit criteria:**
 - Player can move sector timer bar to left edge
 - Floating touch sensitivity reaches 150% (3px slop)
-- Mobile small text renders ~30% larger
+- Mobile small text renders ~30% larger for toasts and mission type labels only
 
 **Depends on:** Milestone 5.3
 

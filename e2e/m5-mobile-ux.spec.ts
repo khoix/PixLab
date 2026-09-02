@@ -195,23 +195,37 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(layout?.hasLeftClass).toBe(true);
   });
 
-  test('mobile small text utilities are 30% larger', async ({ page }) => {
+  test('mobile toast and mission type use enlarged smallest-font scale', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
 
     const sizes = await page.evaluate(() => {
+      const mission = document.querySelector('.lobby-mission-type') as HTMLElement | null;
+      const missionSize = mission ? parseFloat(getComputedStyle(mission).fontSize) : 0;
+
       const probe = document.createElement('div');
-      probe.className = 'text-xs';
+      probe.setAttribute('data-testid', 'toast-viewport');
+      const inner = document.createElement('div');
+      inner.className = 'text-sm';
+      probe.appendChild(inner);
       document.body.appendChild(probe);
-      const xs = parseFloat(getComputedStyle(probe).fontSize);
-      probe.className = 'text-[10px]';
-      const tiny = parseFloat(getComputedStyle(probe).fontSize);
+      const toastSize = parseFloat(getComputedStyle(inner).fontSize);
       probe.remove();
-      return { xs, tiny };
+
+      const xsProbe = document.createElement('div');
+      xsProbe.className = 'text-xs';
+      document.body.appendChild(xsProbe);
+      const xsSize = parseFloat(getComputedStyle(xsProbe).fontSize);
+      xsProbe.remove();
+
+      return { missionSize, toastSize, xsSize };
     });
 
-    expect(sizes.xs).toBeCloseTo(15.6, 0);
-    expect(sizes.tiny).toBeCloseTo(13, 0);
+    expect(sizes.missionSize).toBeCloseTo(18.2, 0);
+    expect(sizes.toastSize).toBeCloseTo(18.2, 0);
+    expect(sizes.xsSize).toBeCloseTo(12, 0);
   });
 
   test('mobile sector timer and quick heal use HUD opacity and size variables', async ({ page }) => {
