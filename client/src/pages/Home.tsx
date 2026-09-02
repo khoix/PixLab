@@ -8,10 +8,17 @@ import pixlabImage from '../assets/pixlab3.PNG';
 import { audioManager, startThemeMusic } from '../lib/audio';
 
 export default function Home() {
-  const { dispatch, resetGame, loadFromCode } = useGame();
+  const { state, dispatch, resetGame, loadFromCode } = useGame();
   const [, setLocation] = useLocation();
   const [codeInput, setCodeInput] = React.useState('');
   const { toast } = useToast();
+
+  // The title theme starts here, before the lobby settings effects run, so the
+  // persisted volume has to be pushed into the audio manager up front.
+  React.useEffect(() => {
+    audioManager.setMusicVolume(state.settings.musicVolume);
+    audioManager.setSfxVolume(state.settings.sfxVolume);
+  }, [state.settings.musicVolume, state.settings.sfxVolume]);
 
   React.useEffect(() => {
     if (audioManager.initialized) {
