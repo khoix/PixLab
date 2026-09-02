@@ -8,7 +8,7 @@ import pixlabImage from '../assets/pixlab3.PNG';
 import { audioManager, startThemeMusic } from '../lib/audio';
 import { useMusicPreload } from '../hooks/use-music-preload';
 import { useRandomPulse } from '../hooks/use-random-pulse';
-import { BroadcastGlitchOverlay, useBroadcastGlitch } from '../components/BroadcastGlitch';
+import { BroadcastGlitchOverlay, glitchDataAttributes, useBroadcastGlitch } from '../components/BroadcastGlitch';
 import { MusicPreloadBar } from '../components/MusicPreloadBar';
 
 export default function Home() {
@@ -17,8 +17,8 @@ export default function Home() {
   const [codeInput, setCodeInput] = React.useState('');
   const { toast } = useToast();
   const { state: preload, ready: menuReady } = useMusicPreload();
-  const glitching = useBroadcastGlitch();
-  const glimmering = useRandomPulse('glimmer', {
+  const glitch = useBroadcastGlitch();
+  const { active: glimmering } = useRandomPulse('glimmer', {
     minDelayMs: 5000,
     maxDelayMs: 11000,
     durationMs: 1200,
@@ -81,10 +81,10 @@ export default function Home() {
     <div
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-purple-950 via-black to-cyan-950"
       data-testid="title-screen"
-      data-glitching={glitching ? 'true' : 'false'}
+      {...glitchDataAttributes(glitch)}
       data-glimmer={glimmering ? 'true' : 'false'}
     >
-      <BroadcastGlitchOverlay active={glitching} />
+      <BroadcastGlitchOverlay active={glitch.active} variant={glitch.variant} />
       {/* Animated background grid */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 

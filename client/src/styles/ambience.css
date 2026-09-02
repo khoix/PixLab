@@ -1,6 +1,14 @@
 /* Ambient menu effects: broadcast glitch, artwork glimmer, music preload bar. */
 
-/* ---------- Broadcast glitch ---------- */
+/* ---------- Broadcast glitch ----------
+   Five variants, selected per pulse (lib/glitchVariants.ts):
+     tear   — band + sync-line sweep, chromatic title split (the original)
+     roll   — vertical hold slip behind a blanking bar
+     static — signal-noise burst with brightness flicker
+     chroma — slow chromatic aberration drift that snaps back
+     hsync  — horizontal sync slip with block-noise strips
+   The overlay carries [data-variant]; the screen root carries
+   [data-glitching][data-glitch-variant] so titles/panels react in step. */
 
 .broadcast-glitch {
   position: absolute;
@@ -15,8 +23,17 @@
   opacity: 1;
 }
 
-.broadcast-glitch__band {
+/* Layers are always present; each variant animates only the ones it needs. */
+.broadcast-glitch__band,
+.broadcast-glitch__blanking,
+.broadcast-glitch__noise,
+.broadcast-glitch__strip,
+.broadcast-glitch__scanlines {
   position: absolute;
+  opacity: 0;
+}
+
+.broadcast-glitch__band {
   left: -10%;
   right: -10%;
   top: 0;
@@ -40,33 +57,87 @@
   box-shadow: 0 0 6px rgba(0, 255, 245, 0.9);
 }
 
+/* Vertical-hold "flyback" bar: bright leading edge, dark body, faint cyan haze
+   underneath so it still reads against the near-black menu. */
+.broadcast-glitch__blanking {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 12%;
+  transform: translateY(110vh);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(0, 255, 245, 0.28) 4%,
+    rgba(0, 0, 0, 0.82) 14%,
+    rgba(0, 0, 0, 0.82) 78%,
+    rgba(0, 255, 245, 0.16) 92%,
+    rgba(0, 255, 245, 0) 100%
+  );
+  box-shadow: 0 -2px 10px rgba(0, 255, 245, 0.35), 0 6px 18px rgba(0, 255, 245, 0.12);
+}
+
+.broadcast-glitch__noise {
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+  mix-blend-mode: screen;
+}
+
+.broadcast-glitch__strip {
+  left: -12%;
+  right: -12%;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(0, 255, 245, 0.32) 0 14px,
+    transparent 14px 22px,
+    rgba(255, 51, 204, 0.28) 22px 30px,
+    transparent 30px 52px,
+    rgba(255, 255, 255, 0.22) 52px 58px,
+    transparent 58px 90px
+  );
+  mix-blend-mode: screen;
+}
+
+.broadcast-glitch__strip--1 { top: 18%; height: 3%; }
+.broadcast-glitch__strip--2 { top: 47%; height: 6%; }
+.broadcast-glitch__strip--3 { top: 71%; height: 2%; }
+
 .broadcast-glitch__scanlines {
-  position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     180deg,
     rgba(0, 0, 0, 0.18) 0 2px,
     transparent 2px 4px
   );
-  opacity: 0;
 }
 
-.broadcast-glitch[data-active="true"] .broadcast-glitch__band {
+/* --- tear --- */
+
+.broadcast-glitch[data-variant="tear"] .broadcast-glitch__band {
   animation: broadcast-band-sweep 0.38s steps(7, end) both;
 }
 
-.broadcast-glitch[data-active="true"] .broadcast-glitch__band--sync {
+.broadcast-glitch[data-variant="tear"] .broadcast-glitch__band--sync {
   animation: broadcast-band-sweep 0.30s steps(9, end) both;
   animation-delay: 0.04s;
 }
 
-.broadcast-glitch[data-active="true"] .broadcast-glitch__scanlines {
+.broadcast-glitch[data-variant="tear"] .broadcast-glitch__scanlines {
   animation: broadcast-scanline-flicker 0.38s steps(3, end) both;
 }
 
+[data-glitch-variant="tear"] .glitch-title {
+  animation: broadcast-title-tear 0.36s steps(2, end) both;
+}
+
+[data-glitch-variant="tear"] .glitch-jitter {
+  animation: broadcast-jitter 0.36s steps(3, end) both;
+}
+
 @keyframes broadcast-band-sweep {
-  from { transform: translateY(-40vh) skewX(-8deg); }
-  to   { transform: translateY(140vh) skewX(6deg); }
+  from { opacity: 1; transform: translateY(-40vh) skewX(-8deg); }
+  to   { opacity: 1; transform: translateY(140vh) skewX(6deg); }
 }
 
 @keyframes broadcast-scanline-flicker {
@@ -75,15 +146,6 @@
   50%  { opacity: 0.35; transform: translateY(1px); }
   80%  { opacity: 0.7; transform: translateY(-1px); }
   100% { opacity: 0; }
-}
-
-/* Titles and panels tagged .glitch-title / .glitch-jitter jitter with the band. */
-[data-glitching="true"] .glitch-title {
-  animation: broadcast-title-tear 0.36s steps(2, end) both;
-}
-
-[data-glitching="true"] .glitch-jitter {
-  animation: broadcast-jitter 0.36s steps(3, end) both;
 }
 
 @keyframes broadcast-title-tear {
@@ -103,6 +165,199 @@
   30%  { transform: translate(-1.5px, 0.5px); }
   60%  { transform: translate(1.5px, -0.5px); }
   100% { transform: translate(0, 0); }
+}
+
+/* --- roll --- */
+
+.broadcast-glitch[data-variant="roll"] .broadcast-glitch__blanking {
+  animation: broadcast-blanking-roll 0.56s linear both;
+}
+
+.broadcast-glitch[data-variant="roll"] .broadcast-glitch__scanlines {
+  animation: broadcast-scanline-hold 0.56s linear both;
+}
+
+[data-glitch-variant="roll"] .glitch-jitter {
+  animation: broadcast-roll-picture 0.56s steps(6, end) both;
+}
+
+[data-glitch-variant="roll"] .glitch-title {
+  animation: broadcast-roll-title 0.56s steps(6, end) both;
+}
+
+@keyframes broadcast-blanking-roll {
+  0%   { opacity: 1; transform: translateY(105vh); }
+  100% { opacity: 1; transform: translateY(-15vh); }
+}
+
+@keyframes broadcast-scanline-hold {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.55; }
+  85%  { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+@keyframes broadcast-roll-picture {
+  0%   { transform: translateY(0); }
+  25%  { transform: translateY(-14px); }
+  50%  { transform: translateY(-26px); }
+  70%  { transform: translateY(8px); }
+  85%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes broadcast-roll-title {
+  0%   { transform: scaleY(1); text-shadow: none; }
+  40%  { transform: scaleY(1.06) translateY(-2px);
+         text-shadow: 0 4px rgba(0, 255, 245, 0.35), 0 -4px rgba(255, 51, 204, 0.3); }
+  70%  { transform: scaleY(0.97) translateY(2px); text-shadow: 0 2px rgba(0, 255, 245, 0.25); }
+  100% { transform: scaleY(1); text-shadow: none; }
+}
+
+/* --- static --- */
+
+.broadcast-glitch[data-variant="static"] .broadcast-glitch__noise {
+  animation: broadcast-noise-burst 0.32s steps(8, end) both;
+}
+
+.broadcast-glitch[data-variant="static"] .broadcast-glitch__scanlines {
+  animation: broadcast-scanline-flicker 0.32s steps(4, end) both;
+}
+
+[data-glitch-variant="static"] .glitch-jitter {
+  animation: broadcast-static-picture 0.32s steps(4, end) both;
+}
+
+[data-glitch-variant="static"] .glitch-title {
+  animation: broadcast-static-title 0.32s steps(4, end) both;
+}
+
+@keyframes broadcast-noise-burst {
+  0%   { opacity: 0;    background-position: 0 0; }
+  12%  { opacity: 0.38; background-position: 37px 91px; }
+  30%  { opacity: 0.22; background-position: 120px 14px; }
+  50%  { opacity: 0.42; background-position: 63px 150px; }
+  70%  { opacity: 0.18; background-position: 155px 77px; }
+  88%  { opacity: 0.3;  background-position: 9px 121px; }
+  100% { opacity: 0;    background-position: 0 0; }
+}
+
+@keyframes broadcast-static-picture {
+  0%   { filter: none; transform: translate(0, 0); }
+  25%  { filter: brightness(1.25) contrast(1.15) saturate(0.7); transform: translate(1px, 0); }
+  50%  { filter: brightness(0.85) contrast(1.3) saturate(0.5); transform: translate(-1px, 1px); }
+  75%  { filter: brightness(1.3) saturate(0.6); transform: translate(0, -1px); }
+  100% { filter: none; transform: translate(0, 0); }
+}
+
+@keyframes broadcast-static-title {
+  0%   { text-shadow: none; opacity: 1; }
+  25%  { text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 0 2px rgba(255, 255, 255, 1); opacity: 0.85; }
+  50%  { text-shadow: none; opacity: 0.6; }
+  75%  { text-shadow: 0 0 12px rgba(0, 255, 245, 0.8); opacity: 1; }
+  100% { text-shadow: none; opacity: 1; }
+}
+
+/* --- chroma --- */
+
+.broadcast-glitch[data-variant="chroma"] .broadcast-glitch__scanlines {
+  animation: broadcast-scanline-breathe 0.72s ease-in-out both;
+}
+
+[data-glitch-variant="chroma"] .glitch-title {
+  animation: broadcast-chroma-title 0.72s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+[data-glitch-variant="chroma"] .glitch-jitter {
+  animation: broadcast-chroma-drift 0.72s ease-in-out both;
+}
+
+@keyframes broadcast-scanline-breathe {
+  0%   { opacity: 0; }
+  50%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+
+@keyframes broadcast-chroma-title {
+  0%   { transform: skewX(0); text-shadow: none; }
+  55%  { transform: skewX(-4deg) translateX(2px);
+         text-shadow: -7px 0 rgba(0, 255, 245, 0.8), 7px 0 rgba(255, 51, 204, 0.8), 0 0 14px rgba(255, 255, 255, 0.15); }
+  78%  { transform: skewX(-5deg) translateX(3px);
+         text-shadow: -9px 0 rgba(0, 255, 245, 0.9), 9px 0 rgba(255, 51, 204, 0.9); }
+  82%  { transform: skewX(1deg) translateX(-1px);
+         text-shadow: 2px 0 rgba(0, 255, 245, 0.5), -2px 0 rgba(255, 51, 204, 0.5); }
+  100% { transform: skewX(0); text-shadow: none; }
+}
+
+@keyframes broadcast-chroma-drift {
+  0%   { transform: translateX(0); }
+  60%  { transform: translateX(3px); }
+  80%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+/* --- hsync --- */
+
+.broadcast-glitch[data-variant="hsync"] .broadcast-glitch__strip--1 {
+  animation: broadcast-strip-slip-left 0.46s steps(5, end) both;
+}
+
+.broadcast-glitch[data-variant="hsync"] .broadcast-glitch__strip--2 {
+  animation: broadcast-strip-slip-right 0.46s steps(4, end) both;
+  animation-delay: 0.05s;
+}
+
+.broadcast-glitch[data-variant="hsync"] .broadcast-glitch__strip--3 {
+  animation: broadcast-strip-slip-left 0.40s steps(6, end) both;
+  animation-delay: 0.09s;
+}
+
+.broadcast-glitch[data-variant="hsync"] .broadcast-glitch__scanlines {
+  animation: broadcast-scanline-hold 0.46s linear both;
+}
+
+[data-glitch-variant="hsync"] .glitch-jitter {
+  animation: broadcast-hsync-picture 0.46s steps(5, end) both;
+}
+
+[data-glitch-variant="hsync"] .glitch-title {
+  animation: broadcast-hsync-title 0.46s steps(5, end) both;
+}
+
+@keyframes broadcast-strip-slip-left {
+  0%   { opacity: 0; transform: translateX(0); }
+  10%  { opacity: 1; transform: translateX(-3%); }
+  50%  { opacity: 1; transform: translateX(-9%); }
+  80%  { opacity: 1; transform: translateX(4%); }
+  100% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes broadcast-strip-slip-right {
+  0%   { opacity: 0; transform: translateX(0); }
+  10%  { opacity: 1; transform: translateX(5%); }
+  50%  { opacity: 1; transform: translateX(11%); }
+  80%  { opacity: 1; transform: translateX(-3%); }
+  100% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes broadcast-hsync-picture {
+  0%   { transform: translateX(0) scaleX(1); }
+  20%  { transform: translateX(-6px) scaleX(1.015); }
+  45%  { transform: translateX(9px) scaleX(1.03); }
+  65%  { transform: translateX(-4px) scaleX(1.01); }
+  85%  { transform: translateX(2px) scaleX(1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+
+@keyframes broadcast-hsync-title {
+  0%   { transform: skewX(0) translateX(0); text-shadow: none; }
+  20%  { transform: skewX(-6deg) translateX(-5px);
+         text-shadow: 8px 0 rgba(0, 255, 245, 0.35), 16px 0 rgba(0, 255, 245, 0.15); }
+  45%  { transform: skewX(6deg) translateX(7px);
+         text-shadow: -8px 0 rgba(255, 51, 204, 0.35), -16px 0 rgba(255, 51, 204, 0.15); }
+  65%  { transform: skewX(-3deg) translateX(-3px);
+         text-shadow: 5px 0 rgba(0, 255, 245, 0.3); }
+  100% { transform: skewX(0) translateX(0); text-shadow: none; }
 }
 
 /* ---------- Title artwork glimmer (sword & shield) ---------- */

@@ -1,10 +1,12 @@
 // Tiny event bus for ambient screen effects (broadcast glitch, artwork glimmer)
 // so tests and other code can fire them on demand; the hooks decide the
-// random cadence.
+// random cadence. Triggers may carry a string detail (e.g. glitch variant).
+
+import { pickGlitchVariant } from './glitchVariants';
 
 export type FxKind = 'glitch' | 'glimmer';
 
-type Listener = () => void;
+type Listener = (detail: string | null) => void;
 
 const listeners: Record<FxKind, Set<Listener>> = {
   glitch: new Set(),
@@ -13,6 +15,8 @@ const listeners: Record<FxKind, Set<Listener>> = {
 
 const activeCounts: Record<FxKind, number> = { glitch: 0, glimmer: 0 };
 const fireCounts: Record<FxKind, number> = { glitch: 0, glimmer: 0 };
+const lastDetail: Record<FxKind, string | null> = { glitch: null, glimmer: null };
+const detailHistory: Record<FxKind, string[]> = { glitch: [], glimmer: [] };
 
 export function onFx(kind: FxKind, listener: Listener): () => void {
   listeners[kind].add(listener);
@@ -21,9 +25,14 @@ export function onFx(kind: FxKind, listener: Listener): () => void {
   };
 }
 
-export function triggerFx(kind: FxKind) {
+export function triggerFx(kind: FxKind, detail: string | null = null) {
   fireCounts[kind]++;
-  listeners[kind].forEach((listener) => listener());
+  lastDetail[kind] = detail;
+  if (detail !== null) {
+    detailHistory[kind].push(detail);
+    if (detailHistory[kind].length > 50) detailHistory[kind].shift();
+  }
+  listeners[kind].forEach((listener) => listener(detail));
 }
 
 export function markFxActive(kind: FxKind, active: boolean) {
@@ -37,6 +46,14 @@ export function isFxActive(kind: FxKind): boolean {
 
 export function getFxFireCount(kind: FxKind): number {
   return fireCounts[kind];
+}
+
+export function getFxLastDetail(kind: FxKind): string | null {
+  return lastDetail[kind];
+}
+
+export function getFxDetailHistory(kind: FxKind): string[] {
+  return [...detailHistory[kind]];
 }
 
 export function prefersReducedMotion(): boolean {
@@ -55,17 +72,23 @@ export function randomBetween(min: number, max: number): number {
 declare global {
   interface Window {
     __PIXLAB_FX__?: {
-      trigger: (kind: FxKind) => void;
+      trigger: (kind: FxKind, detail?: string | null) => void;
       isActive: (kind: FxKind) => boolean;
       getFireCount: (kind: FxKind) => number;
+      getLastDetail: (kind: FxKind) => string | null;
+      getDetailHistory: (kind: FxKind) => string[];
+      pickGlitchVariant: typeof pickGlitchVariant;
     };
   }
 }
 
 if (typeof window !== 'undefined') {
   window.__PIXLAB_FX__ = {
-    trigger: triggerFx,
+    trigger: (kind, detail = null) => triggerFx(kind, detail),
     isActive: isFxActive,
     getFireCount: getFxFireCount,
+    getLastDetail: getFxLastDetail,
+    getDetailHistory: getFxDetailHistory,
+    pickGlitchVariant,
   };
 }
