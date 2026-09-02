@@ -31,5 +31,7 @@ import "./index.css";
 import "./styles/web.css";
 // Mobile-specific styles (mobile optimizations with @media max-width: 767px)
 import "./styles/mobile.css";
+// Ambient menu effects (broadcast glitch, title glimmer, preload bar)
+import "./styles/ambience.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
