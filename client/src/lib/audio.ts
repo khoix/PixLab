@@ -1,17 +1,23 @@
-// Audio manager: WEBM background music + procedural SFX via Web Audio API
+// Audio manager: encoded background music (WebM/Opus, AAC on WebKit) routed
+// through a Web Audio GainNode, plus procedural SFX via Web Audio API.
 
-import themeMusicUrl from '../assets/audio/Glitched Catacombs (Theme).webm';
-import mazeMusicUrl from '../assets/audio/Enter The Catacombs.webm';
-import vendorMusicUrl from '../assets/audio/Uncanny Times.webm';
-import lobbyReturnMusicUrl from '../assets/audio/Uncanny Times (Extended).webm';
+import themeMusicWebm from '../assets/audio/Glitched Catacombs (Theme).webm';
+import mazeMusicWebm from '../assets/audio/Enter The Catacombs.webm';
+import vendorMusicWebm from '../assets/audio/Uncanny Times.webm';
+import lobbyReturnMusicWebm from '../assets/audio/Uncanny Times (Extended).webm';
+import themeMusicAac from '../assets/audio/Glitched Catacombs (Theme).m4a';
+import mazeMusicAac from '../assets/audio/Enter The Catacombs.m4a';
+import vendorMusicAac from '../assets/audio/Uncanny Times.m4a';
+import lobbyReturnMusicAac from '../assets/audio/Uncanny Times (Extended).m4a';
+import { detectMusicFormat, selectMusicFormat, type MusicFormat, type MusicFormatEnv } from './musicFormat';
 
 export type MusicTrack = 'theme' | 'maze' | 'vendor' | 'lobbyReturn';
 
-const TRACK_URLS: Record<MusicTrack, string> = {
-  theme: themeMusicUrl,
-  maze: mazeMusicUrl,
-  vendor: vendorMusicUrl,
-  lobbyReturn: lobbyReturnMusicUrl,
+const TRACK_SOURCES: Record<MusicTrack, Record<MusicFormat, string>> = {
+  theme: { webm: themeMusicWebm, aac: themeMusicAac },
+  maze: { webm: mazeMusicWebm, aac: mazeMusicAac },
+  vendor: { webm: vendorMusicWebm, aac: vendorMusicAac },
+  lobbyReturn: { webm: lobbyReturnMusicWebm, aac: lobbyReturnMusicAac },
 };
 
 declare global {
@@ -19,6 +25,13 @@ declare global {
     __PIXLAB_AUDIO__?: {
       getCurrentTrack: () => MusicTrack | null;
       isMusicPlaying: () => boolean;
+      getMusicVolume: () => number;
+      getEffectiveMusicGain: () => number | null;
+      getMusicElementVolume: () => number | null;
+      isMusicRoutedThroughGraph: () => boolean;
+      getMusicFormat: () => MusicFormat;
+      getMusicSourceUrl: () => string | null;
+      selectMusicFormat: (env: MusicFormatEnv) => MusicFormat;
     };
   }
 }
@@ -35,6 +48,8 @@ class AudioManager {
   private currentTrack: MusicTrack | null = null;
   private loadedMusicSrc: string | null = null;
   private musicPausedForVisibility = false;
+  private musicFormat: MusicFormat | null = null;
+  private graphRoutingFailed = false;
 
   init() {
     if (this.isInitialized) return;
@@ -69,9 +84,40 @@ class AudioManager {
       this.musicElement.preload = 'auto';
     }
 
-    if (this.audioContext && this.musicGainNode && !this.musicMediaSource) {
-      this.musicMediaSource = this.audioContext.createMediaElementSource(this.musicElement);
-      this.musicMediaSource.connect(this.musicGainNode);
+    if (this.audioContext && this.musicGainNode && !this.musicMediaSource && !this.graphRoutingFailed) {
+      try {
+        this.musicMediaSource = this.audioContext.createMediaElementSource(this.musicElement);
+        this.musicMediaSource.connect(this.musicGainNode);
+      } catch (error) {
+        // Without graph routing the element plays straight to the output, so
+        // volume has to be applied on the element itself instead.
+        this.graphRoutingFailed = true;
+        console.warn('Music could not be routed through Web Audio; falling back to element volume:', error);
+      }
+    }
+
+    this.applyMusicVolume();
+  }
+
+  private getMusicFormat(): MusicFormat {
+    if (!this.musicFormat) {
+      this.musicFormat = detectMusicFormat();
+    }
+    return this.musicFormat;
+  }
+
+  // Volume is applied in exactly one place so the two paths never stack
+  // (gain × element.volume would square the slider curve).
+  private applyMusicVolume() {
+    if (this.musicGainNode) {
+      this.musicGainNode.gain.value = this.musicVolume;
+    }
+    if (this.musicElement) {
+      const routed = this.musicMediaSource !== null;
+      const target = routed ? 1 : this.musicVolume;
+      if (this.musicElement.volume !== target) {
+        this.musicElement.volume = target;
+      }
     }
   }
 
@@ -114,10 +160,9 @@ class AudioManager {
   }
 
   setMusicVolume(volume: number) {
-    this.musicVolume = Math.max(0, Math.min(1, volume));
-    if (this.musicGainNode) {
-      this.musicGainNode.gain.value = this.musicVolume;
-    }
+    const clamped = Math.max(0, Math.min(1, volume));
+    this.musicVolume = Number.isFinite(clamped) ? clamped : this.musicVolume;
+    this.applyMusicVolume();
   }
 
   setSfxVolume(volume: number) {
@@ -155,7 +200,7 @@ class AudioManager {
     this.ensureMusicElement();
     if (!this.musicElement) return;
 
-    const nextSrc = TRACK_URLS[type];
+    const nextSrc = TRACK_SOURCES[type][this.getMusicFormat()];
     const sameSource = this.loadedMusicSrc === nextSrc;
 
     this.currentTrack = type;
@@ -179,6 +224,30 @@ class AudioManager {
 
   isMusicPlaying() {
     return Boolean(this.musicElement && this.currentTrack && !this.musicElement.paused);
+  }
+
+  getMusicVolume() {
+    return this.musicVolume;
+  }
+
+  getEffectiveMusicGain() {
+    return this.musicGainNode ? this.musicGainNode.gain.value : null;
+  }
+
+  getMusicElementVolume() {
+    return this.musicElement ? this.musicElement.volume : null;
+  }
+
+  isMusicRoutedThroughGraph() {
+    return this.musicMediaSource !== null;
+  }
+
+  getActiveMusicFormat() {
+    return this.getMusicFormat();
+  }
+
+  getMusicSourceUrl() {
+    return this.loadedMusicSrc;
   }
 
   playSound(type: 'move' | 'attack' | 'enemyDeath' | 'itemPickup' | 'damage' | 'levelComplete' | 'gameOver' | 'coin' | 'purchase') {
@@ -284,6 +353,13 @@ if (typeof window !== 'undefined') {
   window.__PIXLAB_AUDIO__ = {
     getCurrentTrack: () => audioManager.getCurrentTrack(),
     isMusicPlaying: () => audioManager.isMusicPlaying(),
+    getMusicVolume: () => audioManager.getMusicVolume(),
+    getEffectiveMusicGain: () => audioManager.getEffectiveMusicGain(),
+    getMusicElementVolume: () => audioManager.getMusicElementVolume(),
+    isMusicRoutedThroughGraph: () => audioManager.isMusicRoutedThroughGraph(),
+    getMusicFormat: () => audioManager.getActiveMusicFormat(),
+    getMusicSourceUrl: () => audioManager.getMusicSourceUrl(),
+    selectMusicFormat,
   };
 
   const initAudio = async () => {
