@@ -41,8 +41,10 @@ import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quic
 import { triggerHaptic } from '../lib/game/haptics';
 import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
 import {
+  MAX_TOUCH_SENSITIVITY,
   normalizeTouchSensitivity,
   slopPxFromSensitivity,
+  touchSensitivityPercent,
 } from '../lib/game/touch/touchSensitivity';
 
 // Helper function to format item names with initial caps
@@ -1350,13 +1352,13 @@ export default function Game() {
                               });
                             }}
                             min={0}
-                            max={1}
+                            max={MAX_TOUCH_SENSITIVITY}
                             step={0.05}
                             className="flex-1"
                             data-testid="touch-sensitivity-slider"
                           />
                           <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                            {Math.round(normalizeTouchSensitivity(state.settings.touchSensitivity) * 100)}%
+                            {touchSensitivityPercent(state.settings.touchSensitivity)}%
                           </span>
                         </div>
                       </div>
@@ -1428,6 +1430,32 @@ export default function Game() {
                           {Math.round((state.settings.controlSize ?? 1) * 100)}%
                         </span>
                       </div>
+                    </div>
+                    <div className="md:hidden" data-testid="sector-timer-side-settings">
+                      <label className="text-lg font-pixel text-primary mb-2 block">SECTOR TIMER</label>
+                      <RadioGroup
+                        value={state.settings.sectorTimerSide ?? 'right'}
+                        onValueChange={(value) => {
+                          dispatch({
+                            type: 'UPDATE_SETTINGS',
+                            payload: { sectorTimerSide: value as 'left' | 'right' },
+                          });
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="left" id="sector-timer-left" data-testid="sector-timer-left" style={{ minWidth: '40px' }} />
+                          <label htmlFor="sector-timer-left" className="text-sm font-mono text-foreground cursor-pointer">
+                            Left side
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="right" id="sector-timer-right" data-testid="sector-timer-right" style={{ minWidth: '40px' }} />
+                          <label htmlFor="sector-timer-right" className="text-sm font-mono text-foreground cursor-pointer">
+                            Right side
+                          </label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>

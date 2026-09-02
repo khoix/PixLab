@@ -189,6 +189,7 @@ export interface GameState {
     controlSize?: number;
     dpadSize?: number;
     touchSensitivity?: number;
+    sectorTimerSide?: 'left' | 'right';
     hapticsEnabled?: boolean;
   };
 }

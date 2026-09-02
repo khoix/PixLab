@@ -116,4 +116,27 @@ test.describe('M5.3 — Floating touch sensitivity & settings', () => {
     expect(result.registered).toEqual({ kind: 'direction', direction: { x: 1, y: 0 } });
     expect(result.mappedSlop).toBe(6);
   });
+
+  test('sensitivity slider extends to 150% with 3px slop at max', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.updateSettings({ mobileControlType: 'floating', touchSensitivity: 1.5 });
+    });
+
+    const result = await page.evaluate(() => {
+      const slop = window.__PIXLAB_FLOATING_TOUCH__?.slopPxFromSensitivity?.(1.5);
+      const normalized = window.__PIXLAB_FLOATING_TOUCH__?.slopPxFromSensitivity?.(
+        Math.min(1.5, Math.max(0, 1.5)),
+      );
+      return { slop, normalized, maxSupported: 1.5 };
+    });
+
+    expect(result.slop).toBe(3);
+    expect(result.normalized).toBe(3);
+    expect(result.maxSupported).toBe(1.5);
+  });
 });

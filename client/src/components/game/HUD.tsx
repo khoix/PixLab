@@ -101,7 +101,11 @@ export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
 
       {/* Mobile: vertical sector timer (right edge, safe from browser chrome) */}
       {isMobile && !isShop && !isBoss && (
-        <SectorTimerBar activeModIds={state.activeMods} timeLeftSec={timeLeft} />
+        <SectorTimerBar
+          activeModIds={state.activeMods}
+          timeLeftSec={timeLeft}
+          side={state.settings.sectorTimerSide ?? 'right'}
+        />
       )}
 
       {/* Bottom Center: Level badge (Mobile only) */}

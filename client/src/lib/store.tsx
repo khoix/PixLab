@@ -139,6 +139,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               controlSize: parsed.settings?.controlSize ?? 1,
               dpadSize: parsed.settings?.dpadSize ?? 1,
               touchSensitivity: normalizeTouchSensitivity(parsed.settings?.touchSensitivity),
+              sectorTimerSide: parsed.settings?.sectorTimerSide === 'left' ? 'left' : 'right',
               hapticsEnabled: parsed.settings?.hapticsEnabled ?? true,
             },
           };
@@ -171,7 +172,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeScrollEffects: { threatSense: false, lootSense: false, phasing: null },
       temporaryVisionBoost: null,
       pendingScrollAction: null,
-      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'floating', renderQuality: 'auto', controlOpacity: 0.85, controlSize: 1, dpadSize: 1, touchSensitivity: 0.5, hapticsEnabled: true },
+      settings: { musicVolume: 0.5, sfxVolume: 0.5, joystickPosition: 'left', mobileControlType: 'floating', renderQuality: 'auto', controlOpacity: 0.85, controlSize: 1, dpadSize: 1, touchSensitivity: 0.5, sectorTimerSide: 'right', hapticsEnabled: true },
     };
     // Generate code from the default state
     try {

@@ -8,13 +8,15 @@ import {
 interface SectorTimerBarProps {
   activeModIds: string[];
   timeLeftSec: number;
+  side?: 'left' | 'right';
   className?: string;
 }
 
-/** Mobile sector timer — vertical bar on the right; drains top → bottom. */
+/** Mobile sector timer — vertical bar on the left or right edge; drains top → bottom. */
 export const SectorTimerBar: React.FC<SectorTimerBarProps> = ({
   activeModIds,
   timeLeftSec,
+  side = 'right',
   className,
 }) => {
   const timeLimitMs = getSectorTimeLimitMs(activeModIds);
@@ -24,7 +26,11 @@ export const SectorTimerBar: React.FC<SectorTimerBarProps> = ({
 
   return (
     <div
-      className={cn('mobile-sector-timer pointer-events-none', className)}
+      className={cn(
+        'mobile-sector-timer pointer-events-none',
+        side === 'left' && 'mobile-sector-timer--left',
+        className,
+      )}
       data-testid="mobile-sector-timer-bar"
       aria-label={`Sector time remaining: ${Math.floor(timeLeftSec)} seconds`}
     >
