@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { startSectorRun, waitForPerfSamples } from './helpers';
-
-async function openLobbySettings(page: import('@playwright/test').Page) {
-  await page.getByTestId('lobby-settings-tab').click();
-  await expect(page.getByTestId('render-quality-settings')).toBeVisible();
-}
+import { startSectorRun, waitForPerfSamples, openLobbySettings } from './helpers';
 
 test.describe('M2 — Render quality preset', () => {
   test('auto quality is low on mobile viewport during run', async ({ page }) => {
@@ -33,7 +28,8 @@ test.describe('M2 — Render quality preset', () => {
     await page.getByTestId('start-run-button').click();
     await page.waitForURL('**/play**');
 
-    await openLobbySettings(page);
+    await openLobbySettings(page, true);
+    await expect(page.getByTestId('render-quality-settings')).toBeVisible();
     await page.evaluate(() => {
       window.__PIXLAB_TEST__?.updateSettings({ renderQuality: 'high' });
     });

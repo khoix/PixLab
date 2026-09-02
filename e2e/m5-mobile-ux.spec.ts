@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openLobbySettings } from './helpers';
 import { startSectorRun } from './helpers';
 
 test.describe('M5 — Mobile UX & controls', () => {
@@ -40,15 +41,14 @@ test.describe('M5 — Mobile UX & controls', () => {
   });
 
   test('mobile HUD settings sliders are available in lobby', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
-    await page.getByTestId('start-run-button').click();
-    await page.waitForURL('**/play**');
-    await page.getByTestId('lobby-settings-tab').click();
+    await openLobbySettings(page, true);
 
     await expect(page.getByTestId('mobile-hud-settings')).toBeVisible();
     await expect(page.getByTestId('hud-opacity-slider')).toBeVisible();
     await expect(page.getByTestId('hud-size-slider')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-side-settings')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-left')).toBeVisible();
+    await expect(page.getByTestId('sector-timer-right')).toBeVisible();
     await expect(page.getByTestId('haptics-settings')).toBeVisible();
   });
 
@@ -168,6 +168,50 @@ test.describe('M5 — Mobile UX & controls', () => {
       return Math.abs(fillRect.bottom - trackRect.bottom) <= 3;
     });
     expect(anchoredBottom).toBe(true);
+  });
+
+  test('sector timer can be positioned on the left edge', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.updateSettings({ sectorTimerSide: 'left' });
+    });
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    const layout = await page.evaluate(() => {
+      const bar = document.querySelector('[data-testid="mobile-sector-timer-bar"]') as HTMLElement | null;
+      if (!bar) return null;
+      const rect = bar.getBoundingClientRect();
+      return {
+        onLeftEdge: rect.left <= 24,
+        hasLeftClass: bar.classList.contains('mobile-sector-timer--left'),
+      };
+    });
+
+    expect(layout?.onLeftEdge).toBe(true);
+    expect(layout?.hasLeftClass).toBe(true);
+  });
+
+  test('mobile small text utilities are 30% larger', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+
+    const sizes = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.className = 'text-xs';
+      document.body.appendChild(probe);
+      const xs = parseFloat(getComputedStyle(probe).fontSize);
+      probe.className = 'text-[10px]';
+      const tiny = parseFloat(getComputedStyle(probe).fontSize);
+      probe.remove();
+      return { xs, tiny };
+    });
+
+    expect(sizes.xs).toBeCloseTo(15.6, 0);
+    expect(sizes.tiny).toBeCloseTo(13, 0);
   });
 
   test('mobile sector timer and quick heal use HUD opacity and size variables', async ({ page }) => {

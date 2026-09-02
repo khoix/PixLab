@@ -287,6 +287,25 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Mobile UX — Timer Side, Sensitivity & Font Scale
+
+**Branch:** `cursor/mobile-timer-sensitivity-fonts-aa59`  
+**Status:** Ready for review
+
+### Added
+- **`sectorTimerSide` setting** — left/right radio in lobby settings; mobile vertical timer follows choice with safe-area insets
+- **Extended touch sensitivity** — slider now 0–150%; max maps to 3px drag slop (50% more responsive than prior 100% cap)
+
+### Changed
+- **Mobile small fonts** — `.text-xs`, `text-[10px]`, and compact `0.625rem` overrides scaled up 30% for readability
+- **Lobby background canvas** — `pointer-events: none` on `MazeBackground` so settings tabs are clickable in e2e and on device
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts` — timer left edge, font scale, sector timer setting in lobby
+- E2e: `e2e/m5-touch-sensitivity.spec.ts` — 150% sensitivity / 3px slop, lobby settings via `setLobbyTab` hook
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  

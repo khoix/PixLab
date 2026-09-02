@@ -56,7 +56,7 @@
   /* HUD optimizations for mobile */
   .game-hud {
     padding: 1rem;
-    font-size: 0.75rem;
+    font-size: 0.975rem;
   }
 
   /* Move level HUD to bottom on mobile */
@@ -75,14 +75,14 @@
 
   /* Make level badge smaller on mobile */
   .level-hud [class*="Badge"] {
-    font-size: 0.625rem !important; /* Smaller than text-xs */
+    font-size: 0.8125rem !important; /* 0.625rem + 30% */
     padding: 0.25rem 0.5rem !important; /* Reduce padding from px-4 py-2 */
     line-height: 1.2 !important;
   }
 
   /* Make timer text smaller on mobile */
   .level-hud > div:not([class*="Badge"]) {
-    font-size: 0.75rem !important; /* Smaller than text-lg */
+    font-size: 0.975rem !important; /* text-xs + 30% */
     line-height: 1.2 !important;
   }
 
@@ -134,14 +134,14 @@
 
   /* Style stat shorthand on mobile - smaller and more compact */
   .consumable-stats {
-    font-size: 0.625rem !important;
+    font-size: 0.8125rem !important;
     line-height: 1.2;
     margin-top: 0;
     gap: 0 !important;
   }
 
   .consumable-stats > div {
-    font-size: 0.625rem !important;
+    font-size: 0.8125rem !important;
     line-height: 1.2;
   }
 
@@ -549,7 +549,7 @@
   /* Optimize tab buttons for touch */
   .lobby-page button[role="tab"],
   .lobby-page [role="tablist"] button {
-    font-size: 0.625rem !important;
+    font-size: 0.8125rem !important;
     padding: 0.60rem 0.5rem !important;
     min-height: 0px !important;
     line-height: 1.2;
@@ -640,7 +640,7 @@
 
   .lobby-page-grid > div:nth-child(2) .h-6.px-2.text-xs,
   .lobby-page-grid > div[class*="col-span-2"] .h-6.px-2.text-xs {
-    font-size: 0.75rem !important;
+    font-size: 0.975rem !important;
   }
 
   /* Optimize inventory filter buttons */
@@ -800,6 +800,12 @@
     transform-origin: top right;
   }
 
+  .mobile-sector-timer--left {
+    right: auto;
+    left: max(0.25rem, env(safe-area-inset-left, 0px));
+    transform-origin: top left;
+  }
+
   .mobile-sector-timer-track {
     flex: 1;
     width: 6px;
@@ -821,6 +827,15 @@
 
   .mobile-sector-timer-label {
     flex-shrink: 0;
+  }
+
+  /* M5.4 — Bump Tailwind small text utilities by 30% on mobile */
+  .text-xs {
+    font-size: 0.975rem !important;
+  }
+
+  .text-\[10px\] {
+    font-size: 0.8125rem !important;
   }
 
   .safe-area-top {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { startSectorRun } from './helpers';
+import { startSectorRun, clickLobbySettingsTab } from './helpers';
 
 test.describe('M5.1 — Decentralized floating touch', () => {
   test('recogniser uses touch origin for relative direction', async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe('M5.1 — Decentralized floating touch', () => {
     await page.goto('/');
     await page.getByTestId('start-run-button').click();
     await page.waitForURL('**/play**');
-    await page.getByTestId('lobby-settings-tab').click();
+    await clickLobbySettingsTab(page);
 
     await expect(page.getByTestId('floating-touch-settings')).toBeVisible();
   });
@@ -90,7 +90,7 @@ test.describe('M5.1 — Decentralized floating touch', () => {
       return document.body.innerText.includes('Floating Touch') ? 'ok' : 'missing';
     });
 
-    await page.getByTestId('lobby-settings-tab').click();
+    await clickLobbySettingsTab(page);
     const floatingSelected = await page.evaluate(() => {
       const el = document.querySelector('#floating-touch') as HTMLButtonElement | null;
       return el?.getAttribute('data-state') === 'checked';

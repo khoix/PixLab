@@ -1,9 +1,28 @@
 import { Page, expect } from '@playwright/test';
 
-export async function startSectorRun(page: Page): Promise<void> {
+export async function openLobby(page: Page, mobile = false): Promise<void> {
+  if (mobile) {
+    await page.setViewportSize({ width: 375, height: 667 });
+  }
   await page.goto('/');
   await page.getByTestId('start-run-button').click();
   await page.waitForURL('**/play**');
+}
+
+export async function clickLobbySettingsTab(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.__PIXLAB_TEST__?.setLobbyTab('settings');
+  });
+}
+
+export async function openLobbySettings(page: Page, mobile = false): Promise<void> {
+  await openLobby(page, mobile);
+  await clickLobbySettingsTab(page);
+  await expect(page.getByTestId('lobby-settings-panel')).toBeVisible();
+}
+
+export async function startSectorRun(page: Page): Promise<void> {
+  await openLobby(page);
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas').waitFor({ state: 'visible' });
 }

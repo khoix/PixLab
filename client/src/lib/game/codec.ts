@@ -484,6 +484,9 @@ export function encodeGameState(state: GameState): string {
         settings['9'] = state.settings.touchSensitivity;
       }
       if (state.settings.dpadSize !== undefined && state.settings.dpadSize !== 1) settings['10'] = state.settings.dpadSize;
+      if (state.settings.sectorTimerSide && state.settings.sectorTimerSide !== 'right') {
+        settings['11'] = state.settings.sectorTimerSide;
+      }
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -582,6 +585,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         hapticsEnabled: saveData.S?.['8'] !== 0,
         touchSensitivity: normalizeTouchSensitivity(saveData.S?.['9']),
         dpadSize: saveData.S?.['10'] ?? 1,
+        sectorTimerSide: saveData.S?.['11'] === 'left' ? 'left' : 'right',
       },
     };
     

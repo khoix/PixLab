@@ -41,8 +41,10 @@ import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quic
 import { triggerHaptic } from '../lib/game/haptics';
 import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
 import {
+  MAX_TOUCH_SENSITIVITY,
   normalizeTouchSensitivity,
   slopPxFromSensitivity,
+  touchSensitivityPercent,
 } from '../lib/game/touch/touchSensitivity';
 
 // Helper function to format item names with initial caps
@@ -170,6 +172,7 @@ export default function Game() {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [showMenu, setShowMenu] = useState(false);
+  const [lobbyTab, setLobbyTab] = useState('mission');
   const [showInventory, setShowInventory] = useState(false);
   const [lastItemCount, setLastItemCount] = useState(state.inventory.length);
   const [gameOverState, setGameOverState] = useState<{ type: 'death' | 'timeout' } | null>(null);
@@ -225,6 +228,9 @@ export default function Game() {
       },
       setCoins: (coins: number) => {
         dispatch({ type: 'UPDATE_STATS', payload: { coins } });
+      },
+      setLobbyTab: (tab: string) => {
+        setLobbyTab(tab);
       },
     };
     return () => {
@@ -861,7 +867,7 @@ export default function Game() {
           </Card>
 
           <Card className="lobby-tabs-card md:col-span-2 bg-card/90 border-primary/20 pixel-corners flex flex-col h-[24.2rem] md:h-[550px]">
-            <Tabs defaultValue="mission" className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
+            <Tabs value={lobbyTab} onValueChange={setLobbyTab} className="lobby-tabs w-full flex flex-1 flex-col min-h-0">
               <TabsList className="w-full bg-black/40 rounded-none border-b border-white/10">
                 <TabsTrigger value="mission" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MISSION</TabsTrigger>
                 <TabsTrigger value="loadout" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
@@ -870,7 +876,7 @@ export default function Game() {
                 </TabsTrigger>
                 <TabsTrigger value="compendium" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">COMPENDIUM</TabsTrigger>
                 <TabsTrigger value="mods" className="flex-1 font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">MODS</TabsTrigger>
-                <TabsTrigger value="settings" data-testid="lobby-settings-tab" className="w-auto aspect-square font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
+                <TabsTrigger value="settings" data-testid="lobby-settings-tab" className="relative z-20 w-auto aspect-square min-w-[40px] min-h-[40px] font-pixel text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary rounded-none">
                   <Settings className="w-4 h-4" />
                 </TabsTrigger>
               </TabsList>
@@ -1350,13 +1356,13 @@ export default function Game() {
                               });
                             }}
                             min={0}
-                            max={1}
+                            max={MAX_TOUCH_SENSITIVITY}
                             step={0.05}
                             className="flex-1"
                             data-testid="touch-sensitivity-slider"
                           />
                           <span className="text-lg font-mono text-muted-foreground w-12 text-right">
-                            {Math.round(normalizeTouchSensitivity(state.settings.touchSensitivity) * 100)}%
+                            {touchSensitivityPercent(state.settings.touchSensitivity)}%
                           </span>
                         </div>
                       </div>
@@ -1428,6 +1434,32 @@ export default function Game() {
                           {Math.round((state.settings.controlSize ?? 1) * 100)}%
                         </span>
                       </div>
+                    </div>
+                    <div className="md:hidden" data-testid="sector-timer-side-settings">
+                      <label className="text-lg font-pixel text-primary mb-2 block">SECTOR TIMER</label>
+                      <RadioGroup
+                        value={state.settings.sectorTimerSide ?? 'right'}
+                        onValueChange={(value) => {
+                          dispatch({
+                            type: 'UPDATE_SETTINGS',
+                            payload: { sectorTimerSide: value as 'left' | 'right' },
+                          });
+                        }}
+                        className="flex flex-col gap-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="left" id="sector-timer-left" data-testid="sector-timer-left" style={{ minWidth: '40px' }} />
+                          <label htmlFor="sector-timer-left" className="text-sm font-mono text-foreground cursor-pointer">
+                            Left side
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="right" id="sector-timer-right" data-testid="sector-timer-right" style={{ minWidth: '40px' }} />
+                          <label htmlFor="sector-timer-right" className="text-sm font-mono text-foreground cursor-pointer">
+                            Right side
+                          </label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>

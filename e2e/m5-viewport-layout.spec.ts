@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { clickLobbySettingsTab } from './helpers';
 
 async function openLobby(page: import('@playwright/test').Page) {
   await page.goto('/');
@@ -96,7 +97,7 @@ test.describe('M5.2 — Viewport-locked lobby layout', () => {
       return body?.getBoundingClientRect().top ?? 0;
     });
 
-    await page.getByTestId('lobby-settings-tab').click();
+    await clickLobbySettingsTab(page);
     const settingsTop = await page.evaluate(() => {
       const body = document.querySelector('.lobby-page-body');
       return body?.getBoundingClientRect().top ?? 0;
@@ -115,7 +116,7 @@ test.describe('M5.2 — Viewport-locked lobby layout', () => {
   test('settings tab panel scrolls internally', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await openLobby(page);
-    await page.getByTestId('lobby-settings-tab').click();
+    await clickLobbySettingsTab(page);
 
     const panelMetrics = await page.evaluate(() => {
       const panel = document.querySelector('[data-testid="lobby-settings-panel"]');

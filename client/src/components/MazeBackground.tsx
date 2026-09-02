@@ -91,7 +91,7 @@ export const MazeBackground: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full -z-10"
+      className="fixed inset-0 w-full h-full -z-10 pointer-events-none"
       style={{
         filter: 'blur(8px)',
         opacity: 0.3,

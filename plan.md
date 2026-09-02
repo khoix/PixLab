@@ -270,6 +270,31 @@ Execution plan for performance optimization and gameplay improvements on web and
 
 ---
 
+## Milestone 5.4 — Mobile Timer Side, Sensitivity Range & Font Scale
+
+**Goal:** More mobile readability and control customization.
+
+**Tasks:**
+- [x] `settings.sectorTimerSide` (`left` | `right`, default `right`) — lobby radio + CSS `--left` variant
+- [x] Extend `touchSensitivity` slider to 150% (1.5) with 3px slop at max
+- [x] Bump mobile `.text-xs`, `text-[10px]`, and compact `0.625rem` overrides by 30%
+- [x] E2e: timer left edge, 150% sensitivity, font scale
+
+**Files:**
+- `client/src/lib/game/types.ts`, `codec.ts`, `store.tsx`, `touch/touchSensitivity.ts`
+- `client/src/components/game/SectorTimerBar.tsx`, `HUD.tsx`
+- `client/src/pages/Game.tsx`, `client/src/styles/mobile.css`
+- `e2e/m5-mobile-ux.spec.ts`, `e2e/m5-touch-sensitivity.spec.ts`
+
+**Exit criteria:**
+- Player can move sector timer bar to left edge
+- Floating touch sensitivity reaches 150% (3px slop)
+- Mobile small text renders ~30% larger
+
+**Depends on:** Milestone 5.3
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -363,7 +388,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf
                                                 └─► M8 Refactor
