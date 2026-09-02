@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getEntitiesInRadius, hasLineOfSight, getAttackablePositions } from '../../lib/game/engine';
-import { TILE_SIZE, COLORS, LEVEL_TIME_LIMIT, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL } from '../../lib/game/constants';
+import { TILE_SIZE, COLORS, MODS, RARITY_COLORS, MOB_TYPES, SHOP_INTERVAL, BOSS_INTERVAL, LOW_TIME_ASSIST_SEC } from '../../lib/game/constants';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Footprint } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
@@ -42,10 +42,27 @@ import {
 import {
   getSectorElapsedMs,
   getSectorTimeLimitMs,
+  getSectorTimeLeftSec,
   popSectorTimerPause,
   pushSectorTimerPause,
   resetSectorTimer,
 } from '../../lib/game/sectorTimer';
+import { canPlayerAttack, getPlayerMoveDelayMs } from '../../lib/game/combat/playerAttack';
+import {
+  beginAttackTelegraph,
+  completeAttackTelegraph,
+  isAttackTelegraphActive,
+  BOSS_RANGED_TELEGRAPH_MS,
+  RANGED_TELEGRAPH_MS,
+} from '../../lib/game/combat/rangedTelegraph';
+import {
+  shouldAdvanceCerberusCombo,
+  shouldCerberusBiteDamage,
+  CERBERUS_COMBO_COOLDOWN_AFTER_MS,
+  CERBERUS_COMBO_RESET_MS,
+} from '../../lib/game/combat/cerberus';
+import { applyEnemyHitFeedback, updateDamageNumbers } from '../../lib/game/combat/damageFeedback';
+import { computeExitPathHint } from '../../lib/game/exitPathHint';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon, preloadItemIcons } from '../../lib/game/itemIcons';
 
 // Module-level cache for stairs image (persists across component instances)
@@ -152,6 +169,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const afterimageIdCounterRef = useRef<number>(0);
   const particleIdCounterRef = useRef<number>(0);
   const footprintIdCounterRef = useRef<number>(0);
+  const lastPlayerAttackTimeRef = useRef<number>(0);
+  const exitPathHintRef = useRef<Position[]>([]);
   const lastFootprintPosRef = useRef<Position | null>(null); // Track last position where footprint was created
   const nextFootIsLeftRef = useRef<boolean>(true); // Track which foot to place next (alternating)
   const visionDebuffLevelRef = useRef<number>(0); // Track vision debuff level (0-1.0, where 1.0 = complete blindness)
@@ -383,6 +402,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     if (!level.particles) {
       level.particles = [];
     }
+    if (!level.damageNumbers) {
+      level.damageNumbers = [];
+    }
     // Initialize footprints array if not present
     if (!level.footprints) {
       level.footprints = [];
@@ -390,6 +412,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Reset footprint tracking
     lastFootprintPosRef.current = null;
     nextFootIsLeftRef.current = true; // Start with left foot
+    lastPlayerAttackTimeRef.current = 0;
+    exitPathHintRef.current = [];
     // Reset bonus selection when level changes
     bonusSelectionRef.current = null;
     setShowBonusSelection(false);
@@ -574,12 +598,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         onTimeOut();
         return;
       }
+
+      const timeLeftSec = getSectorTimeLeftSec(activeModsRef.current, now);
+      if (timeLeftSec <= LOW_TIME_ASSIST_SEC && levelRef.current) {
+        exitPathHintRef.current = computeExitPathHint(levelRef.current, playerPosRef.current);
+      } else {
+        exitPathHintRef.current = [];
+      }
     }
 
     // Movement Logic - use refs to get current stats and apply item bonuses
     const baseStats = statsRef.current;
     const effectiveStats = getEffectiveStats(baseStats, loadoutRef.current);
-    const moveDelay = 1000 / (effectiveStats.speed * 4);
+    const moveDelay = getPlayerMoveDelayMs(effectiveStats.speed);
 
     // Buffer direction changes during tile interpolation for next legal move tick
     const heldX = Math.round(gameInputDirectionRef.current.x);
@@ -785,7 +816,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             return true;
           });
           
-          attackableEnemies.forEach(enemy => {
+          if (canPlayerAttack(lastPlayerAttackTimeRef.current, now) && attackableEnemies.length > 0) {
+            let playerAttackLanded = false;
+            attackableEnemies.forEach(enemy => {
             // Spear: Check if enemy is behind a wall (10% chance to pierce through)
             if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
               const hasLOS = hasLineOfSight(nextPos, enemy.pos, levelRef.current);
@@ -798,6 +831,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 audioManager.playSound('attack');
                 let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
                 enemy.hp -= damage;
+                if (levelRef.current) {
+                  applyEnemyHitFeedback(levelRef.current, enemy, damage, now, false);
+                }
+                playerAttackLanded = true;
                 
                 // Log player attack event
                 const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
@@ -830,6 +867,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             
             // Apply damage
             enemy.hp -= damage;
+            if (levelRef.current) {
+              applyEnemyHitFeedback(levelRef.current, enemy, damage, now, isCrit);
+            }
+            playerAttackLanded = true;
             
             // Log player attack event
             const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
@@ -962,7 +1003,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   }
                 }
               }
-          });
+            });
+            if (playerAttackLanded) {
+              lastPlayerAttackTimeRef.current = now;
+            }
+          }
         }
       }
     } else {
@@ -1234,6 +1279,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       }
     }
 
+    if (levelRef.current) {
+      updateDamageNumbers(levelRef.current, now);
+    }
+
     // Update footprints
     try {
       if (!levelRef.current.footprints) {
@@ -1289,34 +1338,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             if (distToPlayer <= aggroRange && distToPlayer <= entity.range) {
               const lastAttack = entity.lastAttackTime || 0;
               const cooldown = entity.attackCooldown || 1500;
-              
-              if (now - lastAttack >= cooldown) {
-                // Fire projectile - restrict to cardinal directions only
-                const dx = playerPosRef.current.x - entity.pos.x;
-                const dy = playerPosRef.current.y - entity.pos.y;
-                // Determine which cardinal direction has the largest component
-                const absDx = Math.abs(dx);
-                const absDy = Math.abs(dy);
-                let velocity;
-                if (absDx > absDy) {
-                  // Horizontal direction (left or right)
-                  velocity = { x: Math.sign(dx), y: 0 };
-                } else {
-                  // Vertical direction (up or down)
-                  velocity = { x: 0, y: Math.sign(dy) };
-                }
-                
+
+              const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                 if (levelRef.current) {
                   if (!levelRef.current.projectiles) {
                     levelRef.current.projectiles = [];
                   }
-                  
-                  // Calculate wall phase chance for turret projectiles (25% base)
+
                   let wallPhaseChance: number | undefined;
                   if (mobSubtype === 'turret') {
                     wallPhaseChance = calculateWallPhaseChance(0.25);
                   }
-                  
+
                   levelRef.current.projectiles.push({
                     id: `projectile-${projectileIdCounterRef.current++}`,
                     pos: { ...entity.pos },
@@ -1328,9 +1361,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     ...(wallPhaseChance !== undefined && { wallPhaseChance }),
                   });
                 }
-                
-                updatedEntity.lastAttackTime = now;
                 audioManager.playSound('attack');
+              });
+              Object.assign(updatedEntity, telegraphComplete);
+
+              if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+                Object.assign(
+                  updatedEntity,
+                  beginAttackTelegraph(updatedEntity, now, playerPosRef.current, RANGED_TELEGRAPH_MS),
+                );
               }
             }
           }
@@ -1444,31 +1483,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   shouldMove = true;
                 }
                 
-                // Fire projectile if in range
+                // Fire projectile if in range (with wind-up telegraph)
                 const lastAttack = entity.lastAttackTime || 0;
                 const cooldown = entity.attackCooldown || 2000;
-                
-                if (now - lastAttack >= cooldown) {
-                  // Restrict to cardinal directions only
-                  const absDx = Math.abs(dx);
-                  const absDy = Math.abs(dy);
-                  let velocity;
-                  if (absDx > absDy) {
-                    // Horizontal direction (left or right)
-                    velocity = { x: Math.sign(dx), y: 0 };
-                  } else {
-                    // Vertical direction (up or down)
-                    velocity = { x: 0, y: Math.sign(dy) };
-                  }
-                  
+
+                const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                   if (levelRef.current) {
                     if (!levelRef.current.projectiles) {
                       levelRef.current.projectiles = [];
                     }
-                    
-                    // Calculate wall phase chance for sniper projectiles (10% base)
+
                     const wallPhaseChance = calculateWallPhaseChance(0.10);
-                    
+
                     levelRef.current.projectiles.push({
                       id: `projectile-${projectileIdCounterRef.current++}`,
                       pos: { ...entity.pos },
@@ -1480,9 +1506,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       wallPhaseChance,
                     });
                   }
-                  
-                  updatedEntity.lastAttackTime = now;
+
                   audioManager.playSound('attack');
+                });
+                Object.assign(updatedEntity, telegraphComplete);
+
+                if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+                  Object.assign(
+                    updatedEntity,
+                    beginAttackTelegraph(updatedEntity, now, playerPosRef.current, RANGED_TELEGRAPH_MS),
+                  );
                 }
               } else {
                 // Move towards player slowly (restricted to cardinal)
@@ -1829,38 +1862,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               // Tri-bite combo when in melee range
               if (distToPlayer <= 1.5) {
                 const cooldown = entity.attackCooldown || 2200;
-                
+
                 if (biteComboCount === 0 && timeSinceLastBite >= cooldown) {
-                  // Start combo - first bite
                   updatedEntity.biteComboCount = 1;
                   updatedEntity.lastBiteTime = now;
-                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking for new combo
-                } else if (biteComboCount > 0 && biteComboCount < 3) {
-                  // Continue combo - advance based on timing
-                  if (biteComboCount === 1 && timeSinceLastBite >= 200) {
-                    updatedEntity.biteComboCount = 2;
-                    // Don't update lastBiteTime - keep original combo start time
-                  } else if (biteComboCount === 2 && timeSinceLastBite >= 400) {
-                    updatedEntity.biteComboCount = 3;
-                    // Don't update lastBiteTime - keep original combo start time
-                  } else if (biteComboCount === 3 && timeSinceLastBite >= 600) {
-                    // Combo complete, reset after all bites
+                  updatedEntity.lastDamageComboCount = 0;
+                  updatedEntity.attackTelegraphUntil = now + 220;
+                } else {
+                  const nextCombo = shouldAdvanceCerberusCombo(biteComboCount, timeSinceLastBite);
+                  if (nextCombo !== null) {
+                    updatedEntity.biteComboCount = nextCombo;
+                    if (nextCombo > 0 && nextCombo <= 3) {
+                      updatedEntity.attackTelegraphUntil = now + 220;
+                    }
+                    if (nextCombo === 0) {
+                      updatedEntity.lastBiteTime = now;
+                      updatedEntity.lastDamageComboCount = 0;
+                    }
+                  } else if (biteComboCount === 3 && timeSinceLastBite >= CERBERUS_COMBO_COOLDOWN_AFTER_MS) {
                     updatedEntity.biteComboCount = 0;
                     updatedEntity.lastBiteTime = now;
-                    updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
+                    updatedEntity.lastDamageComboCount = 0;
                   }
-                } else if (biteComboCount === 3 && timeSinceLastBite >= 1000) {
-                  // Reset combo after 1 second of completion
-                  updatedEntity.biteComboCount = 0;
-                  updatedEntity.lastBiteTime = now;
-                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
                 }
-              } else {
-                // Reset combo if too far
-                if (timeSinceLastBite >= 1000) {
-                  updatedEntity.biteComboCount = 0;
-                  updatedEntity.lastDamageComboCount = 0; // Reset damage tracking
-                }
+              } else if (timeSinceLastBite >= CERBERUS_COMBO_RESET_MS) {
+                updatedEntity.biteComboCount = 0;
+                updatedEntity.lastDamageComboCount = 0;
               }
               break;
             }
@@ -1870,30 +1897,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               if (entity.isRanged && entity.range && distToPlayer <= entity.range) {
                 const lastAttack = entity.lastAttackTime || 0;
                 const cooldown = entity.attackCooldown || 1000;
-                
-                if (now - lastAttack >= cooldown) {
-                  // Restrict to cardinal directions only
-                  const absDx = Math.abs(dx);
-                  const absDy = Math.abs(dy);
-                  let velocity;
-                  if (absDx > absDy) {
-                    // Horizontal direction (left or right)
-                    velocity = { x: Math.sign(dx), y: 0 };
-                  } else {
-                    // Vertical direction (up or down)
-                    velocity = { x: 0, y: Math.sign(dy) };
-                  }
-                  
+
+                const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                   if (levelRef.current) {
                     if (!levelRef.current.projectiles) {
                       levelRef.current.projectiles = [];
                     }
-                    
-                    // Calculate wall phase chance for Zeus projectiles (50% base + 0.5% per level, capped at 100%)
-                    const basePhaseChance = 0.5; // 50% base
-                    const phaseChancePerLevel = 0.005; // 0.5% per level
+
+                    const basePhaseChance = 0.5;
+                    const phaseChancePerLevel = 0.005;
                     const wallPhaseChance = Math.min(1.0, basePhaseChance + (state.currentLevel * phaseChancePerLevel));
-                    
+
                     levelRef.current.projectiles.push({
                       id: `projectile-${projectileIdCounterRef.current++}`,
                       pos: { ...entity.pos },
@@ -1902,12 +1916,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                       ownerId: entity.id,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
-                      wallPhaseChance, // Zeus projectiles can phase through walls
+                      wallPhaseChance,
                     });
                   }
-                  
-                  updatedEntity.lastAttackTime = now;
+
                   audioManager.playSound('attack');
+                });
+                Object.assign(updatedEntity, telegraphComplete);
+
+                if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+                  Object.assign(
+                    updatedEntity,
+                    beginAttackTelegraph(updatedEntity, now, playerPosRef.current, BOSS_RANGED_TELEGRAPH_MS),
+                  );
                 }
               }
               
@@ -2060,26 +2081,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               const lastBite = updatedEntity.lastBiteTime || 0;
               const timeSinceLastBite = now - lastBite;
               const lastDamageComboCount = updatedEntity.lastDamageComboCount || 0;
-              
-              // Apply damage when combo count changes and timing is right
-              // Track which combo count has already dealt damage to prevent duplicates
-              let shouldDamage = false;
-              if (biteComboCount === 1 && biteComboCount > lastDamageComboCount && timeSinceLastBite < 100) {
-                // First bite - immediate (within 100ms of combo start)
-                shouldDamage = true;
-              } else if (biteComboCount === 2 && biteComboCount > lastDamageComboCount && timeSinceLastBite >= 200 && timeSinceLastBite < 300) {
-                // Second bite - around 200ms
-                shouldDamage = true;
-              } else if (biteComboCount === 3 && biteComboCount > lastDamageComboCount && timeSinceLastBite >= 400 && timeSinceLastBite < 500) {
-                // Third bite - around 400ms
-                shouldDamage = true;
-              }
-              
-              // Also check if we just transitioned to a new combo count (fallback)
-              const prevBiteComboCount = entity.biteComboCount || 0;
-              if (biteComboCount > prevBiteComboCount && biteComboCount > lastDamageComboCount) {
-                shouldDamage = true;
-              }
+
+              const shouldDamage = shouldCerberusBiteDamage(
+                biteComboCount,
+                timeSinceLastBite,
+                lastDamageComboCount,
+              );
               
               if (shouldDamage) {
                 const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
@@ -2276,6 +2283,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     tileLayerCache.build(levelRef.current, theme, String(state.currentLevel));
     tileLayerCache.drawVisibleRegion(ctx, camX, camY, logicalWidth, logicalHeight);
+
+    if (exitPathHintRef.current.length > 0) {
+      const pulse = 0.28 + 0.14 * Math.sin(Date.now() / 260);
+      ctx.save();
+      ctx.fillStyle = `rgba(5, 217, 232, ${pulse})`;
+      for (const step of exitPathHintRef.current.slice(0, 10)) {
+        const tileX = step.x * TILE_SIZE;
+        const tileY = step.y * TILE_SIZE;
+        ctx.fillRect(tileX + 8, tileY + 8, TILE_SIZE - 16, TILE_SIZE - 16);
+      }
+      ctx.restore();
+    }
 
     for (let y = startRow; y < endRow; y++) {
       for (let x = startCol; x < endCol; x++) {
@@ -3110,6 +3129,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       // Restore context state (resets globalAlpha and shadow)
       ctx.restore();
       
+      const drawNow = Date.now();
+      const entityCenterX = entity.pos.x * TILE_SIZE + TILE_SIZE / 2;
+      const entityCenterY = entity.pos.y * TILE_SIZE + TILE_SIZE / 2;
+
+      if (entity.attackTelegraphUntil && drawNow < entity.attackTelegraphUntil && entity.attackTelegraphVelocity) {
+        const telegraphDuration =
+          entity.isBoss || entity.mobSubtype === 'boss_zeus'
+            ? BOSS_RANGED_TELEGRAPH_MS
+            : RANGED_TELEGRAPH_MS;
+        const progress = Math.min(1, 1 - (entity.attackTelegraphUntil - drawNow) / telegraphDuration);
+        const lineLen = TILE_SIZE * (1.1 + progress * 2.2);
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 80, 120, ${0.35 + progress * 0.5})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(entityCenterX, entityCenterY);
+        ctx.lineTo(
+          entityCenterX + entity.attackTelegraphVelocity.x * lineLen,
+          entityCenterY + entity.attackTelegraphVelocity.y * lineLen,
+        );
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (entity.hitFlashUntil && drawNow < entity.hitFlashUntil) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillRect(entity.pos.x * TILE_SIZE + 2, entity.pos.y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        ctx.restore();
+      }
+
       // Health bar (always fully opaque)
       ctx.fillStyle = '#ff0000';
       const barWidth = TILE_SIZE - 4;
@@ -3118,6 +3168,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       ctx.fillStyle = '#00ff00';
       ctx.fillRect(entity.pos.x * TILE_SIZE + 2, entity.pos.y * TILE_SIZE + 2, (entity.hp / entity.maxHp) * barWidth, barHeight);
     });
+
+    if (levelRef.current.damageNumbers?.length) {
+      const drawNow = Date.now();
+      levelRef.current.damageNumbers.forEach((entry) => {
+        const age = drawNow - entry.createdAt;
+        const t = Math.min(1, age / entry.lifetime);
+        const alpha = 1 - t;
+        const yOffset = t * 20;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, alpha);
+        ctx.fillStyle = entry.isCrit ? '#ffd700' : '#f8fafc';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          String(entry.amount),
+          entry.pos.x * TILE_SIZE + TILE_SIZE / 2,
+          entry.pos.y * TILE_SIZE + 8 - yOffset,
+        );
+        ctx.restore();
+      });
+    }
 
     // Draw Items (PNG icons only, no background)
     levelRef.current.items.forEach(({ pos, item }) => {

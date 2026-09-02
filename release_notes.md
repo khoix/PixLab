@@ -1,5 +1,26 @@
 # Release Notes
 
+## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
+
+**Branch:** `cursor/m6-balance-aa59`  
+**Status:** Ready for review
+
+### Changed
+- **Player attack cadence** — movement speed no longer scales DPS; auto-attacks respect a 500ms cooldown (`PLAYER_ATTACKS_PER_SECOND = 2`). Scaling power index uses damage × attack rate only.
+- **Sector timer** — mobile viewports get +18% sector time automatically; desktop players can enable **Relaxed Sector Timer** (+18%) in lobby settings.
+- **Low-time assist** — when sector timer drops below 30s, a subtle cyan path hint marks tiles toward the exit (BFS).
+- **Ranged telegraphs** — sniper, turret, and Zeus boss attacks show a wind-up aim line (~450–550ms) before projectiles spawn.
+- **Cerberus tri-bite** — wider bite windows (300/600/900ms spacing) and telegraph flash for mobile reaction time.
+- **Hit feedback** — enemies flash white and show floating damage numbers (gold on crit).
+
+### Files
+- `client/src/lib/game/combat/` — playerAttack, cerberus, rangedTelegraph, damageFeedback
+- `client/src/lib/game/exitPathHint.ts`, `sectorTimer.ts`, `scaling.ts`, `constants.ts`
+- `client/src/components/game/GameCanvas.tsx`, `client/src/pages/Game.tsx`
+- `e2e/m6-balance.spec.ts`
+
+---
+
 ## Milestone 0 — Baseline & Instrumentation
 
 **Branch:** `cursor/PixLab`  

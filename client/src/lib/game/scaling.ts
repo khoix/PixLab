@@ -42,7 +42,7 @@ export const SCALING_CONFIG = {
   maxScaling: 3.0,         // Maximum scaling multiplier (prevent extreme spikes)
   
   // Player power calculation
-  baseAttackRate: 2.0,     // Base attacks per second (movement-based)
+  baseAttackRate: 2.0,     // Base attacks per second (decoupled from movement speed in M6)
   defenseEhpFactor: 150,   // Factor for converting flat defense to EHP multiplier (increased to make defense less powerful)
 };
 
@@ -106,8 +106,8 @@ const ARCHETYPE_CONSTANTS: Record<string, { hp: number; dmg: number }> = {
 // Calculate initial power from INITIAL_STATS
 function calculateInitialPower(): number {
   const stats = INITIAL_STATS;
-  // DPS = damage * speed * attackRate
-  const dps = stats.damage * stats.speed * SCALING_CONFIG.baseAttackRate;
+  // DPS = damage * attackRate (speed affects movement only)
+  const dps = stats.damage * SCALING_CONFIG.baseAttackRate;
   // EHP = maxHp (no defense at start)
   const ehp = stats.maxHp;
   // Power = sqrt(dps * ehp)
@@ -145,9 +145,8 @@ export function calculatePlayerPower(
   const effectiveStats = getEffectiveStats(stats, loadout);
   const defense = getTotalDefense(loadout);
   
-  // Calculate DPS: damage * speed * attack rate
-  // Player attacks on movement, so speed directly affects attack frequency
-  const dps = effectiveStats.damage * effectiveStats.speed * SCALING_CONFIG.baseAttackRate;
+  // Calculate DPS: damage * attack rate (movement speed no longer scales DPS — M6)
+  const dps = effectiveStats.damage * SCALING_CONFIG.baseAttackRate;
   
   // Calculate EHP: maxHp adjusted by defense
   // Defense is flat reduction, convert to EHP multiplier

@@ -487,6 +487,7 @@ export function encodeGameState(state: GameState): string {
       if (state.settings.sectorTimerSide && state.settings.sectorTimerSide !== 'right') {
         settings['11'] = state.settings.sectorTimerSide;
       }
+      if (state.settings.relaxedTimer) settings['12'] = 1;
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -586,6 +587,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         touchSensitivity: normalizeTouchSensitivity(saveData.S?.['9']),
         dpadSize: saveData.S?.['10'] ?? 1,
         sectorTimerSide: saveData.S?.['11'] === 'left' ? 'left' : 'right',
+        relaxedTimer: saveData.S?.['12'] === 1,
       },
     };
     

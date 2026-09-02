@@ -1,4 +1,4 @@
-import { LEVEL_TIME_LIMIT } from './constants';
+import { LEVEL_TIME_LIMIT, MOBILE_SECTOR_TIMER_MULT, RELAXED_SECTOR_TIMER_MULT } from './constants';
 import { buildModifiers } from './modifiers';
 
 interface SectorTimerState {
@@ -6,6 +6,11 @@ interface SectorTimerState {
   pausedTotalMs: number;
   pauseStartedMs: number | null;
   pauseCount: number;
+}
+
+export interface SectorTimerContext {
+  isMobile?: boolean;
+  relaxedTimer?: boolean;
 }
 
 const timer: SectorTimerState = {
@@ -16,6 +21,26 @@ const timer: SectorTimerState = {
 };
 
 const pauseReasons = new Set<string>();
+let timerContext: SectorTimerContext = {};
+
+export function setSectorTimerContext(context: SectorTimerContext): void {
+  timerContext = context;
+}
+
+export function getSectorTimerContext(): SectorTimerContext {
+  return timerContext;
+}
+
+/** Timer multiplier from mobile auto-bonus or relaxed-timer setting (not mod stacking). */
+export function getSectorTimerBonusMult(context: SectorTimerContext = timerContext): number {
+  if (context.relaxedTimer) {
+    return RELAXED_SECTOR_TIMER_MULT;
+  }
+  if (context.isMobile) {
+    return MOBILE_SECTOR_TIMER_MULT;
+  }
+  return 1;
+}
 
 export function resetSectorTimer(startTimeMs: number = Date.now()): void {
   timer.startTimeMs = startTimeMs;
@@ -55,7 +80,8 @@ export function getSectorElapsedMs(now: number = Date.now()): number {
 }
 
 export function getSectorTimeLimitMs(activeModIds: string[]): number {
-  return LEVEL_TIME_LIMIT * buildModifiers(activeModIds).timerMult * 1000;
+  const bonusMult = getSectorTimerBonusMult();
+  return LEVEL_TIME_LIMIT * buildModifiers(activeModIds).timerMult * bonusMult * 1000;
 }
 
 export function getSectorTimeLeftSec(activeModIds: string[], now: number = Date.now()): number {
@@ -74,6 +100,8 @@ export function initSectorTimerApi(): void {
     pushPause: pushSectorTimerPause,
     popPause: popSectorTimerPause,
     reset: resetSectorTimer,
+    setContext: setSectorTimerContext,
+    getBonusMult: getSectorTimerBonusMult,
   };
 }
 
@@ -87,6 +115,8 @@ declare global {
       pushPause: typeof pushSectorTimerPause;
       popPause: typeof popSectorTimerPause;
       reset: typeof resetSectorTimer;
+      setContext: typeof setSectorTimerContext;
+      getBonusMult: typeof getSectorTimerBonusMult;
     };
   }
 }
