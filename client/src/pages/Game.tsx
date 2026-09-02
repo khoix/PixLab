@@ -591,7 +591,9 @@ export default function Game() {
     } else if (state.screen === 'shop') {
       audioManager.playMusic('vendor');
     } else if (state.screen === 'run') {
-      audioManager.stopMusic();
+      // GameCanvas (child) also requests maze on level load; this parent effect
+      // runs after it, so it must not stop music or it clobbers that track.
+      audioManager.playMusic('maze');
     } else {
       audioManager.stopMusic();
     }
