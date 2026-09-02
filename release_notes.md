@@ -1,5 +1,37 @@
 # Release Notes
 
+## Milestone 7 — AI & Late-Game Performance
+
+**Branch:** `cursor/m7-ai-perf-aa59`  
+**Status:** Ready for review
+
+### Changed
+- **AI scheduler** (`client/src/lib/game/ai/aiScheduler.ts`) — each mob is classified every frame from its distance to the player:
+  - `engaged` (≤ 3 tiles, or mid-telegraph / charging / pouncing / in a Cerberus combo): ticked every frame, exactly as before.
+  - `active` (inside aggro range or vision range, + 4-tile buffer): ticked every 3rd frame, spread across frames by a stable per-entity slot (`enemy-17` → slot 17), so ⅓ of mid-range mobs run per frame.
+  - `dormant` (beyond `max(aggroRange, visionRadius) + 4` tiles): not ticked. Nothing that far away is visible or a threat. Threat-sense scrolls and lightswitch reveals widen the awake radius so revealed mobs keep animating.
+  - Skipped mobs keep their own clock: on their next tick they receive the real elapsed time (capped at 400 ms), so movement cadence is unchanged and a mob waking from dormancy takes one step, not a burst.
+- **Line-of-sight cache** (`client/src/lib/game/ai/losCache.ts`) — `hasLineOfSight` results are memoised per level by (from tile, to tile); invalidated when a boss death carves the exit. Used by the player auto-attack targeting.
+- **Hot-path cleanups** in the mob update — `MOB_TYPE_BY_SUBTYPE` map replaces a linear `MOB_TYPES.find` per mob per frame; mob-vs-mob collision uses a lazily built tile-occupancy map instead of filtering every entity for every moving mob (was O(n²) on move ticks).
+- **Draw culling** — entities more than 10 tiles outside the camera rectangle are not drawn (margin covers off-screen telegraph aim lines; longest ranged reach is 6 tiles).
+- Test hooks: `window.__PIXLAB_AI__` (`getStats`, `resetStats`, `setEnabled`, pure `classifyAiTier` / `shouldUpdateThisFrame` / `aiSlotForId`, `constants`), `window.__PIXLAB_LEVEL__` (`getEntities`, `getPlayerPos`, `spawnMob`, `clearMobs`, `isFloor`, `getLosCacheStats`), `__PIXLAB_TEST__.setCurrentLevel` / `updateStats`.
+
+### Measurements (headless Chromium, 6× CPU throttle, mobile project, 2.5 s windows)
+| Sector | Mobs | Mob-ticks run | `update()` avg, scheduler on / off | `draw()` avg |
+|--------|------|---------------|-----------------------------------|--------------|
+| 1 | 8 | 1–4% | 0.11–0.18 ms / 0.14–0.17 ms | 2.7 ms |
+| 25 | 45 | 1.5% | 0.24–0.29 ms / 0.28–0.30 ms | 2.7 ms |
+| 30 | 62 | 4–5% | 0.35 ms / 0.37–0.49 ms | 3.5 ms (3.9 ms without culling) |
+
+Frame time grows ~30% from 8 to 62 mobs (2.9 → 3.8 ms) — sub-linear; `update()` is a small share of the frame, the mob draw pass is the remaining entity-scaled cost.
+
+### Verification
+- `e2e/m7-ai-perf.spec.ts`: tier boundaries (engaged / active / dormant, timing-sensitive override, vision keeps mobs awake, infinite aggro never sleeps); stagger gives each active mob exactly one tick per 3-frame cycle and engaged mobs every frame; live sector — a drone spawned 5 tiles out still closes on the player while one spawned 18+ tiles out does not move and `skippedDormant > 0`; sector 25 with 45–55 mobs runs < 60% of mob-ticks (observed ~2–4%) and the `setEnabled(false)` fallback ticks 100%; LOS cache reports hits on repeated (player, mob) tile pairs; `setCurrentLevel` hook.
+- `e2e/title-screen.spec.ts`: media-abort route now also matches Vite's `?t=<hmr>` suffix, so the "failed download" case is stable against a long-running dev server.
+- Full suite: 181 passed, 1 skipped.
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Branch:** `cursor/m6-balance-aa59`  

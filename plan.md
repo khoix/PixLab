@@ -327,12 +327,13 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Keep frame times stable as enemy count and sector level grow.
 
 **Tasks:**
-- [ ] Skip AI updates for mobs outside `aggroRange + buffer` of player
-- [ ] Stagger mob AI: update subset per frame (e.g. ⅓ of active mobs per frame)
-- [ ] Cache line-of-sight for stationary entities until player or entity moves
-- [ ] Profile mob update block at sector 20+ with 15+ enemies; target specific hotspots
+- [x] Skip AI updates for mobs outside `aggroRange + buffer` of player (`dormant` tier; also outside vision + buffer, so revealed mobs keep animating)
+- [x] Stagger mob AI: update subset per frame (⅓ of `active` mobs per frame; mobs within 3 tiles or mid-attack stay per-frame)
+- [x] Cache line-of-sight for stationary entities until player or entity moves (per-level tile-pair memo, invalidated on tile carve)
+- [x] Profile mob update block at sector 20+ with 15+ enemies; target specific hotspots (O(1) mob-occupancy lookup, `MOB_TYPE_BY_SUBTYPE` map, off-camera entity draw culling)
 
 **Files:**
+- `client/src/lib/game/ai/aiScheduler.ts`, `client/src/lib/game/ai/losCache.ts` (new)
 - `client/src/components/game/GameCanvas.tsx` (or extracted `GameEngine` — see Milestone 8)
 
 **Exit criteria:**
