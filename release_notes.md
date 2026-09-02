@@ -312,7 +312,7 @@ npm run test:e2e:ui     # interactive UI mode
 **Status:** Ready for review
 
 ### Changed
-- **Left sector timer** — seconds label moves to the bottom of the bar when timer is on the left edge; bar starts below top-left HUD (no overlap with HP/coins)
+- **Left sector timer** — seconds label moves to the bottom of the bar when timer is on the left edge; bar starts below top-left HUD; bottom aligns with quick heal button; timer label no longer clips off-screen
 - **Operator preview** — moved from Compendium to the top of the lobby Inventory tab; OPERATOR header removed
 
 ### Verification

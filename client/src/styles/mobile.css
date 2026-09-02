@@ -766,6 +766,10 @@
   }
 
   /* M5 — Mobile run controls & HUD layout (375×667 safe) */
+  .relative.w-full.h-screen {
+    --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+  }
+
   .mobile-hud-stats,
   .mobile-hud-sector-badge,
   .mobile-sector-timer,
@@ -802,11 +806,26 @@
 
   .mobile-sector-timer--left {
     right: auto;
-    left: max(0.25rem, env(safe-area-inset-left, 0px));
+    left: max(0.5rem, env(safe-area-inset-left, 0px));
     transform-origin: top left;
     flex-direction: column-reverse;
     /* Below top-left HUD (safe-area + padding + HP + coins rows) */
     top: calc(env(safe-area-inset-top, 0px) + 6.5rem);
+    /* Bottom aligns with quick heal button */
+    bottom: var(--mobile-quick-actions-bottom);
+    width: auto;
+    min-width: 2rem;
+    align-items: flex-start;
+  }
+
+  .mobile-sector-timer--left .mobile-sector-timer-track {
+    align-self: center;
+  }
+
+  .mobile-sector-timer--left .mobile-sector-timer-label {
+    min-width: 2.25rem;
+    text-align: left;
+    white-space: nowrap;
   }
 
   .mobile-sector-timer-track {
@@ -863,7 +882,7 @@
   .mobile-quick-actions {
     position: absolute;
     right: max(0.75rem, env(safe-area-inset-right, 0px));
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    bottom: var(--mobile-quick-actions-bottom);
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -882,8 +901,12 @@
   }
 
   @media (max-height: 700px) {
+    .relative.w-full.h-screen {
+      --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+    }
+
     .mobile-quick-actions {
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+      bottom: var(--mobile-quick-actions-bottom);
     }
 
     .mobile-quick-heal {
