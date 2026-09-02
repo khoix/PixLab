@@ -240,6 +240,19 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(healAlignment?.bottomsAligned).toBe(true);
     expect(healAlignment?.labelOnScreen).toBe(true);
     expect(healAlignment?.labelFullyVisible).toBe(true);
+
+    const barMetrics = await page.evaluate(() => {
+      const timer = document.querySelector('.mobile-sector-timer--left') as HTMLElement | null;
+      if (!timer) return null;
+      const rect = timer.getBoundingClientRect();
+      return {
+        position: getComputedStyle(timer).position,
+        height: rect.height,
+      };
+    });
+
+    expect(barMetrics?.position).toBe('absolute');
+    expect(barMetrics?.height ?? 0).toBeGreaterThan(200);
   });
 
   test('operator preview is at top of lobby inventory tab', async ({ page }) => {
