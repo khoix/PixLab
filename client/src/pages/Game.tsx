@@ -1283,6 +1283,7 @@ export default function Game() {
                       <label className="text-lg font-pixel text-primary mb-2 block">MUSIC VOLUME</label>
                       <div className="flex items-center gap-3">
                         <Slider
+                          data-testid="music-volume-slider"
                           value={[state.settings.musicVolume]}
                           onValueChange={(value) => {
                             dispatch({ 
