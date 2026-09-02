@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import type { MusicPreloadState } from '../lib/musicPreload';
+import { PRELOAD_STATUS_TICK_MS, pickPreloadStatusLine } from '../lib/preloadStatus';
 
 interface MusicPreloadBarProps {
   state: MusicPreloadState;
@@ -7,6 +9,16 @@ interface MusicPreloadBarProps {
 export function MusicPreloadBar({ state }: MusicPreloadBarProps) {
   const percent = Math.round(Math.min(1, Math.max(0, state.progress)) * 100);
   const failed = state.status === 'error';
+  const done = state.status === 'done';
+
+  const [ticks, setTicks] = useState(0);
+  useEffect(() => {
+    if (done || failed) return;
+    const timer = setInterval(() => setTicks((t) => t + 1), PRELOAD_STATUS_TICK_MS);
+    return () => clearInterval(timer);
+  }, [done, failed]);
+
+  const statusLine = pickPreloadStatusLine(state.progress, ticks, done ? 'done' : failed ? 'error' : 'loading');
 
   return (
     <div className="w-full space-y-3 mt-8" data-testid="music-preload">
@@ -19,7 +31,7 @@ export function MusicPreloadBar({ state }: MusicPreloadBarProps) {
       <div
         className="preload-bar pixel-corners"
         role="progressbar"
-        aria-label="Loading music"
+        aria-label="Loading"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
@@ -29,8 +41,15 @@ export function MusicPreloadBar({ state }: MusicPreloadBarProps) {
         <div className="preload-bar__scanlines" />
         <div className="preload-bar__sweep" />
       </div>
-      <p className="font-mono text-sm tracking-wider text-muted-foreground text-center">
-        {state.completedTracks}/{state.totalTracks || 4} TRACKS CACHED
+      <p
+        className="preload-status font-mono text-sm tracking-wider text-muted-foreground text-center"
+        data-testid="music-preload-status"
+        aria-live="polite"
+      >
+        <span className="preload-status__prompt">&gt;</span> {statusLine}
+        <span className="preload-status__cursor" aria-hidden="true">
+          ▌
+        </span>
       </p>
     </div>
   );
