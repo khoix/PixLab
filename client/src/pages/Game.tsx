@@ -885,7 +885,7 @@ export default function Game() {
                 <TabsContent value="mission" className="lobby-tab-panel mt-0 h-full flex flex-col items-center justify-center gap-6 py-4 relative pb-12">
                   <div className="text-center space-y-2">
                     <h2 className="text-2xl text-white font-pixel">SECTOR {state.currentLevel}</h2>
-                    <p className="text-muted-foreground font-mono text-lg">
+                    <p className="lobby-mission-type text-muted-foreground font-mono text-lg">
                       {currentLevel.isBoss ? 'BOSS AWAITS' : currentLevel.isShop ? 'VENDOR STATION' : 'COMBAT ZONE'}
                     </p>
                   </div>

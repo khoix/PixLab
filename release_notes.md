@@ -297,11 +297,11 @@ npm run test:e2e:ui     # interactive UI mode
 - **Extended touch sensitivity** — slider now 0–150%; max maps to 3px drag slop (50% more responsive than prior 100% cap)
 
 ### Changed
-- **Mobile small fonts** — `.text-xs`, `text-[10px]`, and compact `0.625rem` overrides scaled up 30% for readability
+- **Mobile smallest fonts** — toast title/description and lobby mission type labels (e.g. COMBAT ZONE) scaled up 30%; broad `.text-xs` bump reverted
 - **Lobby background canvas** — `pointer-events: none` on `MazeBackground` so settings tabs are clickable in e2e and on device
 
 ### Verification
-- E2e: `e2e/m5-mobile-ux.spec.ts` — timer left edge, font scale, sector timer setting in lobby
+- E2e: `e2e/m5-mobile-ux.spec.ts` — timer left edge, toast/mission type font scale
 - E2e: `e2e/m5-touch-sensitivity.spec.ts` — 150% sensitivity / 3px slop, lobby settings via `setLobbyTab` hook
 
 ---

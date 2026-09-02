@@ -56,7 +56,7 @@
   /* HUD optimizations for mobile */
   .game-hud {
     padding: 1rem;
-    font-size: 0.975rem;
+    font-size: 0.75rem;
   }
 
   /* Move level HUD to bottom on mobile */
@@ -75,14 +75,14 @@
 
   /* Make level badge smaller on mobile */
   .level-hud [class*="Badge"] {
-    font-size: 0.8125rem !important; /* 0.625rem + 30% */
+    font-size: 0.625rem !important; /* Smaller than text-xs */
     padding: 0.25rem 0.5rem !important; /* Reduce padding from px-4 py-2 */
     line-height: 1.2 !important;
   }
 
   /* Make timer text smaller on mobile */
   .level-hud > div:not([class*="Badge"]) {
-    font-size: 0.975rem !important; /* text-xs + 30% */
+    font-size: 0.75rem !important; /* Smaller than text-lg */
     line-height: 1.2 !important;
   }
 
@@ -134,14 +134,14 @@
 
   /* Style stat shorthand on mobile - smaller and more compact */
   .consumable-stats {
-    font-size: 0.8125rem !important;
+    font-size: 0.625rem !important;
     line-height: 1.2;
     margin-top: 0;
     gap: 0 !important;
   }
 
   .consumable-stats > div {
-    font-size: 0.8125rem !important;
+    font-size: 0.625rem !important;
     line-height: 1.2;
   }
 
@@ -549,7 +549,7 @@
   /* Optimize tab buttons for touch */
   .lobby-page button[role="tab"],
   .lobby-page [role="tablist"] button {
-    font-size: 0.8125rem !important;
+    font-size: 0.625rem !important;
     padding: 0.60rem 0.5rem !important;
     min-height: 0px !important;
     line-height: 1.2;
@@ -640,7 +640,7 @@
 
   .lobby-page-grid > div:nth-child(2) .h-6.px-2.text-xs,
   .lobby-page-grid > div[class*="col-span-2"] .h-6.px-2.text-xs {
-    font-size: 0.975rem !important;
+    font-size: 0.75rem !important;
   }
 
   /* Optimize inventory filter buttons */
@@ -829,13 +829,16 @@
     flex-shrink: 0;
   }
 
-  /* M5.4 — Bump Tailwind small text utilities by 30% on mobile */
-  .text-xs {
-    font-size: 0.975rem !important;
+  /* M5.4 — Bump smallest secondary copy (+30%): toasts, mission type labels */
+  [data-testid="toast-viewport"] .text-sm {
+    font-size: 1.1375rem !important; /* 0.875rem + 30% */
+    line-height: 1.35;
   }
 
-  .text-\[10px\] {
-    font-size: 0.8125rem !important;
+  .lobby-page-grid > div:nth-child(2) .lobby-mission-type.text-lg.font-mono,
+  .lobby-page-grid > div[class*="col-span-2"] .lobby-mission-type.text-lg.font-mono {
+    font-size: 1.1375rem !important; /* shrunk text-lg.font-mono + 30% */
+    line-height: 1.35;
   }
 
   .safe-area-top {
