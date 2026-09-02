@@ -6,7 +6,7 @@ import { GameCanvas } from '../components/game/GameCanvas';
 import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
-import { pushSectorTimerPause, popSectorTimerPause } from '../lib/game/sectorTimer';
+import { pushSectorTimerPause, popSectorTimerPause, setSectorTimerContext } from '../lib/game/sectorTimer';
 import { Compendium } from '../components/game/Compendium';
 import { OperatorPreview } from '../components/game/OperatorPreview';
 import { GameOverlay } from '../components/game/GameOverlay';
@@ -185,6 +185,13 @@ export default function Game() {
   const [commerceScrollRarity, setCommerceScrollRarity] = useState<Item['rarity'] | null>(null);
   const { toast } = useToast();
   const hasHandledRefresh = useRef(false);
+
+  useEffect(() => {
+    setSectorTimerContext({
+      isMobile,
+      relaxedTimer: state.settings.relaxedTimer === true,
+    });
+  }, [isMobile, state.settings.relaxedTimer]);
 
   // E2e/test hook for settings updates (avoids background canvas intercepting UI clicks)
   useEffect(() => {
@@ -1530,6 +1537,34 @@ export default function Game() {
                         </div>
                       </RadioGroup>
                     </div>
+                    {!isMobile && (
+                      <div data-testid="relaxed-timer-settings">
+                        <label className="text-lg font-pixel text-primary mb-2 block">RELAXED SECTOR TIMER</label>
+                        <RadioGroup
+                          value={(state.settings.relaxedTimer === true).toString()}
+                          onValueChange={(value) => {
+                            dispatch({
+                              type: 'UPDATE_SETTINGS',
+                              payload: { relaxedTimer: value === 'true' },
+                            });
+                          }}
+                          className="flex flex-col gap-3"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="true" id="relaxed-timer-on" data-testid="relaxed-timer-on" style={{ minWidth: '40px' }} />
+                            <label htmlFor="relaxed-timer-on" className="text-sm font-mono text-foreground cursor-pointer">
+                              On (+18% sector time)
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="false" id="relaxed-timer-off" data-testid="relaxed-timer-off" style={{ minWidth: '40px' }} />
+                            <label htmlFor="relaxed-timer-off" className="text-sm font-mono text-foreground cursor-pointer">
+                              Off
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </div>

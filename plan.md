@@ -300,12 +300,12 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
 
 **Tasks:**
-- [ ] **Decouple move speed from DPS:** Introduce separate attack cadence or cooldown floor; update `scaling.ts` `baseAttackRate` assumptions
-- [ ] **Mobile timer adjustment:** +15–20% sector time on mobile OR configurable "relaxed timer" setting; document in constants
-- [ ] **Low-time assist:** When timer < 30s, optional subtle path hint toward exit (BFS distance overlay or compass pulse)
-- [ ] **Attack telegraphs:** Wind-up flash or aim line for sniper, turret, and boss ranged attacks before projectile spawn
-- [ ] **Cerberus tuning:** Revisit tri-bite damage/window per `docs/BALANCE_ANALYSIS.md`; ensure mobile reaction time is feasible
-- [ ] **Hit feedback:** Brief damage flash or floating damage numbers on enemies
+- [x] **Decouple move speed from DPS:** Introduce separate attack cadence or cooldown floor; update `scaling.ts` `baseAttackRate` assumptions
+- [x] **Mobile timer adjustment:** +15–20% sector time on mobile OR configurable "relaxed timer" setting; document in constants
+- [x] **Low-time assist:** When timer < 30s, optional subtle path hint toward exit (BFS distance overlay or compass pulse)
+- [x] **Attack telegraphs:** Wind-up flash or aim line for sniper, turret, and boss ranged attacks before projectile spawn
+- [x] **Cerberus tuning:** Revisit tri-bite damage/window per `docs/BALANCE_ANALYSIS.md`; ensure mobile reaction time is feasible
+- [x] **Hit feedback:** Brief damage flash or floating damage numbers on enemies
 
 **Files:**
 - `client/src/components/game/GameCanvas.tsx`

@@ -55,6 +55,12 @@ export const MODS = [
 
 // Level Configuration
 export const LEVEL_TIME_LIMIT = 120; // Seconds per normal level
+/** +18% sector time on mobile viewports (M6). */
+export const MOBILE_SECTOR_TIMER_MULT = 1.18;
+/** +18% sector time when relaxed timer setting is enabled (M6). */
+export const RELAXED_SECTOR_TIMER_MULT = 1.18;
+/** Show exit path hint when remaining time falls below this threshold (seconds). */
+export const LOW_TIME_ASSIST_SEC = 30;
 export const SHOP_INTERVAL = 4; // Every 4 levels
 export const BOSS_INTERVAL = 8; // Every 8 levels
 // Mob type definitions with cyberpunk Greek/Roman mythology theme

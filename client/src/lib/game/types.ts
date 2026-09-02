@@ -68,6 +68,18 @@ export interface Entity {
   lastDamageComboCount?: number; // For cerberus - tracks which combo count has already dealt damage
   roamDirection?: { x: number; y: number } | null; // For phase mob roaming
   lastRoamChange?: number; // Timestamp of last roam direction change
+  attackTelegraphUntil?: number; // Ranged wind-up end time (ms)
+  attackTelegraphVelocity?: { x: number; y: number }; // Aim direction during wind-up
+  hitFlashUntil?: number; // Brief damage flash end time (ms)
+}
+
+export interface DamageNumber {
+  id: string;
+  pos: Position;
+  amount: number;
+  createdAt: number;
+  lifetime: number;
+  isCrit?: boolean;
 }
 
 export interface Projectile {
@@ -136,6 +148,7 @@ export interface Level {
   projectiles: Projectile[];
   afterimages: Afterimage[];
   particles: Particle[];
+  damageNumbers?: DamageNumber[];
   footprints: Footprint[];
   items: { pos: Position; item: Item }[];
   portals: Portal[];
@@ -191,5 +204,6 @@ export interface GameState {
     touchSensitivity?: number;
     sectorTimerSide?: 'left' | 'right';
     hapticsEnabled?: boolean;
+    relaxedTimer?: boolean;
   };
 }
