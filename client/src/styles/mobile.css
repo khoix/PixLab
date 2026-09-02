@@ -804,6 +804,7 @@
     right: auto;
     left: max(0.25rem, env(safe-area-inset-left, 0px));
     transform-origin: top left;
+    flex-direction: column-reverse;
   }
 
   .mobile-sector-timer-track {

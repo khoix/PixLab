@@ -193,6 +193,41 @@ test.describe('M5 — Mobile UX & controls', () => {
 
     expect(layout?.onLeftEdge).toBe(true);
     expect(layout?.hasLeftClass).toBe(true);
+
+    const labelLayout = await page.evaluate(() => {
+      const bar = document.querySelector('[data-testid="mobile-sector-timer-bar"]') as HTMLElement | null;
+      const label = document.querySelector('[data-testid="hud-sector-timer"]') as HTMLElement | null;
+      const track = document.querySelector('.mobile-sector-timer-track') as HTMLElement | null;
+      if (!bar || !label || !track) return null;
+      const labelRect = label.getBoundingClientRect();
+      const trackRect = track.getBoundingClientRect();
+      return {
+        labelBelowTrack: labelRect.top >= trackRect.bottom - 4,
+        flexDirection: getComputedStyle(bar).flexDirection,
+      };
+    });
+
+    expect(labelLayout?.labelBelowTrack).toBe(true);
+    expect(labelLayout?.flexDirection).toBe('column-reverse');
+  });
+
+  test('operator preview is at top of lobby inventory tab', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.setLobbyTab('loadout');
+    });
+
+    await expect(page.getByTestId('operator-preview')).toBeVisible();
+    const order = await page.evaluate(() => {
+      const preview = document.querySelector('[data-testid="operator-preview"]');
+      const equipped = document.querySelector('.lobby-tab-panel h4.font-pixel.text-lg.text-primary');
+      if (!preview || !equipped) return null;
+      return preview.compareDocumentPosition(equipped) & Node.DOCUMENT_POSITION_FOLLOWING;
+    });
+    expect(order).toBeTruthy();
   });
 
   test('mobile small text utilities are 30% larger', async ({ page }) => {

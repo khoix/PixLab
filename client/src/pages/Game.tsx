@@ -8,6 +8,7 @@ import { DirectionalPadControl } from '../components/game/DirectionalPadControl'
 import { HUD } from '../components/game/HUD';
 import { pushSectorTimerPause, popSectorTimerPause } from '../lib/game/sectorTimer';
 import { Compendium } from '../components/game/Compendium';
+import { OperatorPreview } from '../components/game/OperatorPreview';
 import { GameOverlay } from '../components/game/GameOverlay';
 import { GameEventLogViewer } from '../components/game/GameEventLogViewer';
 import { eventLogger } from '../lib/game/eventLogger';
@@ -923,6 +924,8 @@ export default function Game() {
                 </TabsContent>
 
                 <TabsContent value="loadout" className="lobby-tab-panel mt-0 h-full overflow-y-auto scroll-touch space-y-4">
+                  <OperatorPreview />
+
                   {/* Equipped Items Section */}
                   <div className="border border-primary/30 p-3 bg-primary/5">
                     <h4 className="font-pixel text-lg text-primary mb-2">EQUIPPED</h4>
