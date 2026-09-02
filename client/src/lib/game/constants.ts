@@ -1,6 +1,11 @@
 export const TILE_SIZE = 32; // Pixels
 export const VIEWPORT_WIDTH = 11;
 export const VIEWPORT_HEIGHT = 15;
+// Where the player sits on screen as a fraction of the viewport. X is centred;
+// Y is lifted 7% above centre so more of the maze shows below the player and
+// thumbs on the lower half of the screen have room to work.
+export const PLAYER_SCREEN_ANCHOR_X = 0.5;
+export const PLAYER_SCREEN_ANCHOR_Y = 0.43;
 
 export const COLORS = {
   wall: '#1a1a2e',

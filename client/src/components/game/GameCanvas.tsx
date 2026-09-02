@@ -2264,9 +2264,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
-    // Use visual position for camera to follow smooth movement
-    const camX = visualPosRef.current.x * TILE_SIZE - logicalWidth / 2 + TILE_SIZE / 2;
-    const camY = visualPosRef.current.y * TILE_SIZE - logicalHeight / 2 + TILE_SIZE / 2;
+    // Use visual position for camera to follow smooth movement; the player is
+    // pinned to the screen anchor (centred horizontally, lifted above centre).
+    const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
+    const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
 
     ctx.save();
     ctx.translate(-camX, -camY);
@@ -3370,9 +3371,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     if (levelRef.current && (activeScrollEffectsRef.current.threatSense || activeScrollEffectsRef.current.lootSense)) {
       ctx.save();
       
-      // Calculate player screen position
-      const playerScreenX = logicalWidth / 2;
-      const playerScreenY = logicalHeight / 2;
+      // Player screen position (same anchor the camera and fog use)
+      const playerScreenX = frame.playerScreenX;
+      const playerScreenY = frame.playerScreenY;
       const visionRadius = frame.visionRadiusPx;
       
       // Draw Threat-sense: All enemies

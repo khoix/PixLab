@@ -39,6 +39,24 @@ test.describe('M3 — Canvas DPR and fog cache', () => {
     expect(stats!.blitCount).toBeGreaterThan(0);
     expect(stats!.blitCount).toBeGreaterThan(stats!.rebuildCount);
   });
+
+  test('player (fog centre) sits 7% above the vertical middle of the canvas', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await startSectorRun(page);
+    await page.waitForTimeout(300);
+
+    const info = await page.evaluate(() => {
+      const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+      const dims = window.__PIXLAB_CANVAS__!.getDimensions(canvas);
+      // Fog key is "w:h:dpr:centerX:centerY:radius"; the fog is centred on the player.
+      const [, , , centerX, centerY] = window.__PIXLAB_FOG__!.getStats().lastKey.split(':').map(Number);
+      return { dims, centerX, centerY };
+    });
+
+    expect(info.centerX).toBeCloseTo(info.dims.logicalWidth / 2, 0);
+    expect(info.centerY).toBeCloseTo(info.dims.logicalHeight * 0.43, 0);
+    expect(info.centerY).toBeLessThan(info.dims.logicalHeight / 2 - info.dims.logicalHeight * 0.06);
+  });
 });
 
 test.describe('M2/M3 — mobile backing-store pixel budget', () => {
