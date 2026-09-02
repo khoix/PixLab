@@ -1,5 +1,10 @@
 import { getEffectiveStats } from '../stats';
 import { buildModifiers, type ModifierSnapshot } from '../modifiers';
+import {
+  PLAYER_SCREEN_ANCHOR_X,
+  PLAYER_SCREEN_ANCHOR_Y_DESKTOP,
+  PLAYER_SCREEN_ANCHOR_Y_MOBILE,
+} from '../constants';
 import type { GameState, PlayerStats } from '../types';
 
 export type { ModifierSnapshot };
@@ -15,6 +20,9 @@ export interface DrawFrameSnapshot {
   visionBoost: number;
   visionRadiusPx: number;
   fogRadius: number;
+  /** Screen-space position of the player's tile centre; the camera and fog are built around it. */
+  playerScreenX: number;
+  playerScreenY: number;
   fogCenterX: number;
   fogCenterY: number;
 }
@@ -29,6 +37,7 @@ interface BuildDrawFrameSnapshotInput {
   logicalWidth: number;
   logicalHeight: number;
   tileSize: number;
+  isMobileViewport: boolean;
   now?: number;
 }
 
@@ -56,6 +65,9 @@ export function buildDrawFrameSnapshot(input: BuildDrawFrameSnapshotInput): Draw
 
   const fogRadius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * input.tileSize;
   const visionRadiusPx = fogRadius;
+  const playerScreenX = input.logicalWidth * PLAYER_SCREEN_ANCHOR_X;
+  const anchorY = input.isMobileViewport ? PLAYER_SCREEN_ANCHOR_Y_MOBILE : PLAYER_SCREEN_ANCHOR_Y_DESKTOP;
+  const playerScreenY = input.logicalHeight * anchorY;
 
   return {
     modifiers,
@@ -67,7 +79,9 @@ export function buildDrawFrameSnapshot(input: BuildDrawFrameSnapshotInput): Draw
     visionBoost,
     visionRadiusPx,
     fogRadius,
-    fogCenterX: input.logicalWidth / 2,
-    fogCenterY: input.logicalHeight / 2,
+    playerScreenX,
+    playerScreenY,
+    fogCenterX: playerScreenX,
+    fogCenterY: playerScreenY,
   };
 }

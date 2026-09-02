@@ -39,6 +39,37 @@ test.describe('M3 — Canvas DPR and fog cache', () => {
     expect(stats!.blitCount).toBeGreaterThan(0);
     expect(stats!.blitCount).toBeGreaterThan(stats!.rebuildCount);
   });
+
+  // Fog key is "w:h:dpr:centerX:centerY:radius"; the fog is centred on the player.
+  const readPlayerAnchor = (page: import('@playwright/test').Page) =>
+    page.evaluate(() => {
+      const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+      const dims = window.__PIXLAB_CANVAS__!.getDimensions(canvas);
+      const [, , , centerX, centerY] = window.__PIXLAB_FOG__!.getStats().lastKey.split(':').map(Number);
+      return { dims, centerX, centerY };
+    });
+
+  test('mobile: player (fog centre) sits 7% above the vertical middle of the canvas', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await startSectorRun(page);
+    await page.waitForTimeout(300);
+
+    // The fog key stores rounded centres, so allow 1px.
+    const info = await readPlayerAnchor(page);
+    expect(Math.abs(info.centerX - info.dims.logicalWidth / 2)).toBeLessThanOrEqual(1);
+    expect(Math.abs(info.centerY - info.dims.logicalHeight * 0.43)).toBeLessThanOrEqual(1);
+    expect(info.centerY).toBeLessThan(info.dims.logicalHeight / 2 - info.dims.logicalHeight * 0.06);
+  });
+
+  test('desktop: player (fog centre) stays dead-centre', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await startSectorRun(page);
+    await page.waitForTimeout(300);
+
+    const info = await readPlayerAnchor(page);
+    expect(Math.abs(info.centerX - info.dims.logicalWidth / 2)).toBeLessThanOrEqual(1);
+    expect(Math.abs(info.centerY - info.dims.logicalHeight / 2)).toBeLessThanOrEqual(1);
+  });
 });
 
 test.describe('M2/M3 — mobile backing-store pixel budget', () => {
