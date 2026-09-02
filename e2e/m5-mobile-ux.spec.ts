@@ -231,13 +231,13 @@ test.describe('M5 — Mobile UX & controls', () => {
       const healRect = heal.getBoundingClientRect();
       const labelRect = label.getBoundingClientRect();
       return {
-        bottomsAligned: Math.abs(timerRect.bottom - healRect.bottom) <= 4,
+        timerBottomAtHealTop: Math.abs(timerRect.bottom - healRect.top) <= 4,
         labelOnScreen: labelRect.left >= 2,
         labelFullyVisible: labelRect.right <= window.innerWidth - 2,
       };
     });
 
-    expect(healAlignment?.bottomsAligned).toBe(true);
+    expect(healAlignment?.timerBottomAtHealTop).toBe(true);
     expect(healAlignment?.labelOnScreen).toBe(true);
     expect(healAlignment?.labelFullyVisible).toBe(true);
 

@@ -769,6 +769,10 @@
   .relative.w-full.h-screen,
   .relative.w-full.h-full {
     --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    --mobile-quick-heal-height: 3.5rem;
+    --mobile-left-timer-bottom: calc(
+      var(--mobile-quick-actions-bottom) + var(--mobile-quick-heal-height)
+    );
     --mobile-left-timer-top: calc(env(safe-area-inset-top, 0px) + 7.75rem);
   }
 
@@ -813,7 +817,10 @@
     transform-origin: bottom left;
     flex-direction: column-reverse;
     top: var(--mobile-left-timer-top);
-    bottom: var(--mobile-quick-actions-bottom, calc(env(safe-area-inset-bottom, 0px) + 6.5rem));
+    bottom: var(
+      --mobile-left-timer-bottom,
+      calc(env(safe-area-inset-bottom, 0px) + 10rem)
+    );
     width: 2.75rem;
     align-items: center;
   }
@@ -903,6 +910,7 @@
     .relative.w-full.h-screen,
     .relative.w-full.h-full {
       --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+      --mobile-quick-heal-height: 3rem;
       --mobile-left-timer-top: calc(env(safe-area-inset-top, 0px) + 7rem);
     }
 
