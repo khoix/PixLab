@@ -2259,13 +2259,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       logicalWidth,
       logicalHeight,
       tileSize: TILE_SIZE,
+      isMobileViewport,
     });
 
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
     // Use visual position for camera to follow smooth movement; the player is
-    // pinned to the screen anchor (centred horizontally, lifted above centre).
+    // pinned to the screen anchor (centred horizontally; lifted above centre on mobile).
     const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
     const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
 

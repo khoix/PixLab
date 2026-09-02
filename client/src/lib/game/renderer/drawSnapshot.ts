@@ -1,6 +1,10 @@
 import { getEffectiveStats } from '../stats';
 import { buildModifiers, type ModifierSnapshot } from '../modifiers';
-import { PLAYER_SCREEN_ANCHOR_X, PLAYER_SCREEN_ANCHOR_Y } from '../constants';
+import {
+  PLAYER_SCREEN_ANCHOR_X,
+  PLAYER_SCREEN_ANCHOR_Y_DESKTOP,
+  PLAYER_SCREEN_ANCHOR_Y_MOBILE,
+} from '../constants';
 import type { GameState, PlayerStats } from '../types';
 
 export type { ModifierSnapshot };
@@ -33,6 +37,7 @@ interface BuildDrawFrameSnapshotInput {
   logicalWidth: number;
   logicalHeight: number;
   tileSize: number;
+  isMobileViewport: boolean;
   now?: number;
 }
 
@@ -61,7 +66,8 @@ export function buildDrawFrameSnapshot(input: BuildDrawFrameSnapshotInput): Draw
   const fogRadius = (effectiveStats.visionRadius + visionBoost) * visionMultiplier * input.tileSize;
   const visionRadiusPx = fogRadius;
   const playerScreenX = input.logicalWidth * PLAYER_SCREEN_ANCHOR_X;
-  const playerScreenY = input.logicalHeight * PLAYER_SCREEN_ANCHOR_Y;
+  const anchorY = input.isMobileViewport ? PLAYER_SCREEN_ANCHOR_Y_MOBILE : PLAYER_SCREEN_ANCHOR_Y_DESKTOP;
+  const playerScreenY = input.logicalHeight * anchorY;
 
   return {
     modifiers,
