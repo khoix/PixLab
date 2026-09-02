@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useToast } from '../hooks/use-toast';
 import pixlabImage from '../assets/pixlab3.PNG';
+import { audioManager, startThemeMusic } from '../lib/audio';
 
 export default function Home() {
   const { dispatch, resetGame, loadFromCode } = useGame();
@@ -12,7 +13,14 @@ export default function Home() {
   const [codeInput, setCodeInput] = React.useState('');
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    if (audioManager.initialized) {
+      startThemeMusic();
+    }
+  }, []);
+
   const handleStart = () => {
+    startThemeMusic();
     // If no code is inputted, start a new game from Sector 1
     if (codeInput.length === 0) {
       resetGame();
@@ -27,6 +35,7 @@ export default function Home() {
   };
 
   const handleLoad = () => {
+    startThemeMusic();
     if (codeInput.length > 0) {
       const success = loadFromCode(codeInput);
       if (success) {

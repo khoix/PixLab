@@ -584,20 +584,28 @@ export default function Game() {
     }
   }, [gameOverState]);
 
+  const prevScreenRef = useRef(state.screen);
+
   // Play music based on current screen
   useEffect(() => {
-    audioManager.resume();
-    
+    void audioManager.resume();
+
+    const prev = prevScreenRef.current;
+
     if (state.screen === 'lobby') {
-      audioManager.playMusic('lobby');
+      const fromGameplay = prev === 'run' || prev === 'shop';
+      audioManager.playMusic(fromGameplay ? 'lobbyReturn' : 'theme');
     } else if (state.screen === 'shop') {
-      audioManager.playMusic('shop');
+      audioManager.playMusic('vendor');
     } else if (state.screen === 'run') {
-      // Stop lobby/shop loop; GameCanvas starts combat/boss when the level loads
-      audioManager.stopMusic();
+      // GameCanvas (child) also requests maze on level load; this parent effect
+      // runs after it, so it must not stop music or it clobbers that track.
+      audioManager.playMusic('maze');
     } else {
       audioManager.stopMusic();
     }
+
+    prevScreenRef.current = state.screen;
   }, [state.screen]);
 
   // Update audio volumes when settings change
