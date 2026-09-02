@@ -93,16 +93,76 @@ test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
     const overlay = page.getByTestId('broadcast-glitch');
     await expect(overlay).toHaveAttribute('data-active', 'false');
 
-    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch'));
+    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch', 'tear'));
     await expect(screen).toHaveAttribute('data-glitching', 'true');
+    await expect(screen).toHaveAttribute('data-glitch-variant', 'tear');
     await expect(overlay).toHaveAttribute('data-active', 'true');
+    await expect(overlay).toHaveAttribute('data-variant', 'tear');
     const titleAnimation = await page
       .locator('[data-testid="title-screen"] .glitch-title')
       .evaluate((el) => getComputedStyle(el).animationName);
     expect(titleAnimation).toBe('broadcast-title-tear');
 
     await expect(screen).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
+    await expect(screen).toHaveAttribute('data-glitch-variant', '');
     await expect(overlay).toHaveAttribute('data-active', 'false');
+  });
+
+  test('five distinct glitch variants each drive their own title and overlay animations', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('start-run-button').waitFor();
+
+    const expected: Record<string, { title: string; layer: string; layerAnimation: string }> = {
+      tear: { title: 'broadcast-title-tear', layer: '.broadcast-glitch__band', layerAnimation: 'broadcast-band-sweep' },
+      roll: { title: 'broadcast-roll-title', layer: '.broadcast-glitch__blanking', layerAnimation: 'broadcast-blanking-roll' },
+      static: { title: 'broadcast-static-title', layer: '.broadcast-glitch__noise', layerAnimation: 'broadcast-noise-burst' },
+      chroma: { title: 'broadcast-chroma-title', layer: '.broadcast-glitch__scanlines', layerAnimation: 'broadcast-scanline-breathe' },
+      hsync: { title: 'broadcast-hsync-title', layer: '.broadcast-glitch__strip--2', layerAnimation: 'broadcast-strip-slip-right' },
+    };
+
+    const seenTitleAnimations = new Set<string>();
+    for (const [variant, want] of Object.entries(expected)) {
+      await page.evaluate((v) => window.__PIXLAB_FX__?.trigger('glitch', v), variant);
+      await expect(page.getByTestId('title-screen')).toHaveAttribute('data-glitch-variant', variant);
+      await expect(page.getByTestId('broadcast-glitch')).toHaveAttribute('data-variant', variant);
+
+      const [titleAnimation, layerAnimation] = await page.evaluate((selector) => {
+        const title = document.querySelector('[data-testid="title-screen"] .glitch-title') as HTMLElement;
+        const layer = document.querySelector(`[data-testid="broadcast-glitch"] ${selector}`) as HTMLElement;
+        return [getComputedStyle(title).animationName, getComputedStyle(layer).animationName];
+      }, want.layer);
+      expect(titleAnimation, `${variant} title`).toBe(want.title);
+      expect(layerAnimation, `${variant} overlay layer`).toBe(want.layerAnimation);
+      seenTitleAnimations.add(titleAnimation);
+
+      await expect(page.getByTestId('title-screen')).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
+    }
+    expect(seenTitleAnimations.size).toBe(5);
+  });
+
+  test('automatic pulses rotate variants without immediate repeats and cover all five', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('start-run-button').waitFor();
+
+    const result = await page.evaluate(() => {
+      const pick = window.__PIXLAB_FX__!.pickGlitchVariant;
+      const seen = new Set<string>();
+      let previous: ReturnType<typeof pick> | null = null;
+      let repeats = 0;
+      for (let i = 0; i < 300; i++) {
+        const next = pick(previous);
+        if (next === previous) repeats++;
+        seen.add(next);
+        previous = next;
+      }
+      // Deterministic edge: random() returning ~1 must still yield a valid variant.
+      const edge = pick('tear', () => 0.999999);
+      return { repeats, variants: [...seen].sort(), edge };
+    });
+
+    expect(result.repeats).toBe(0);
+    expect(result.variants).toEqual(['chroma', 'hsync', 'roll', 'static', 'tear']);
+    expect(['chroma', 'hsync', 'roll', 'static']).toContain(result.edge);
   });
 
   test('glitch pulse also runs on the lobby (main menu)', async ({ page }) => {
@@ -112,9 +172,13 @@ test.describe('Menu ambience — broadcast glitch and title glimmer', () => {
 
     const lobby = page.getByTestId('lobby-screen');
     await expect(lobby).toHaveAttribute('data-glitching', 'false');
-    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch'));
+    await page.evaluate(() => window.__PIXLAB_FX__?.trigger('glitch', 'roll'));
     await expect(lobby).toHaveAttribute('data-glitching', 'true');
+    await expect(lobby).toHaveAttribute('data-glitch-variant', 'roll');
     await expect(lobby.getByTestId('broadcast-glitch')).toHaveAttribute('data-active', 'true');
+    expect(
+      await lobby.locator('.glitch-title').evaluate((el) => getComputedStyle(el).animationName),
+    ).toBe('broadcast-roll-title');
     await expect(lobby).toHaveAttribute('data-glitching', 'false', { timeout: 3000 });
   });
 

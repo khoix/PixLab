@@ -411,7 +411,17 @@ The settings **MUSIC VOLUME** slider set the music `GainNode`, but on iPhone it 
 ### Added
 - **`client/src/lib/musicPreload.ts`** — downloads every track of the active rendition on the title screen with streamed byte progress, stores responses in the Cache API (`pixlab-music-v1`, stale hashes pruned) and hands `blob:` URLs to the audio manager, so track switches never touch the network. Idempotent across remounts; a failed download degrades to on-demand streaming.
 - **Title screen gate** (`Home.tsx`, `use-music-preload.ts`, `MusicPreloadBar.tsx`) — START RUN and the code prompt are replaced by a pixel-styled progress bar ("TUNING BROADCAST", segmented neon fill, scanlines, sweep) until preloading completes; shown for at least 700 ms so it never flashes, and capped at 45 s so a stalled connection cannot hold the menu hostage. Returning to the title mid-session skips the bar.
-- **Broadcast glitch** (`components/BroadcastGlitch.tsx`, `lib/fx.ts`, `hooks/use-random-pulse.ts`) — every 6–14 s a ~380 ms pulse sweeps an RGB-fringed tear band and sync line over the screen, flickers a scanline field and tears the title with a chromatic split. Runs on the title screen and the lobby; `BroadcastGlitchScope` owns the state so the heavy `Game` page is not re-rendered per pulse.
+- **Broadcast glitch** (`components/BroadcastGlitch.tsx`, `lib/fx.ts`, `lib/glitchVariants.ts`, `hooks/use-random-pulse.ts`) — five variants rotate at random, never repeating back-to-back, every 9–24 s (first after 3 s), each with its own duration so pulses don't feel metronomic. Runs on the title screen and the lobby; `BroadcastGlitchScope` owns the state so the heavy `Game` page is not re-rendered per pulse.
+
+  | Variant | Duration | What happens |
+  |---------|----------|--------------|
+  | `tear` | 380 ms | RGB-fringed tear band + bright sync line sweep, scanline flicker, chromatic title split, panel jitter (the original) |
+  | `roll` | 560 ms | Vertical hold slips: picture rolls up ~26 px and snaps back behind a bright-edged flyback bar; title stretches vertically |
+  | `static` | 320 ms | Signal-noise burst (SVG `feTurbulence` tile, stepped frames) with brightness/contrast flicker and a washed-out title |
+  | `chroma` | 720 ms | Slow chromatic aberration: cyan/magenta channels drift up to 9 px apart with a skew, then snap back into register |
+  | `hsync` | 460 ms | Horizontal sync slip: three block-noise strips skid left/right while the panel smears sideways and the title skews |
+
+  The screen root exposes `data-glitching` / `data-glitch-variant`; the overlay exposes `data-variant`. `window.__PIXLAB_FX__.trigger('glitch', variant)` fires a specific one; `pickGlitchVariant(previous)` is exposed for tests.
 - **Sword & shield glimmer** — a diagonal light sweep masked to the `pixlab3.PNG` artwork (`mask-image`) fires every 5–11 s on the title screen.
 - Both effects honour `prefers-reduced-motion` (no automatic scheduling, CSS animations disabled).
 - Test hooks: `window.__PIXLAB_FX__` (`trigger`, `isActive`, `getFireCount`), `__PIXLAB_AUDIO__.getPreloadState/getGraphKickCount/getTrackSources`; test ids `title-screen`, `lobby-screen`, `title-menu`, `title-glint`, `music-preload*`, `broadcast-glitch`.
