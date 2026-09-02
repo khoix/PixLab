@@ -209,6 +209,17 @@ test.describe('M5 — Mobile UX & controls', () => {
 
     expect(labelLayout?.labelBelowTrack).toBe(true);
     expect(labelLayout?.flexDirection).toBe('column-reverse');
+
+    const hudClearance = await page.evaluate(() => {
+      const stats = document.querySelector('.mobile-hud-stats') as HTMLElement | null;
+      const timer = document.querySelector('.mobile-sector-timer--left') as HTMLElement | null;
+      if (!stats || !timer) return null;
+      const statsRect = stats.getBoundingClientRect();
+      const timerRect = timer.getBoundingClientRect();
+      return { timerBelowHud: timerRect.top >= statsRect.bottom - 4 };
+    });
+
+    expect(hudClearance?.timerBelowHud).toBe(true);
   });
 
   test('operator preview is at top of lobby inventory tab', async ({ page }) => {

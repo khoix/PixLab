@@ -805,6 +805,8 @@
     left: max(0.25rem, env(safe-area-inset-left, 0px));
     transform-origin: top left;
     flex-direction: column-reverse;
+    /* Below top-left HUD (safe-area + padding + HP + coins rows) */
+    top: calc(env(safe-area-inset-top, 0px) + 6.5rem);
   }
 
   .mobile-sector-timer-track {
