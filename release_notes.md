@@ -306,6 +306,20 @@ npm run test:e2e:ui     # interactive UI mode
 
 ---
 
+## Lobby UX — Operator Preview & Left Timer Label
+
+**Branch:** `cursor/PixLab`  
+**Status:** Ready for review
+
+### Changed
+- **Left sector timer** — seconds label moves to the bottom of the bar when timer is on the left edge
+- **Operator preview** — moved from Compendium to the top of the lobby Inventory tab; OPERATOR header removed
+
+### Verification
+- E2e: `e2e/m5-mobile-ux.spec.ts` — left timer label below track, operator preview in inventory
+
+---
+
 ## PWA — Add to Home Screen URL
 
 **Branch:** `cursor/PixLab`  

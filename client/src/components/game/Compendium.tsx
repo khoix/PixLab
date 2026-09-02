@@ -2,29 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useGame } from '../../lib/store';
 import { MobSubtype } from '../../lib/game/types';
-import { renderOperatorWithGear, getMobCardData, getAllMobSubtypes, MOB_CARD_DATA, getMobPreviewRenderer, renderMobImageOnly } from '../../lib/game/compendium';
+import { getAllMobSubtypes, MOB_CARD_DATA, getMobPreviewRenderer, renderMobImageOnly } from '../../lib/game/compendium';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { cn } from '../../lib/utils';
 
 export const Compendium: React.FC = () => {
   const { state } = useGame();
-  const playerCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedCard, setSelectedCard] = useState<MobSubtype | null>(null);
-  const [playerLoading, setPlayerLoading] = useState(true);
-
-  // Render player when loadout changes
-  useEffect(() => {
-    if (playerCanvasRef.current) {
-      setPlayerLoading(true);
-      renderOperatorWithGear(playerCanvasRef.current, state.loadout)
-        .then(() => setPlayerLoading(false))
-        .catch((err) => {
-          console.error('Failed to render operator:', err);
-          setPlayerLoading(false);
-        });
-    }
-  }, [state.loadout]);
 
   const unlockedCount = state.compendium.length;
   const totalCount = getAllMobSubtypes().length;
@@ -33,27 +17,8 @@ export const Compendium: React.FC = () => {
     return state.compendium.includes(subtype);
   };
 
-  const selectedCardData = selectedCard ? getMobCardData(selectedCard) : null;
-
   return (
     <div className="space-y-6">
-      {/* Player Section */}
-      <Card className="bg-card/90 border-primary/20 pixel-corners">
-        <CardHeader>
-          <CardTitle className="text-primary text-xl font-pixel">OPERATOR</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <canvas
-              ref={playerCanvasRef}
-              className="border border-primary/30 bg-black"
-              style={{ imageRendering: 'pixelated' }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mob Cards Section */}
       <Card className="bg-card/90 border-primary/20 pixel-corners">
         <CardHeader>
           <CardTitle className="text-primary text-xl font-pixel">
