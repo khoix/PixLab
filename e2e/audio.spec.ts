@@ -88,7 +88,13 @@ test.describe('Music volume setting', () => {
 
     const audio = await readAudio(page);
     expect(audio.format).toBe('webm');
-    expect(audio.sourceUrl).toMatch(/\.webm(\?|$)/);
+    // Playback comes from the preloaded blob; the blob was built from the WebM asset.
+    expect(audio.sourceUrl).toMatch(/^blob:/);
+    const sources = await page.evaluate(() => window.__PIXLAB_AUDIO__?.getTrackSources() ?? null);
+    expect(Object.values(sources ?? {})).toHaveLength(4);
+    for (const url of Object.values(sources ?? {})) {
+      expect(url).toMatch(/\.webm(\?|$)/);
+    }
   });
 
   test('WebKit browsers are steered to the AAC rendition (WebKit 276813)', async ({ page }) => {
