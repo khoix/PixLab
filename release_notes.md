@@ -1,5 +1,80 @@
 # Release Notes
 
+## Milestone 6.1 — Mob Balance Pass
+
+**Branch:** `claude/pixlab-mob-fixes`  
+**Status:** Ready for review
+
+A balance review of the full mob roster. The headline suspect (Hades Phase) turned
+out to be a mechanics problem rather than a stat problem, and the review surfaced
+four issues with more impact than it.
+
+### Fixed
+
+- **Incoming damage was inverted.** `(base - defense) * (1 - hpRatio * 0.3)` made
+  the player take 70% of a hit at full HP and 97% at 10% HP — mobs hit hardest
+  exactly when the player was closest to dying. Replaced with a real mercy term
+  (`combat/damageModel.ts`): full HP takes the whole hit, near-death lands at 70%.
+- **Hades Phase.** Its stats were below average; four mechanics compounded instead.
+  Melee damage is now line-of-sight gated (`combat/meleeLineOfSight.ts`), matching
+  the rule the player's own attacks already followed — a mob embedded in a wall
+  could previously hit a player who had no way to hit back. Phasing is capped at
+  3 consecutive wall tiles (`ai/phaseBudget.ts`) so the maze is cover again, and
+  cadence/detection soften (`attackCooldown` 400 → 600, `aggroRange` 5 → 4).
+- **Minion Swarm dominated the population.** Spawn weights are rolled per
+  *selection* but a swarm selection spawns 2–3 entities, making swarm 67% of
+  level-1 mobs and 37% at sector 30. The "cap at 50 enemies" counted selections
+  too, so sector 30 generated ~62. `spawnWeight` 25 → 10 and the generation loop
+  now counts entities.
+- **Nyx vision debuff could end a run.** Stacked to 1.0 (total blindness) against
+  2%/s decay: one moth blinded the player in ~9s and needed 50s to clear on a
+  120s timer, with an unreachable lightswitch as the only cure. Now capped at 0.6,
+  decaying at 8%/s (~8s to clear), one stack per source per 3s
+  (`combat/visionDebuff.ts`). A moth pack is still worse than a single moth.
+- **Archetype ordering was inverted at depth.** The level-1 Hermes Drone
+  out-damaged the Athena Guardian (unlocked at 29) by 1.4× at sector 30. Drone
+  `damagePerLevel` 1 → 0.7 and archetype `dmg` 1.0 → 0.8; Ares Charger
+  `attackCooldown` 600 → 900, since it already carries `moveSpeed` 1.8 and a charge.
+- **Applied the tuning `docs/BALANCE_ANALYSIS.md` claimed but never shipped.**
+  Moth speed/level 0.03 → 0.015 and min cooldown 850 → 950ms; tracker 0.04 → 0.02
+  and 1050 → 1100ms; cerberus `baseDamage` 7 → 6, `damagePerLevel` 1.2 → 1.0, min
+  cooldown 1400 → 1500ms. At L20 the tracker now reaches speed 1.95 rather than
+  2.35 — the "way too fast" case that document flagged and then did not fix.
+
+### Changed
+
+- Per-level speed/cadence ramps moved out of `engine.ts` and `demoSpawn.ts` into
+  `MobTypeDef` (`speedPerLevel`, `cooldownPerLevel`, `minCooldown`), so all mob
+  tuning lives in `constants.ts`. `mobBalance.ts` holds the shared ramp,
+  spawn-share and relative-DPS maths used by generation and by the tests.
+- Progressive mob introduction now reads `MobTypeDef.minLevel` instead of a
+  hardcoded ladder in `engine.ts` that mirrored the same values — two sources of
+  truth for one rule. The roster per level is unchanged and pinned by a test.
+- Moth blink interval is rolled once and stored (`nextBlinkAt`) instead of being
+  re-rolled every tick, and orbit angle advances by elapsed time rather than per
+  tick — both previously made the moth's behaviour depend on how often the M7 AI
+  scheduler happened to tick it.
+- `docs/BALANCE_ANALYSIS.md` rewritten to describe the code as it is, with a note
+  about the stale "Fixes Applied" section that prompted this pass.
+- CI now also runs on `claude/**` branches.
+- Test hooks: `window.__PIXLAB_MOB_BALANCE__`, `__PIXLAB_DAMAGE__`,
+  `__PIXLAB_VISION_DEBUFF__`, `__PIXLAB_PHASE__`, `__PIXLAB_MELEE_LOS__`;
+  `__PIXLAB_LEVEL__.getPlayerHp` / `.isWall`.
+
+### Verification
+
+- `e2e/m6-1-mob-balance.spec.ts` (10 tests): mercy term monotonic and floored,
+  defense applied before it, minimum 1 damage; vision debuff capped, rate-limited
+  per source, clears inside a sector, pack still worse than solo; phase budget
+  blocks at 3 wall tiles and resets on surfacing; melee reach denied into a wall
+  tile and through a wall, allowed on adjacent floor and same tile; a live phasing
+  mob does not stay embedded; swarm below 50% of level-1 population and 30% at
+  L30; the level-30 entity count stays within the 50 cap; the `minLevel` roster
+  matches the documented ladder at every unlock boundary; drone below guardian and
+  turret at L30; ramps match the documented values.
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Branch:** `cursor/m7-ai-perf-aa59`  
