@@ -384,15 +384,18 @@ wall-clock resume fast-forwards all of them at once.
 - [x] Route every game-loop and draw `Date.now()` read through `getGameNow()`
 - [x] Skip `update()` while paused, keep drawing, keep `lastTimeRef` current
 - [x] Pause the clock wherever the timer is already paused (`Game.tsx` dialogs, `GameCanvas` bonus selection)
+- [x] Pause the run's music with it — the track is scored against the sector timer, so running on desyncs it permanently (`subscribeGamePause` listener, separate flag from the visibility pause so the two compose)
 
 **Files:**
-- `client/src/lib/game/gameClock.ts` (new), `client/src/components/game/GameCanvas.tsx`, `client/src/pages/Game.tsx`, `client/src/main.tsx`
+- `client/src/lib/game/gameClock.ts` (new), `client/src/lib/audio.ts`, `client/src/components/game/GameCanvas.tsx`, `client/src/pages/Game.tsx`, `client/src/main.tsx`
 - `e2e/m6-2-pause.spec.ts`
 
 **Exit criteria:**
 - No mob moves or attacks while a run dialog is open
 - No burst of banked attacks on the first frame after resume
 - Sector timer and game clock pause and resume together
+- The run's music holds its position while paused and resumes from it
+- Verified on both the desktop and mobile Playwright projects
 
 **Depends on:** Milestone 4 (dialog pause reasons), Milestone 7 (scheduler stats used to assert the loop is idle)
 

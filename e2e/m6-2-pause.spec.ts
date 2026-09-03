@@ -146,3 +146,76 @@ test.describe('M6.2 — the run pauses, not just the countdown', () => {
     expect(after).toEqual({ timer: false, clock: false });
   });
 });
+
+test.describe('M6.2 — music freezes with the run', () => {
+  test('the run track pauses and keeps its position while a dialog is open', async ({ page }) => {
+    await startSectorRun(page);
+    // Music needs a user gesture; the run-start clicks provide it.
+    await page.waitForTimeout(600);
+
+    const playingBefore = await page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPlaying());
+    test.skip(!playingBefore, 'music did not start (autoplay blocked in this environment)');
+
+    await page.getByTestId('game-menu-button').click();
+    await expect.poll(() => page.evaluate(() => window.__PIXLAB_CLOCK__!.isPaused())).toBe(true);
+
+    await expect
+      .poll(() => page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPausedForGamePause()))
+      .toBe(true);
+    expect(await page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPlaying())).toBe(false);
+
+    // The track is scored against the sector timer, so its position must hold —
+    // neither running on nor restarting from zero.
+    const atPause = await page.evaluate(() => window.__PIXLAB_AUDIO__!.getMusicCurrentTime());
+    expect(atPause).not.toBeNull();
+    expect(atPause!).toBeGreaterThan(0);
+    await page.waitForTimeout(1200);
+    const stillPaused = await page.evaluate(() => window.__PIXLAB_AUDIO__!.getMusicCurrentTime());
+    expect(Math.abs(stillPaused! - atPause!)).toBeLessThan(0.15);
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.evaluate(() => window.__PIXLAB_CLOCK__!.isPaused())).toBe(false);
+    await expect
+      .poll(() => page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPausedForGamePause()))
+      .toBe(false);
+    await expect.poll(() => page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPlaying())).toBe(true);
+
+    // Resumes from where it stopped, not from the start.
+    const afterResume = await page.evaluate(() => window.__PIXLAB_AUDIO__!.getMusicCurrentTime());
+    expect(afterResume!).toBeGreaterThanOrEqual(atPause! - 0.05);
+  });
+
+  test('re-arming the same track behind an open dialog does not restart it', async ({ page }) => {
+    await startSectorRun(page);
+    await page.waitForTimeout(600);
+    const playing = await page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPlaying());
+    test.skip(!playing, 'music did not start (autoplay blocked in this environment)');
+
+    await page.getByTestId('game-menu-button').click();
+    await expect
+      .poll(() => page.evaluate(() => window.__PIXLAB_AUDIO__!.isMusicPausedForGamePause()))
+      .toBe(true);
+
+    const before = await page.evaluate(() => {
+      const track = window.__PIXLAB_AUDIO__!.getCurrentTrack();
+      return { track, time: window.__PIXLAB_AUDIO__!.getMusicCurrentTime() };
+    });
+
+    // A re-render calling playMusic for the track already loaded must be a no-op
+    // while paused, rather than resuming or seeking to zero.
+    await page.evaluate(() => window.__PIXLAB_TEST__?.setCoins(1));
+    await page.waitForTimeout(400);
+
+    const after = await page.evaluate(() => ({
+      playing: window.__PIXLAB_AUDIO__!.isMusicPlaying(),
+      paused: window.__PIXLAB_AUDIO__!.isMusicPausedForGamePause(),
+      time: window.__PIXLAB_AUDIO__!.getMusicCurrentTime(),
+      track: window.__PIXLAB_AUDIO__!.getCurrentTrack(),
+    }));
+
+    expect(after.playing).toBe(false);
+    expect(after.paused).toBe(true);
+    expect(after.track).toBe(before.track);
+    expect(Math.abs(after.time! - before.time!)).toBeLessThan(0.15);
+  });
+});

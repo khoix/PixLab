@@ -23,12 +23,27 @@ mobs walked, charged and attacked behind the dialog.
   mobs firing the instant the menu closed, projectiles expiring mid-flight.
   `resetSectorTimer` keeps the wall clock, which is what it wants.
 
+- **The run's music pauses with it.** The track is scored to end as the sector
+  timer expires, so letting it run on behind a dialog desynced it permanently.
+  `audioManager.pauseMusicForGamePause()` holds the element at its position —
+  neither running on nor restarting — driven by a `subscribeGamePause` listener
+  on the clock so there is one source of truth for "the run is frozen". It is a
+  separate flag from the existing visibility pause so the two compose:
+  backgrounding the tab with the menu open does not resume music on return, and
+  a `playMusic` call for the already-loaded track is a no-op while paused rather
+  than a restart. The AudioContext keeps running, so UI click SFX still work
+  inside the menu.
+
 ### Verification
-- `e2e/m6-2-pause.spec.ts` (5 tests): the clock freezes and resumes with < 50 ms
+- `e2e/m6-2-pause.spec.ts` (7 tests): the clock freezes and resumes with < 50 ms
   drift across a 250 ms pause; overlapping dialogs reference-count correctly;
   with the menu open the scheduler records zero frames and zero mob ticks and no
   mob position changes, and both resume on close; no HP is lost during or in the
-  first frame after a 2.5 s pause; timer and clock always agree.
+  first frame after a 2.5 s pause; timer and clock always agree; the run track
+  stops within 0.15 s of its pause position, holds there for 1.2 s, and resumes
+  from that position rather than zero; re-arming the same track behind an open
+  dialog neither resumes nor seeks. Run on both the desktop and mobile Playwright
+  projects, alongside the existing `e2e/audio.spec.ts` — 26 passed.
 
 ---
 

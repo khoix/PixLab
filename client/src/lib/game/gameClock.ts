@@ -26,6 +26,28 @@ const clock: GameClockState = {
 
 const pauseReasons = new Set<string>();
 
+// Notified on the 0->paused and paused->0 transitions only, so subscribers see
+// one pause and one resume however many dialogs overlap. Audio subscribes here
+// rather than at each dialog site, keeping one source of truth for "the run is
+// frozen" — and keeping this module free of an audio dependency.
+type PauseListener = (paused: boolean) => void;
+const listeners = new Set<PauseListener>();
+
+function notify(paused: boolean): void {
+  listeners.forEach((listener) => {
+    try {
+      listener(paused);
+    } catch {
+      // A failing subscriber must not strand the clock mid-transition.
+    }
+  });
+}
+
+export function subscribeGamePause(listener: PauseListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 /** Simulation time in ms. Advances with the wall clock except while paused. */
 export function getGameNow(wallNow: number = Date.now()): number {
   if (clock.pauseStartedMs !== null) {
@@ -39,6 +61,7 @@ export function pauseGameClock(reason: string): void {
   pauseReasons.add(reason);
   if (!wasPaused) {
     clock.pauseStartedMs = Date.now();
+    notify(true);
   }
 }
 
@@ -47,6 +70,7 @@ export function resumeGameClock(reason: string): void {
   if (pauseReasons.size === 0 && clock.pauseStartedMs !== null) {
     clock.pausedTotalMs += Date.now() - clock.pauseStartedMs;
     clock.pauseStartedMs = null;
+    notify(false);
   }
 }
 
@@ -64,9 +88,11 @@ export function getGamePauseReasons(): string[] {
  * new level replaces.
  */
 export function resetGameClock(): void {
+  const wasPaused = pauseReasons.size > 0;
   clock.pausedTotalMs = 0;
   clock.pauseStartedMs = null;
   pauseReasons.clear();
+  if (wasPaused) notify(false);
 }
 
 export function initGameClockApi(): void {
