@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
-import { FlaskConical, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { RARITY_COLORS } from '../../lib/game/constants';
+import { getConsumableSummary } from '../../lib/game/consumableKind';
+import { ConsumableIcon } from './ConsumableIcon';
 import type { Item } from '../../lib/game/types';
 
 interface QuickConsumablesButtonProps {
   consumables: Item[];
   disabled?: boolean;
   onUseConsumable: (itemId: string) => void;
-}
-
-function consumableSummary(item: Item): string | null {
-  if (item.stats?.heal) return `+${item.stats.heal} HP`;
-  if (item.stats?.speed) return `+${item.stats.speed} SPD`;
-  if (item.stats?.vision) return `+${item.stats.vision} VIS`;
-  if (item.name.includes('Scroll')) return 'SCROLL';
-  return null;
 }
 
 export const QuickConsumablesButton: React.FC<QuickConsumablesButtonProps> = ({
@@ -48,7 +42,7 @@ export const QuickConsumablesButton: React.FC<QuickConsumablesButtonProps> = ({
             <ul className="py-1">
               {consumables.map((consumable) => {
                 const rarityColor = RARITY_COLORS[consumable.rarity];
-                const summary = consumableSummary(consumable);
+                const summary = getConsumableSummary(consumable);
                 return (
                   <li key={consumable.id}>
                     <button
@@ -60,7 +54,7 @@ export const QuickConsumablesButton: React.FC<QuickConsumablesButtonProps> = ({
                         setOpen(false);
                       }}
                     >
-                      <FlaskConical className="w-4 h-4 shrink-0" style={{ color: rarityColor }} />
+                      <ConsumableIcon item={consumable} className="w-4 h-4 shrink-0" />
                       <span className="flex-1 min-w-0">
                         <span
                           className="block text-xs font-pixel truncate"
