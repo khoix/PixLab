@@ -100,6 +100,55 @@ test.describe('Consumables — desktop panel', () => {
   });
 });
 
+test.describe('Toasts — stacking on the run screen', () => {
+  test('desktop: the USED toast renders above the event log console', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await enterWithConsumables(page, [KINDS[0]]);
+
+    await page.getByTestId('consumable-button-k-heal').click();
+    const toast = page.locator('[data-testid="toast-viewport"] li').first();
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('USED');
+
+    const stacking = await toast.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const viewport = el.closest('[data-testid="toast-viewport"]') as HTMLElement;
+      const log = document.querySelector('[data-testid="event-log-console"]');
+      return {
+        logPresent: !!log,
+        hitInsideToast: !!hit && el.contains(hit),
+        hitInsideLog: !!hit && !!log && log.contains(hit),
+        viewportZ: getComputedStyle(viewport).zIndex,
+        toastBottom: r.bottom,
+        innerHeight: window.innerHeight,
+      };
+    });
+
+    expect(stacking.logPresent).toBe(true);
+    expect(stacking.hitInsideToast).toBe(true);
+    expect(stacking.hitInsideLog).toBe(false);
+    expect(Number(stacking.viewportZ)).toBeGreaterThan(201);
+    // Bottom-right on desktop, i.e. over the log panel region.
+    expect(stacking.toastBottom).toBeGreaterThan(stacking.innerHeight * 0.6);
+  });
+
+  test('desktop: a toast fired from inside the inventory dialog is not hidden behind it', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await enterWithConsumables(page, [KINDS[0]]);
+
+    await page.getByTestId('game-menu-button').click();
+    await page.getByRole('menuitem', { name: /inventory/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    const dialogZ = await page.getByRole('dialog').evaluate((el) => Number(getComputedStyle(el).zIndex));
+    const viewportZ = await page
+      .locator('[data-testid="toast-viewport"]')
+      .evaluate((el) => Number(getComputedStyle(el).zIndex));
+    expect(viewportZ).toBeGreaterThan(dialogZ);
+  });
+});
+
 test.describe('Consumables — mobile quick menu', () => {
   test('menu rows use the same per-kind glyphs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

@@ -357,7 +357,11 @@ test.describe('M5 — Mobile UX & controls', () => {
     expect(paddingTop).toBeGreaterThanOrEqual(40);
   });
 
-  test('toast viewport stacks below global CRT blinds overlay', async ({ page }) => {
+  test('toast viewport stacks above dialogs and the event log, below the debug perf overlay', async ({ page }) => {
+    // Toasts fire from inside the inventory dialog and while the desktop event
+    // log console is open, so they must clear both (z-250 / z-201). They sit
+    // above the CRT blinds like every other in-run layer; only the debug perf
+    // overlay (z-300) stays on top.
     await page.goto('/');
 
     const stacking = await page.evaluate(() => {
@@ -371,7 +375,9 @@ test.describe('M5 — Mobile UX & controls', () => {
     });
 
     expect(stacking).not.toBeNull();
-    expect(stacking!.toastZ).toBeLessThan(stacking!.blindsZ);
+    expect(stacking!.toastZ).toBeGreaterThan(250);
+    expect(stacking!.toastZ).toBeLessThan(300);
+    expect(stacking!.toastZ).toBeGreaterThan(stacking!.blindsZ);
   });
 
   test('mobile toast stacks above HUD chrome during run', async ({ page }) => {
