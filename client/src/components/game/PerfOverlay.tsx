@@ -34,7 +34,7 @@ export const PerfOverlay: React.FC<PerfOverlayProps> = ({ visible }) => {
       <div>FPS: {snapshot.fps.toFixed(1)}</div>
       <div>Frame: {snapshot.avgFrameMs.toFixed(2)} ms</div>
       <div>Draw: {snapshot.avgDrawMs.toFixed(2)} ms (max {snapshot.maxDrawMs.toFixed(2)})</div>
-      <div>Update: {snapshot.avgUpdateMs.toFixed(2)} ms</div>
+      <div>Update: {snapshot.avgUpdateMs.toFixed(2)} ms (max {snapshot.maxUpdateMs.toFixed(2)})</div>
       <div>Entities: {snapshot.entityCount}</div>
       <div>Sector: {snapshot.sectorLevel}</div>
       <div>Loop restarts: {snapshot.loopRestarts}</div>

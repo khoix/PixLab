@@ -168,8 +168,34 @@ declare global {
   }
 }
 
+// Kill switch. `?ai=legacy` disables the scheduler (every mob every frame, the
+// pre-M7 behaviour) and remembers that in localStorage; `?ai=scheduler` turns it
+// back on. Lets a live cadence regression be switched off without a deploy.
+export const AI_QUERY_PARAM = 'ai';
+export const AI_STORAGE_KEY = 'pixlab:aiScheduler';
+
+export function syncAiSchedulerFromUrl(): boolean {
+  if (typeof window === 'undefined') return true;
+  let enabled = true;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const param = params.get(AI_QUERY_PARAM);
+    if (param === 'legacy' || param === 'off' || param === '0') {
+      localStorage.setItem(AI_STORAGE_KEY, 'legacy');
+    } else if (param === 'scheduler' || param === 'on' || param === '1') {
+      localStorage.setItem(AI_STORAGE_KEY, 'scheduler');
+    }
+    enabled = localStorage.getItem(AI_STORAGE_KEY) !== 'legacy';
+  } catch {
+    enabled = true;
+  }
+  aiScheduler.setEnabled(enabled);
+  return enabled;
+}
+
 export function initAiSchedulerHooks(): void {
   if (typeof window === 'undefined') return;
+  syncAiSchedulerFromUrl();
   window.__PIXLAB_AI__ = {
     getStats: () => aiScheduler.getStats(),
     resetStats: () => aiScheduler.resetStats(),

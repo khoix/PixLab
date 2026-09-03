@@ -20,6 +20,7 @@ export interface DrawFrameSnapshot {
   visionBoost: number;
   visionRadiusPx: number;
   fogRadius: number;
+  isMobileViewport: boolean;
   /** Screen-space position of the player's tile centre; the camera and fog are built around it. */
   playerScreenX: number;
   playerScreenY: number;
@@ -79,6 +80,7 @@ export function buildDrawFrameSnapshot(input: BuildDrawFrameSnapshotInput): Draw
     visionBoost,
     visionRadiusPx,
     fogRadius,
+    isMobileViewport: input.isMobileViewport,
     playerScreenX,
     playerScreenY,
     fogCenterX: playerScreenX,

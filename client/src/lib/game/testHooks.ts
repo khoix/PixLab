@@ -15,6 +15,7 @@ declare global {
       getEntities: () => LevelDebugEntity[];
       getExitPos: () => Position | null;
       isFloor: (x: number, y: number) => boolean;
+      setPlayerPos: (pos: Position) => void;
       spawnMob: (subtype: MobSubtype, pos: Position) => string | null;
       clearMobs: () => void;
       getLosCacheStats: () => { size: number; hits: number; misses: number } | null;

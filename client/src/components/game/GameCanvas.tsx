@@ -1,7 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
-import { generateLevel, checkCollision, getEntitiesInRadius, getAttackablePositions } from '../../lib/game/engine';
-import { TILE_SIZE, COLORS, MODS, RARITY_COLORS, MOB_TYPE_BY_SUBTYPE, SHOP_INTERVAL, BOSS_INTERVAL, LOW_TIME_ASSIST_SEC } from '../../lib/game/constants';
+import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
+import {
+  TILE_SIZE,
+  COLORS,
+  MODS,
+  RARITY_COLORS,
+  MOB_TYPE_BY_SUBTYPE,
+  MAX_MOB_RANGE_TILES,
+  MOTH_ORBIT_RAD_PER_TICK,
+  MOTH_BLINK_RADIUS,
+  rollMothBlinkDelay,
+  SHOP_INTERVAL,
+  BOSS_INTERVAL,
+  LOW_TIME_ASSIST_SEC,
+} from '../../lib/game/constants';
 import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
 import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
 import { spawnMobEntity } from '../../lib/game/demoSpawn';
@@ -34,7 +47,7 @@ import {
 } from '../../lib/game/renderQuality';
 import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/renderer/canvasSizing';
 import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
-import { buildDrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
+import { buildDrawFrameSnapshot, type DrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
 import { buildModifiers } from '../../lib/game/modifiers';
 import {
   flushGameLoopBatch,
@@ -198,12 +211,47 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const updateFnRef = useRef<(deltaTime: number) => void>(() => {});
   const drawFnRef = useRef<() => void>(() => {});
   const loopRunningRef = useRef(false);
+  // One derived-stats snapshot per rAF, shared by update() and draw(). The loop
+  // bumps frameCounterRef; the first caller in a frame builds, the rest reuse.
+  const frameCounterRef = useRef(0);
+  const frameSnapshotRef = useRef<{ frame: number; snapshot: DrawFrameSnapshot } | null>(null);
+
+  const getFrameSnapshot = (now?: number): DrawFrameSnapshot => {
+    const cached = frameSnapshotRef.current;
+    if (cached && cached.frame === frameCounterRef.current) return cached.snapshot;
+    const canvas = canvasRef.current;
+    const isMobileViewport =
+      (canvas ? canvas.clientWidth < MOBILE_BREAKPOINT : false) || window.innerWidth < MOBILE_BREAKPOINT;
+    const snapshot = buildDrawFrameSnapshot({
+      stats: statsRef.current,
+      loadout: loadoutRef.current,
+      activeMods: activeModsRef.current,
+      temporaryVisionBoost: temporaryVisionBoostRef.current,
+      lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
+      visionDebuffLevel: visionDebuffLevelRef.current,
+      logicalWidth: canvasSizeRef.current.logicalWidth,
+      logicalHeight: canvasSizeRef.current.logicalHeight,
+      tileSize: TILE_SIZE,
+      isMobileViewport,
+      now,
+    });
+    frameSnapshotRef.current = { frame: frameCounterRef.current, snapshot };
+    return snapshot;
+  };
   
   // Calculate mod modifiers
   const getModifiers = () => buildModifiers(activeModsRef.current);
 
   const haptic = (pattern: 'light' | 'medium' | 'heavy' | 'success') => {
     triggerHaptic(pattern, { enabled: settingsRef.current.hapticsEnabled !== false });
+  };
+
+  // Drop every per-mob record when a mob leaves the level, so a future mob that
+  // reuses the id (waves, summons) starts with a clean clock and cooldowns.
+  const releaseMobBookkeeping = (id: string) => {
+    aiScheduler.forget(id);
+    enemyMoveTimersRef.current.delete(id);
+    enemyDamageCooldownRef.current.delete(id);
   };
 
   // Apply vision debuff (stacks up to complete blindness)
@@ -462,6 +510,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         })),
       getExitPos: () => (levelRef.current ? { ...levelRef.current.exitPos } : null),
       isFloor: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'floor',
+      setPlayerPos: (pos) => {
+        playerPosRef.current = { ...pos };
+        visualPosRef.current = { ...pos };
+        moveStartPosRef.current = { ...pos };
+        moveProgressRef.current = 1;
+        lastPlayerPosRef.current = { ...pos };
+      },
       spawnMob: (subtype, pos) => {
         const level = levelRef.current;
         if (!level) return null;
@@ -953,6 +1008,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 audioManager.playSound('enemyDeath');
                 audioManager.playSound('coin');
                 levelRef.current!.entities = levelRef.current!.entities.filter(e => e.id !== enemy.id);
+                releaseMobBookkeeping(enemy.id);
                 
                 // Log kill event
                 const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
@@ -1186,6 +1242,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                   
                   // Remove the dead entity immediately
                   levelRef.current.entities = levelRef.current.entities.filter(e => e.id !== entity.id);
+                  releaseMobBookkeeping(entity.id);
                 } else {
                   // Entity still alive - just update HP
                   levelRef.current.entities[j] = {
@@ -1354,19 +1411,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // Anything inside this radius is visible to the player and must keep animating.
     const awakeRadiusTiles = activeScrollEffectsRef.current.threatSense
       ? Infinity
-      : buildDrawFrameSnapshot({
-          stats: baseStats,
-          loadout: loadoutRef.current,
-          activeMods: activeModsRef.current,
-          temporaryVisionBoost: temporaryVisionBoostRef.current,
-          lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
-          visionDebuffLevel: visionDebuffLevelRef.current,
-          logicalWidth: canvasSizeRef.current.logicalWidth,
-          logicalHeight: canvasSizeRef.current.logicalHeight,
-          tileSize: TILE_SIZE,
-          isMobileViewport: false,
-          now,
-        }).fogRadius / TILE_SIZE;
+      : getFrameSnapshot(now).fogRadius / TILE_SIZE;
     const playerTileX = playerPosRef.current.x;
     const playerTileY = playerPosRef.current.y;
 
@@ -1659,38 +1704,54 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               const orbitRadius = 2.5;
               let currentAngle = entity.orbitAngle || Math.atan2(dy, dx);
               
-              // Update orbit angle
-              currentAngle += 0.1;
+              // Advance the orbit by the time that actually elapsed since the last
+              // move tick (nominal 0.1 rad per tick), so a staggered or late tick
+              // does not slow the orbit; capped so a waking moth does not jump.
+              const orbitTicks = Math.min(3, moveTimer / baseMoveDelay);
+              currentAngle += MOTH_ORBIT_RAD_PER_TICK * orbitTicks;
               updatedEntity.orbitAngle = currentAngle;
               
               // Calculate orbiting position
               const orbitX = playerPosRef.current.x + Math.cos(currentAngle) * orbitRadius;
               const orbitY = playerPosRef.current.y + Math.sin(currentAngle) * orbitRadius;
               
-              // Check blink cooldown
+              // Blink timing: roll the 3–5 s threshold once and keep it, instead of
+              // re-rolling every tick (which made the effective rate tick-dependent).
               const blinkCooldown = entity.blinkCooldown || 0;
-              if (now - blinkCooldown >= 3000 + Math.random() * 2000) { // 3-5 seconds
-                // Find dark area (tile with no nearby entities)
+              const nextBlinkAt = entity.nextBlinkAt ?? blinkCooldown + rollMothBlinkDelay();
+              updatedEntity.nextBlinkAt = nextBlinkAt;
+              if (now >= nextBlinkAt) {
+                // Find a dark tile: floor, within 6 tiles of the player, no mob on or
+                // adjacent to it. Only the disc around the player is scanned and mob
+                // proximity is an O(1) occupancy lookup (was a full-map scan with an
+                // O(N) entity filter per tile).
                 if (levelRef.current) {
                   const darkTiles: Position[] = [];
                   const exitPos = levelRef.current.exitPos;
-                  for (let y = 0; y < levelRef.current.height; y++) {
-                    for (let x = 0; x < levelRef.current.width; x++) {
-                      if (levelRef.current.tiles[y][x] === 'floor' &&
-                          (x !== exitPos.x || y !== exitPos.y)) {
-                        const tilePos = { x, y };
-                        const distToPlayer = Math.sqrt(
-                          Math.pow(tilePos.x - playerPosRef.current.x, 2) +
-                          Math.pow(tilePos.y - playerPosRef.current.y, 2)
-                        );
-                        if (distToPlayer <= 6) {
-                          // Check if no entities nearby
-                          const nearbyEntities = getEntitiesInRadius(tilePos, 1.5, levelRef.current.entities);
-                          if (nearbyEntities.length === 0) {
-                            darkTiles.push(tilePos);
+                  const occupancy = getMobOccupancy();
+                  const px = playerPosRef.current.x;
+                  const py = playerPosRef.current.y;
+                  const minX = Math.max(0, Math.floor(px - MOTH_BLINK_RADIUS));
+                  const maxX = Math.min(levelRef.current.width - 1, Math.ceil(px + MOTH_BLINK_RADIUS));
+                  const minY = Math.max(0, Math.floor(py - MOTH_BLINK_RADIUS));
+                  const maxY = Math.min(levelRef.current.height - 1, Math.ceil(py + MOTH_BLINK_RADIUS));
+                  for (let y = minY; y <= maxY; y++) {
+                    for (let x = minX; x <= maxX; x++) {
+                      if (levelRef.current.tiles[y][x] !== 'floor') continue;
+                      if (x === exitPos.x && y === exitPos.y) continue;
+                      const ddx = x - px;
+                      const ddy = y - py;
+                      if (ddx * ddx + ddy * ddy > MOTH_BLINK_RADIUS * MOTH_BLINK_RADIUS) continue;
+                      let crowded = false;
+                      for (let oy = -1; oy <= 1 && !crowded; oy++) {
+                        for (let ox = -1; ox <= 1; ox++) {
+                          if (occupancy.has(occupancyKey(x + ox, y + oy))) {
+                            crowded = true;
+                            break;
                           }
                         }
                       }
+                      if (!crowded) darkTiles.push({ x, y });
                     }
                   }
                   if (darkTiles.length > 0) {
@@ -1698,6 +1759,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     nextPos = randomDarkTile;
                     shouldMove = true;
                     updatedEntity.blinkCooldown = now;
+                    updatedEntity.nextBlinkAt = now + rollMothBlinkDelay();
                   } else {
                     // Fallback to orbiting
                     nextPos = { x: orbitX, y: orbitY };
@@ -2307,6 +2369,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       });
       
       // Remove dead entities
+      deadEntities.forEach(enemy => releaseMobBookkeeping(enemy.id));
       levelRef.current.entities = levelRef.current.entities.filter(e => 
         !((e.type === 'enemy' || e.type === 'boss_enemy') && e.hp <= 0)
       );
@@ -2325,30 +2388,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const isMobileViewport =
-        canvas.clientWidth < MOBILE_BREAKPOINT || window.innerWidth < MOBILE_BREAKPOINT;
+      const frame = getFrameSnapshot();
       const effectiveQuality = resolveRenderQuality(
         settingsRef.current.renderQuality ?? 'auto',
-        isMobileViewport,
+        frame.isMobileViewport,
       );
       restoreShadowGate = installShadowQualityGate(ctx, effectiveQuality);
 
     // Get color theme for current level (changes every 4 sectors)
     const theme = getThemeForLevel(state.currentLevel);
     const { logicalWidth, logicalHeight, dpr } = canvasSizeRef.current;
-
-    const frame = buildDrawFrameSnapshot({
-      stats: statsRef.current,
-      loadout: loadoutRef.current,
-      activeMods: activeModsRef.current,
-      temporaryVisionBoost: temporaryVisionBoostRef.current,
-      lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
-      visionDebuffLevel: visionDebuffLevelRef.current,
-      logicalWidth,
-      logicalHeight,
-      tileSize: TILE_SIZE,
-      isMobileViewport,
-    });
 
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
@@ -2625,9 +2674,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
 
     // Draw Entities with unique appearances. Mobs well outside the camera are
-    // skipped; the margin covers telegraph aim lines (longest ranged reach is
-    // ~8 tiles) drawn from an off-screen mob toward the player.
-    const ENTITY_CULL_MARGIN = TILE_SIZE * 10;
+    // skipped; the margin is the longest mob attack reach plus slack, so a
+    // telegraph aim line from an off-screen mob toward the player is never clipped.
+    const ENTITY_CULL_MARGIN = TILE_SIZE * (MAX_MOB_RANGE_TILES + 2);
     const cullMinX = camX - ENTITY_CULL_MARGIN;
     const cullMaxX = camX + logicalWidth + ENTITY_CULL_MARGIN;
     const cullMinY = camY - ENTITY_CULL_MARGIN;
@@ -3741,6 +3790,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const MAX_DELTA_TIME = 100;
       deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
 
+      frameCounterRef.current += 1;
       const frameStart = performance.now();
       const updateStart = performance.now();
       updateFnRef.current(deltaTime);
