@@ -8,6 +8,7 @@ export interface PerfSnapshot {
   avgDrawMs: number;
   avgUpdateMs: number;
   maxDrawMs: number;
+  maxUpdateMs: number;
   entityCount: number;
   loopRestarts: number;
   inputDirectionUpdates: number;
@@ -28,6 +29,7 @@ class PerfMonitor {
   private drawSamples: number[] = [];
   private updateSamples: number[] = [];
   private maxDrawMs = 0;
+  private maxUpdateMs = 0;
   private entityCount = 0;
   private loopRestarts = 0;
   private inputDirectionUpdates = 0;
@@ -88,6 +90,7 @@ class PerfMonitor {
     this.pushSample(this.drawSamples, drawMs);
     this.pushSample(this.updateSamples, updateMs);
     this.maxDrawMs = Math.max(this.maxDrawMs, drawMs);
+    this.maxUpdateMs = Math.max(this.maxUpdateMs, updateMs);
   }
 
   getSnapshot(): PerfSnapshot {
@@ -98,6 +101,7 @@ class PerfMonitor {
       avgDrawMs: this.average(this.drawSamples),
       avgUpdateMs: this.average(this.updateSamples),
       maxDrawMs: this.maxDrawMs,
+      maxUpdateMs: this.maxUpdateMs,
       entityCount: this.entityCount,
       loopRestarts: this.loopRestarts,
       inputDirectionUpdates: this.inputDirectionUpdates,
@@ -116,6 +120,7 @@ class PerfMonitor {
     this.drawSamples = [];
     this.updateSamples = [];
     this.maxDrawMs = 0;
+    this.maxUpdateMs = 0;
     this.loopRestarts = 0;
     this.inputDirectionUpdates = 0;
   }

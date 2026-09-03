@@ -1,7 +1,25 @@
-import type { GameState, Item } from '../lib/game/types';
+import type { GameState, Item, MobSubtype, Position } from './types';
+
+export interface LevelDebugEntity {
+  id: string;
+  type: string;
+  mobSubtype: MobSubtype | null;
+  pos: Position;
+  hp: number;
+}
 
 declare global {
   interface Window {
+    __PIXLAB_LEVEL__?: {
+      getPlayerPos: () => Position;
+      getEntities: () => LevelDebugEntity[];
+      getExitPos: () => Position | null;
+      isFloor: (x: number, y: number) => boolean;
+      setPlayerPos: (pos: Position) => void;
+      spawnMob: (subtype: MobSubtype, pos: Position) => string | null;
+      clearMobs: () => void;
+      getLosCacheStats: () => { size: number; hits: number; misses: number } | null;
+    };
     __PIXLAB_TEST__?: {
       updateSettings: (payload: Partial<GameState['settings']>) => void;
       setActiveMods: (mods: string[]) => void;
@@ -9,6 +27,8 @@ declare global {
       addConsumable: (item?: Partial<Item>) => void;
       setScreen: (screen: GameState['screen']) => void;
       setCoins: (coins: number) => void;
+      setCurrentLevel: (level: number) => void;
+      updateStats: (payload: Partial<GameState['stats']>) => void;
       setLobbyTab: (tab: string) => void;
     };
   }

@@ -44,6 +44,7 @@ export interface PerfSnapshotResult {
   avgDrawMs: number;
   avgUpdateMs: number;
   maxDrawMs: number;
+  maxUpdateMs: number;
   entityCount: number;
   loopRestarts: number;
   inputDirectionUpdates: number;

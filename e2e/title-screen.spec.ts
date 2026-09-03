@@ -5,8 +5,9 @@ import {
   pickPreloadStatusLine,
 } from '../client/src/lib/preloadStatus';
 
-// Match the media bytes only — in dev Vite also serves `X.webm?import` JS modules.
-const AUDIO_ASSET = /\.(webm|m4a)$/;
+// Match the media bytes only — in dev Vite also serves `X.webm?import` JS modules,
+// and a long-running dev server appends `?t=<hmr timestamp>` to the media URL.
+const AUDIO_ASSET = /\.(webm|m4a)(\?(?!import)[^?]*)?$/;
 
 async function delayAudioAssets(page: Page, delayMs: number) {
   await page.route(AUDIO_ASSET, async (route) => {
