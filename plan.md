@@ -5,13 +5,13 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Scope:** Client-side game (`client/src/`), primarily `GameCanvas.tsx`, mobile controls, HUD, and balance constants.
 
 **Success criteria (overall):**
-- Stable 60fps on the reference profile: headless Chromium at 6× CPU throttle,
-  Playwright `chromium-mobile` project. No measurement to date has run on a
-  physical device; treat device testing as unverified until it does
+- Stable 60fps on mid-range mobile during active gameplay (sector run screen). **Measurement standard until a device lab exists:** headless Chromium, mobile Playwright project (390×844 @ 3x), `Emulation.setCPUThrottlingRate(6)`, `?perf=1`, sector 25+ with 45+ mobs — target `avgFrameMs ≤ 8 ms` under that throttle (≈ 16 ms budget with 2× safety for a real mid-range SoC). Every number in this file is that standard unless a device is named.
 - No React re-renders on every touch tick during movement
 - Mobile controls feel responsive with input buffering
 - Timer, combat, and modifier behavior are consistent across HUD and game loop
-- Measurable before/after via browser Performance tab + manual mobile smoke test
+- Measurable before/after via the perf overlay / `__PIXLAB_PERF__` + manual mobile smoke test
+
+**System of record for results:** `release_notes.md` holds the per-milestone measurements and verification details; this file keeps only the **Results summary (M0–M7)** table near the end as a rollup. Update both when a milestone lands.
 
 ---
 
@@ -375,22 +375,23 @@ documented a set of fixes that were never applied to the code.
 
 **Tasks:**
 - [x] Skip AI updates for mobs outside `aggroRange + buffer` of player (`dormant` tier; also outside vision + buffer, so revealed mobs keep animating)
-- [x] Stagger mob AI: update subset per frame (⅓ of `active` mobs per frame; mobs within 3 tiles or mid-attack stay per-frame)
-- [x] Cache line-of-sight (per-level tile-pair memo, invalidated on tile carve). Serves the player's attack targeting and, since M6.1, the mob melee gate — enemy chase AI does not use LOS
+- [x] Stagger mob AI: update subset per frame (⅓ of `active` mobs per frame; mobs within 3 tiles or mid-attack stay per-frame). Skipped mobs bank real elapsed time (cap 400 ms) so cadence is unchanged — verified by an on/off A/B in `e2e/m7-ai-perf.spec.ts`.
+- [x] Memoise line-of-sight per level by tile pair, invalidated on tile carve. **Scope note:** this served the player's auto-attack targeting only — enemy chase AI never calls `hasLineOfSight` (it uses short lane checks), so there was no NPC-side win here. M6.1 added a second consumer: the mob melee gate.
 - [x] Profile mob update block at sector 20+ with 15+ enemies; target specific hotspots (O(1) mob-occupancy lookup, `MOB_TYPE_BY_SUBTYPE` map, off-camera entity draw culling)
-- [ ] **Moth blink target search** scans every tile of the level and calls `getEntitiesInRadius` per tile — O(W·H·N) per blinking moth, ~40k distance checks in one frame at sector 25. Scan the ≤6-tile disc around the player and reuse the frame's occupancy map
-- [ ] Hoist `buildDrawFrameSnapshot` to one call per frame — the AI block added a second call, undoing M3's per-frame dedup
-- [ ] Wire `aiScheduler.forget(id)` into entity removal; it is currently dead API
+- [x] Moth blink target search: was a full `W×H` tile walk with an O(N) entity filter per tile (O(W·H·N) per blinking moth). Now scans only the 6-tile disc around the player and uses the frame's occupancy map. Measured at 6× throttle the old scan was **not** producing visible `maxUpdateMs` spikes (the 10–25 ms spikes in that block are first-execution JIT on the first AI frame of a sector, present before and after); the rewrite is kept for its complexity bound, not a measured win.
+- [x] Time-base fixes exposed by the scheduler: moth orbit angle advances by elapsed move-ticks instead of +0.1 per tick; blink threshold is rolled once into `nextBlinkAt` instead of re-rolled every tick.
+- [x] Kill switch: `?ai=legacy` disables the scheduler (persisted in `localStorage`, `?ai=scheduler` re-enables) so a live cadence regression can be turned off without a deploy.
 
 **Files:**
 - `client/src/lib/game/ai/aiScheduler.ts`, `client/src/lib/game/ai/losCache.ts` (new)
 - `client/src/components/game/GameCanvas.tsx` (or extracted `GameEngine` — see Milestone 8)
 
-**Exit criteria:**
-- Frame time does not scale linearly with total entity count on map.
-  Measured (headless Chromium, 6× CPU throttle): 2.9ms at 8 mobs -> 3.8ms at 62 mobs.
-  Not yet gated by a test — see M7.1
-- No observable AI regressions (mobs still aggro and attack correctly in range)
+**Exit criteria (measured, 6× throttle, mobile project — see Results summary):**
+- Frame time is sub-linear in entity count: **2.9 ms @ 8 mobs → 3.8 ms @ 62 mobs** (7.75× mobs, 1.3× frame). Gate for regressions: `avgFrameMs(sector 30) ≤ 1.5 × avgFrameMs(sector 1)` under the measurement standard.
+- `update()` is bounded: `processed / considered` mob-ticks < 60% at sector 25 (observed 2–5%), asserted in `e2e/m7-ai-perf.spec.ts`.
+- No observable AI regressions: a mid-range mob closes the same distance with the scheduler on and off (±1 tile), a far mob does not move while dormant, a waking mob takes ≤ 1 step on its wake frame, moths still blink — all asserted in e2e.
+
+**Honest framing:** `update()` was already ~10% of the frame; the scheduler is headroom for higher entity counts, not a present-day speedup. The entity-scaled cost that remains is the mob **draw** pass — see M7.1.
 
 **Depends on:** Milestone 3 (render opt baseline), Milestone 1 (stable loop)
 
@@ -398,27 +399,22 @@ documented a set of fixes that were never applied to the code.
 
 ## Milestone 7.1 — Entity Draw Scaling
 
-**Goal:** Attack the cost that actually scales with entity count.
-
-**Problem:** M7's own measurements put `update()` at ~0.3ms and `draw()` at
-2.7-3.5ms across 8 to 62 mobs. The AI scheduler bought headroom, not a present-day
-speedup; the per-entity draw pass is the entity-scaled cost and no milestone owns it.
+**Goal:** Own the remaining entity-scaled cost: `draw()` grows 2.7 → 3.5 ms from 8 to 62 mobs (6× throttle) while `update()` stays ~0.3 ms. No milestone currently covers entity *render* cost.
 
 **Tasks:**
-- [ ] Sprite-cache the mob draw pass: pre-render each `mobSubtype`+size to an offscreen canvas once, `drawImage` per entity (follow `renderer/tileLayer.ts`, `cacheInstances.ts`)
-- [ ] Cull entities to the fog radius, not just the camera — mobs past the opaque fog ring are drawn and then painted over
-- [ ] Replace the per-frame occupancy rebuild with a persistent spatial hash; reuse it for `getEntitiesInRadius` and projectile-vs-mob checks
-- [ ] Add a perf regression assertion so M7's exit criterion is gated, not just observed
+- [ ] **Sprite-cache the mob draw pass.** Pre-render each `mobSubtype` (+ boss variants, + size) to a small offscreen canvas once per theme and `drawImage` per entity, instead of per-entity path/fill/`shadowBlur` work in the entity `forEach`. Follow `renderer/tileLayer.ts` + `cacheInstances.ts`. Keep hit-flash / telegraph overlays as thin post-passes.
+- [ ] **Cull to the fog radius, not just the camera.** The fog gradient hits alpha 1.0 at `fogRadius`; mobs beyond `fogRadius + 1 tile` are drawn and painted over. When threat-sense is off and no reveal is active, skip them.
+- [ ] Measure before/after with the standard: `avgDrawMs` at sectors 1 / 25 / 30, plus `maxDrawMs`.
 
-**Files:**
-- `client/src/components/game/GameCanvas.tsx`, `client/src/lib/game/renderer/`
-- `e2e/m7-ai-perf.spec.ts`
+**Later (M8+ once the engine is split):**
+- Persistent spatial hash (serves occupancy, moth scan, projectile-vs-mob)
+- Fixed-step AI tick (10–20 Hz accumulator) with interpolated draw positions — bigger structural win than staggering
+- Flow-field pathfinding: one BFS from the player per player-tile-change makes every mob move O(1) and stops wall-sticking (`exitPathHint.ts` has the BFS)
+- Behaviour-cost tiering (moth/cerberus/bosses vs swarm/guardian), adaptive stagger from rolling frame time, clone entity objects only on change
 
-**Exit criteria:**
-- `draw()` at 60 mobs within 15% of `draw()` at 10 mobs on the throttled profile
-- A failing perf assertion when entity draw cost regresses
+**Exit criteria:** `avgDrawMs(sector 30) ≤ 1.15 × avgDrawMs(sector 1)` under the measurement standard; no visual regressions in the smoke checklist.
 
-**Depends on:** Milestone 7
+**Depends on:** Milestone 7. Independent of M8, but cheaper after it.
 
 ---
 
@@ -443,7 +439,7 @@ speedup; the per-entity draw pass is the entity-scaled cost and no milestone own
 - At least 5 engine unit tests passing
 - No regressions in manual smoke test (move, fight, exit, boss, shop)
 
-**Depends on:** Milestones 1–4 (stabilize hot path before large refactor)
+**Depends on:** Milestones 1–4 (stabilize hot path before large refactor). **Now unblocked and promoted to P1:** every remaining perf idea (fixed-step AI, flow-field, sprite batching, spatial hash) is materially cheaper to build and test after the split. Sequence M8 before further AI micro-optimisation; M7.1's two render tasks can land before or alongside it.
 
 ---
 
@@ -469,37 +465,36 @@ M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
                         ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance ──► M6.1 Mob Balance
                         └─► M3 Canvas/Fog (after M2)
-                                      └─► M7 AI Perf ──► M7.1 Entity Draw
-                                                └─► M8 Refactor
-                                                          └─► M9 Variety
+                                      └─► M7 AI Perf ──► M8 Refactor ──► M9 Variety
+                                                └─► M7.1 Entity draw (before or alongside M8)
 ```
 
-| Milestone | Theme | Priority | Risk |
-|-----------|-------|----------|------|
-| M0 | Instrumentation | P0 | Low |
-| M1 | Input & game loop | P0 | Medium |
-| M2 | Mobile render preset | P0 | Low |
-| M3 | Fog/tile cache, DPR | P1 | Medium |
-| M4 | State batching, modifiers | P1 | Medium |
-| M5 | Mobile UX | P1 | Low |
-| M5.1 | Decentralized touch controls | P1 | Medium |
-| M5.2 | Viewport-locked lobby layout | P1 | Low |
-| M5.3 | Touch sensitivity & control settings | P1 | Low |
-| M5.4 | Timer side, sensitivity range, font scale | P2 | Low |
-| M6 | Balance & clarity | P2 | Medium |
-| M6.1 | Mob balance pass | P1 | Medium — changes visible AI behaviour |
-| M7 | AI performance | P2 | Medium — changes AI tick cadence |
-| M7.1 | Entity draw scaling | P1 | Medium |
-| M8 | Architecture split | **P1** | High |
-| M9 | Content/variety | P3 | Low |
+| Milestone | Theme | Priority | Risk | Status |
+|-----------|-------|----------|------|--------|
+| M0 | Instrumentation | P0 | Low | Done |
+| M1 | Input & game loop | P0 | Medium | Done |
+| M2 | Mobile render preset | P0 | Low | Done |
+| M3 | Fog/tile cache, DPR | P1 | Medium | Done |
+| M4 | State batching, modifiers | P1 | Medium | Done |
+| M5 | Mobile UX | P1 | Low | Done |
+| M5.1 | Decentralized touch controls | P1 | Medium | Done |
+| M5.2 | Viewport-locked lobby layout | P1 | Low | Done |
+| M5.3 | Floating touch sensitivity & control settings | P1 | Low | Done |
+| M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
+| M6 | Balance & clarity | P2 | Medium | Done |
+| M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
+| M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
+| M7.1 | Entity draw scaling | P2 | Low | Next |
+| M8 | Architecture split | **P1** | High | Next |
+| M9 | Content/variety | P3 | Low | — |
 
 ---
 
-## Testing Checklist (Template — copy per milestone, do not tick in place)
+## Testing Checklist (template — copy into the milestone's PR description and tick there)
 
-Results per milestone live in `release_notes.md`, which is the system of record
-for what was verified. This list is the template to work through.
+The boxes below are intentionally left blank in this file; a checked list here would only reflect whichever milestone last touched it. Each PR pastes this block and records the result for that milestone.
 
+```
 - [ ] New game → sector 1: move, pickup, combat, exit
 - [ ] Sector with shop (4) and boss (8)
 - [ ] Mobile D-pad and floating touch schemes
@@ -508,7 +503,31 @@ for what was verified. This list is the template to work through.
 - [ ] Window resize / rotate orientation
 - [ ] Save code load and resume
 - [ ] Active mods: verify stacked modifiers in HUD and actual gameplay
-- [ ] Performance: FPS overlay or Performance tab — compare to M0 baseline
+- [ ] Performance: `?perf=1` overlay under the measurement standard — compare to the Results summary
+- [ ] Kill switches still work where relevant (`?ai=legacy` for AI cadence)
+```
+
+Automated coverage that stands in for most of the list: `npm run test:e2e` (Playwright, desktop + mobile Chromium projects).
+
+---
+
+## Results summary (M0–M7)
+
+Rollup only; full tables and verification detail live in `release_notes.md` per milestone.
+
+| Milestone | Headline result | Where measured |
+|-----------|-----------------|----------------|
+| M0 | Baseline captured: idle sector 1 frame 0.35 ms desktop / 0.23 ms mobile emu; loop restarted on every input event | `scripts/capture-baseline.ts`, table below |
+| M1 | Held direction: 0 loop restarts, 1 input-direction update per change (was 60/s on D-pad hold) | `e2e/m1-input-loop.spec.ts` |
+| M2 | Mobile viewports default to `medium` quality: per-tier shadow gate, boss/player shadows kept | `e2e/m2-render-quality.spec.ts` |
+| M3 | DPR capped at 2; tile layer pre-rendered per sector/theme; fog gradient cached — fog blits ≫ rebuilds when idle | `e2e/m3-canvas-fog.spec.ts` |
+| M2/3 wrap | Mobile backing store capped at ~1.2 MP (430×932 @ 3x drops to ~1.73x) | `e2e/m3-canvas-fog.spec.ts` |
+| M4 | Per-frame HUD dispatches batched; timer/modifier single source of truth | `e2e/m4-state-hud.spec.ts` |
+| M5–M5.4 | Viewport-locked layouts, floating touch + sensitivity, timer side / font scale settings | `e2e/m5-*.spec.ts` |
+| M6 | DPS decoupled from move speed; +18% mobile timer; telegraphs; hit feedback | `e2e/m6-balance.spec.ts` |
+| M7 | 6× throttle, mobile project: frame **2.9 ms @ 8 mobs → 3.8 ms @ 62 mobs**; `update()` 0.11–0.18 → 0.35 ms (0.37–0.49 without scheduler); 2–5% of mob-ticks run at sector 25; draw culling −0.3 ms at sector 30 | `e2e/m7-ai-perf.spec.ts`, release notes |
+
+**Open against the M0 "Target After M1–M3" column:** the ≤ 16 ms mobile budget has only been evaluated under the headless standard above (3.8 ms @ 6× throttle at sector 30), never on a physical mid-range device.
 
 ---
 

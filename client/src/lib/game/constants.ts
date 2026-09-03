@@ -297,5 +297,19 @@ export const MOB_TYPE_BY_SUBTYPE: ReadonlyMap<string, MobTypeDef> = new Map(
   MOB_TYPES.map((mob) => [mob.subtype, mob]),
 );
 
+// Longest attack reach of any mob or boss (Zeus boss and turret: 6). Drives the
+// off-camera draw-cull margin so a telegraph line from an off-screen mob to the
+// player is never clipped.
+export const MAX_MOB_RANGE_TILES = Math.max(6, ...MOB_TYPES.map((mob) => mob.range));
+
+// Nyx Glitchmoth tuning
+export const MOTH_ORBIT_RAD_PER_TICK = 0.1;
+export const MOTH_BLINK_RADIUS = 6;
+export const MOTH_BLINK_MIN_MS = 3000;
+export const MOTH_BLINK_MAX_MS = 5000;
+export const rollMothBlinkDelay = (random: () => number = Math.random): number =>
+  MOTH_BLINK_MIN_MS + random() * (MOTH_BLINK_MAX_MS - MOTH_BLINK_MIN_MS);
+
+
 // Re-export color theme utilities
 export { getThemeForLevel, generateColorPalette, type ColorPalette } from './colorThemes';

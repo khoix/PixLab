@@ -59,8 +59,8 @@ export interface Entity {
   chargeDirection?: { x: number; y: number } | null; // For charger mobs
   // New mob-specific properties
   orbitAngle?: number;       // For moth orbiting
-  blinkCooldown?: number;    // For moth blinking
-  nextBlinkAt?: number;      // For moth: pre-rolled next blink time (ms epoch)
+  blinkCooldown?: number;    // For moth blinking (time of last blink)
+  nextBlinkAt?: number;      // For moth blinking (absolute time of the next blink, rolled once)
   wallTilesTraversed?: number; // For phasing mobs: consecutive wall tiles occupied
   isStalking?: boolean;      // For tracker stalking state
   pounceDirection?: { x: number; y: number } | null; // For tracker pounce

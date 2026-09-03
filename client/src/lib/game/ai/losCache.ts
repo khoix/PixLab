@@ -2,11 +2,16 @@
 // the wall layout, so a result stays valid until a tile in that level changes
 // (boss death carving the exit) or the level is replaced. Callers must invoke
 // invalidateLosCache(level) after mutating tiles.
+//
+// Used by the player's auto-attack targeting (the only hasLineOfSight caller
+// in the hot path); enemy AI uses its own short lane checks and does not
+// query LOS.
 
 import { hasLineOfSight } from '../engine';
 import type { Level, Position } from '../types';
 
-const MAX_ENTRIES_PER_LEVEL = 4096;
+export const MAX_ENTRIES_PER_LEVEL = 4096;
+export const EVICT_FRACTION = 0.25;
 
 interface LevelLosCache {
   entries: Map<number, boolean>;
@@ -44,14 +49,29 @@ export function hasLineOfSightCached(from: Position, to: Position, level: Level)
   }
   cache.misses += 1;
   const result = hasLineOfSight(from, to, level);
-  if (cache.entries.size >= MAX_ENTRIES_PER_LEVEL) cache.entries.clear();
+  if (cache.entries.size >= MAX_ENTRIES_PER_LEVEL) evictOldest(cache.entries);
   cache.entries.set(key, result);
   return result;
 }
 
+// Map iterates in insertion order, so dropping the first quarter of the keys
+// evicts the oldest entries without a periodic all-miss frame.
+function evictOldest(entries: Map<number, boolean>): void {
+  const toEvict = Math.max(1, Math.floor(entries.size * EVICT_FRACTION));
+  let removed = 0;
+  for (const key of Array.from(entries.keys())) {
+    entries.delete(key);
+    removed += 1;
+    if (removed >= toEvict) break;
+  }
+}
+
 export function invalidateLosCache(level: Level): void {
   const cache = caches.get(level);
-  if (cache) cache.entries.clear();
+  if (!cache) return;
+  cache.entries.clear();
+  cache.hits = 0;
+  cache.misses = 0;
 }
 
 export function getLosCacheStats(level: Level): { size: number; hits: number; misses: number } {

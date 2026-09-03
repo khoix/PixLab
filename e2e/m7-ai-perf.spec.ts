@@ -161,10 +161,181 @@ test.describe('M7 — AI scheduler in a live sector', () => {
   });
 
   test('waking from dormancy hands a mob a capped delta, not a burst', async ({ page }) => {
-    await page.goto('/');
-    const constants = await page.evaluate(() => window.__PIXLAB_AI__!.constants);
-    expect(constants.maxDeltaMs).toBeLessThanOrEqual(500);
-    expect(constants.maxDeltaMs).toBeGreaterThanOrEqual(250);
+    await startSectorRun(page);
+    await page.waitForTimeout(200);
+    await page.evaluate(() => window.__PIXLAB_LEVEL__!.clearMobs());
+
+    // Park a drone far from the player (dormant), then teleport the player to a
+    // floor tile 5 tiles from it so it wakes with a large gap in its clock.
+    const spots = await page.evaluate(() => {
+      const api = window.__PIXLAB_LEVEL__!;
+      const p = api.getPlayerPos();
+      let far: { x: number; y: number } | null = null;
+      for (let y = 0; y < 30 && !far; y++) {
+        for (let x = 0; x < 30; x++) {
+          if (Math.hypot(x - p.x, y - p.y) >= 18 && api.isFloor(x, y)) {
+            far = { x, y };
+            break;
+          }
+        }
+      }
+      if (!far) return null;
+      for (let y = 0; y < 30; y++) {
+        for (let x = 0; x < 30; x++) {
+          const d = Math.hypot(x - far.x, y - far.y);
+          if (d >= 4.5 && d <= 5.5 && api.isFloor(x, y)) return { far, near: { x, y } };
+        }
+      }
+      return null;
+    });
+    expect(spots).not.toBeNull();
+
+    const id = await page.evaluate((far) => window.__PIXLAB_LEVEL__!.spawnMob('drone', far), spots!.far);
+    await page.waitForTimeout(1500);
+    const asleep = await page.evaluate((id) => {
+      window.__PIXLAB_AI__!.resetStats();
+      return window.__PIXLAB_LEVEL__!.getEntities().find((e) => e.id === id)!.pos;
+    }, id);
+    expect(asleep).toEqual(spots!.far);
+    // It is the only mob on the map, so any processed tick would be its own.
+    await page.waitForTimeout(300);
+    expect((await page.evaluate(() => window.__PIXLAB_AI__!.getStats())).processed).toBe(0);
+
+    await page.evaluate((near) => window.__PIXLAB_LEVEL__!.setPlayerPos(near), spots!.near);
+    // A drone steps every 250 ms; a burst of the ~1.8 s it slept would be 7 tiles.
+    await page.waitForTimeout(180);
+    const woke = await page.evaluate((id) => ({
+      pos: window.__PIXLAB_LEVEL__!.getEntities().find((e) => e.id === id)!.pos,
+      stats: window.__PIXLAB_AI__!.getStats(),
+    }), id);
+    expect(woke.stats.processed).toBeGreaterThan(0);
+    const wakeStep = Math.max(Math.abs(woke.pos.x - spots!.far.x), Math.abs(woke.pos.y - spots!.far.y));
+    expect(wakeStep).toBeLessThanOrEqual(1);
+  });
+
+  test('staggering does not change how fast a mid-range mob closes distance (A/B)', async ({ page }) => {
+    test.slow();
+    await startSectorRun(page);
+    await page.waitForTimeout(200);
+
+    // Guardian: aggro 6, 0.6 speed (a step every ~417 ms) — slow enough that it
+    // is still closing after 1.5 s from 4–5 tiles out, so cadence differences show.
+    // Move the player to one end of a straight 4–5 tile corridor and spawn at the
+    // other end, so greedy movement has a clear run in both A and B.
+    const spawn = await page.evaluate(() => {
+      const api = window.__PIXLAB_LEVEL__!;
+      const dirs = [{ x: 1, y: 0 }, { x: 0, y: 1 }];
+      for (let y = 1; y < 29; y++) {
+        for (let x = 1; x < 29; x++) {
+          if (!api.isFloor(x, y)) continue;
+          for (const d of dirs) {
+            let len = 0;
+            while (len < 5 && api.isFloor(x + d.x * (len + 1), y + d.y * (len + 1))) len++;
+            if (len >= 4) {
+              api.setPlayerPos({ x, y });
+              return { x: x + d.x * len, y: y + d.y * len };
+            }
+          }
+        }
+      }
+      return null;
+    });
+    expect(spawn).not.toBeNull();
+
+    const closedWith = async (enabled: boolean) => {
+      await page.evaluate(
+        ({ enabled, spawn }) => {
+          const api = window.__PIXLAB_LEVEL__!;
+          api.clearMobs();
+          window.__PIXLAB_AI__!.setEnabled(enabled);
+          api.spawnMob('guardian', spawn!);
+        },
+        { enabled, spawn },
+      );
+      const before = await page.evaluate(() => {
+        const api = window.__PIXLAB_LEVEL__!;
+        const p = api.getPlayerPos();
+        const e = api.getEntities().find((x) => x.mobSubtype === 'guardian')!;
+        return Math.hypot(e.pos.x - p.x, e.pos.y - p.y);
+      });
+      await page.waitForTimeout(1500);
+      const after = await page.evaluate(() => {
+        const api = window.__PIXLAB_LEVEL__!;
+        const p = api.getPlayerPos();
+        const e = api.getEntities().find((x) => x.mobSubtype === 'guardian')!;
+        return Math.hypot(e.pos.x - p.x, e.pos.y - p.y);
+      });
+      return before - after;
+    };
+
+    const scheduled = await closedWith(true);
+    const legacy = await closedWith(false);
+    await page.evaluate(() => window.__PIXLAB_AI__!.setEnabled(true));
+
+    console.log(`[m7] guardian closed ${scheduled.toFixed(2)} tiles (scheduler) vs ${legacy.toFixed(2)} tiles (legacy) in 1.5 s`);
+    expect(legacy).toBeGreaterThan(0.5);
+    expect(Math.abs(scheduled - legacy)).toBeLessThanOrEqual(1);
+  });
+
+  test('moths still blink onto dark tiles near the player with the disc-limited scan', async ({ page }) => {
+    test.slow();
+    await page.goto('/?perf=1');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => {
+      window.__PIXLAB_TEST__?.setCurrentLevel(25);
+      window.__PIXLAB_TEST__?.updateStats({ hp: 1_000_000, maxHp: 1_000_000 });
+    });
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas').waitFor({ state: 'visible' });
+    await page.waitForTimeout(300);
+
+    // Four moths in aggro range on top of the sector's own 40+ mobs. A fresh
+    // moth's blink is due immediately, so each one scans for a dark tile on its
+    // first move tick.
+    const spawned = await page.evaluate(() => {
+      const api = window.__PIXLAB_LEVEL__!;
+      const p = api.getPlayerPos();
+      const ids: string[] = [];
+      for (let y = 0; y < 30 && ids.length < 4; y++) {
+        for (let x = 0; x < 30 && ids.length < 4; x++) {
+          const d = Math.hypot(x - p.x, y - p.y);
+          if (d >= 3.5 && d <= 5.5 && api.isFloor(x, y)) {
+            const id = api.spawnMob('moth', { x, y });
+            if (id) ids.push(id);
+          }
+        }
+      }
+      window.__PIXLAB_PERF__!.resetSamples();
+      return ids.map((id) => ({ id, pos: api.getEntities().find((e) => e.id === id)!.pos }));
+    });
+    expect(spawned.length).toBeGreaterThanOrEqual(2);
+
+    await page.waitForTimeout(1500);
+
+    const result = await page.evaluate((spawned) => {
+      const api = window.__PIXLAB_LEVEL__!;
+      const p = api.getPlayerPos();
+      const moved = spawned.filter((s) => {
+        const e = api.getEntities().find((x) => x.id === s.id);
+        return e && (e.pos.x !== s.pos.x || e.pos.y !== s.pos.y);
+      }).length;
+      const nearPlayer = spawned.filter((s) => {
+        const e = api.getEntities().find((x) => x.id === s.id);
+        return e && Math.hypot(e.pos.x - p.x, e.pos.y - p.y) <= 6.5;
+      }).length;
+      return { moved, nearPlayer, perf: window.__PIXLAB_PERF__!.getSnapshot() };
+    }, spawned);
+
+    console.log(
+      `[m7] moth blink: ${result.moved}/${spawned.length} moved, ${result.nearPlayer} within 6.5 tiles; ` +
+        `update avg ${result.perf.avgUpdateMs.toFixed(3)} ms, max ${result.perf.maxUpdateMs.toFixed(3)} ms, ${result.perf.entityCount} entities`,
+    );
+    expect(result.moved).toBeGreaterThanOrEqual(1);
+    expect(result.nearPlayer).toBe(spawned.length);
+    // Generous ceiling: catches a pathological scan regression, not CI jitter.
+    // (Measured max on this path is dominated by first-execution JIT, ~2–15 ms.)
+    expect(result.perf.maxUpdateMs).toBeLessThan(50);
   });
 
   test('sector 25: most per-frame mob work is skipped and update cost stays bounded', async ({ page }) => {
@@ -264,6 +435,36 @@ test.describe('M7 — AI scheduler in a live sector', () => {
     expect(stats).not.toBeNull();
     expect(stats!.misses).toBeGreaterThan(0);
     expect(stats!.hits).toBeGreaterThan(0);
+  });
+});
+
+test.describe('M7 — kill switch', () => {
+  test('?ai=legacy disables the scheduler and persists; ?ai=scheduler re-enables it', async ({ page }) => {
+    await page.goto('/?ai=legacy');
+    expect(await page.evaluate(() => window.__PIXLAB_AI__!.isEnabled())).toBe(false);
+
+    await page.goto('/');
+    expect(await page.evaluate(() => window.__PIXLAB_AI__!.isEnabled())).toBe(false);
+
+    await page.goto('/?ai=scheduler');
+    expect(await page.evaluate(() => window.__PIXLAB_AI__!.isEnabled())).toBe(true);
+
+    await page.goto('/');
+    expect(await page.evaluate(() => window.__PIXLAB_AI__!.isEnabled())).toBe(true);
+  });
+
+  test('legacy mode ticks every mob every frame in a live sector', async ({ page }) => {
+    await page.goto('/?ai=legacy');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas').waitFor({ state: 'visible' });
+    await page.evaluate(() => window.__PIXLAB_AI__!.resetStats());
+    await page.waitForTimeout(600);
+    const stats = await page.evaluate(() => window.__PIXLAB_AI__!.getStats());
+    expect(stats.considered).toBeGreaterThan(0);
+    expect(stats.processed).toBe(stats.considered);
+    await page.goto('/?ai=scheduler');
   });
 });
 
