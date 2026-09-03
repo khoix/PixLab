@@ -7,6 +7,7 @@ import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
 import { pushSectorTimerPause, popSectorTimerPause, setSectorTimerContext } from '../lib/game/sectorTimer';
+import { pauseGameClock, resumeGameClock } from '../lib/game/gameClock';
 import { Compendium } from '../components/game/Compendium';
 import { OperatorPreview } from '../components/game/OperatorPreview';
 import { GameOverlay } from '../components/game/GameOverlay';
@@ -253,7 +254,9 @@ export default function Game() {
     };
   }, [dispatch]);
 
-  // Pause sector timer while run dialogs are open
+  // Freeze the whole run while a dialog is open, not just the countdown: the
+  // game clock stops too, so mobs stop moving and no cooldown or telegraph
+  // advances behind the menu.
   useEffect(() => {
     if (state.screen !== 'run') return;
 
@@ -262,9 +265,15 @@ export default function Game() {
     if (showMenu) pauseReasons.push('menu');
     if (showCommerceVendor) pauseReasons.push('commerce');
 
-    pauseReasons.forEach((reason) => pushSectorTimerPause(reason));
+    pauseReasons.forEach((reason) => {
+      pushSectorTimerPause(reason);
+      pauseGameClock(reason);
+    });
     return () => {
-      pauseReasons.forEach((reason) => popSectorTimerPause(reason));
+      pauseReasons.forEach((reason) => {
+        popSectorTimerPause(reason);
+        resumeGameClock(reason);
+      });
     };
   }, [state.screen, showInventory, showMenu, showCommerceVendor]);
 

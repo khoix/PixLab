@@ -18,6 +18,7 @@ import {
 import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
 import { canEnterTile as phaseCanEnterTile, nextWallTilesTraversed } from '../../lib/game/ai/phaseBudget';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
+import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
 import {
   applyVisionDebuffStack,
@@ -293,11 +294,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
   }, [inputDirection?.x, inputDirection?.y]);
 
-  // Pause sector timer during bonus selection (mirrors timeout freeze)
+  // Freeze the run during bonus selection: timer, mobs and every cooldown.
   useEffect(() => {
     if (showBonusSelection) {
       pushSectorTimerPause('bonus');
-      return () => popSectorTimerPause('bonus');
+      pauseGameClock('bonus');
+      return () => {
+        popSectorTimerPause('bonus');
+        resumeGameClock('bonus');
+      };
     }
     return undefined;
   }, [showBonusSelection]);
@@ -434,13 +439,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     tileLayerCache.invalidate();
     fogLayerCache.invalidate();
     resetGameLoopBatch();
+    resetGameClock();
     resetSectorTimer(Date.now());
     playerPosRef.current = { ...level.startPos };
     visualPosRef.current = { ...level.startPos };
     moveStartPosRef.current = { ...level.startPos };
     moveProgressRef.current = 1;
     lastPlayerPosRef.current = { ...level.startPos };
-    levelStartTimeRef.current = Date.now();
+    levelStartTimeRef.current = getGameNow();
     if (perfMonitor.isActive() && state.screen === 'run') {
       perfMonitor.setSectorLevel(state.currentLevel);
     }
@@ -654,7 +660,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
 
     // Get current time - used throughout update for cooldowns and timers
-    const now = Date.now();
+    const now = getGameNow();
     const PROJECTILE_LIFETIME = 3000; // 3 seconds
     
     runtimeVisionDebuffRef.current = decayVisionDebuff(visionDebuffRef.current, deltaTime);
@@ -770,7 +776,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 pos: { x: nextPos.x, y: nextPos.y },
                 direction: { x: dx, y: dy },
                 isLeftFoot: isLeftFoot,
-                createdAt: Date.now(),
+                createdAt: getGameNow(),
                 lifetime: 3000, // 3 seconds (fade sooner)
               };
               levelRef.current.footprints.push(footprint);
@@ -2450,7 +2456,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     tileLayerCache.drawVisibleRegion(ctx, camX, camY, logicalWidth, logicalHeight);
 
     if (exitPathHintRef.current.length > 0) {
-      const pulse = 0.28 + 0.14 * Math.sin(Date.now() / 260);
+      const pulse = 0.28 + 0.14 * Math.sin(getGameNow() / 260);
       ctx.save();
       ctx.fillStyle = `rgba(5, 217, 232, ${pulse})`;
       for (const step of exitPathHintRef.current.slice(0, 10)) {
@@ -2532,7 +2538,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     try {
       if (levelRef.current.particles && levelRef.current.particles.length > 0) {
         levelRef.current.particles.forEach((particle: Particle) => {
-          const age = Date.now() - particle.createdAt;
+          const age = getGameNow() - particle.createdAt;
           const lifetime = particle.lifetime;
           const alpha = 1 - (age / lifetime); // Fade out over lifetime
           
@@ -2563,7 +2569,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     try {
       if (levelRef.current.afterimages && levelRef.current.afterimages.length > 0) {
         levelRef.current.afterimages.forEach((afterimage: Afterimage) => {
-          const age = Date.now() - afterimage.createdAt;
+          const age = getGameNow() - afterimage.createdAt;
           const lifetime = afterimage.lifetime;
           const alpha = 1 - (age / lifetime); // Fade out over lifetime
           
@@ -2591,7 +2597,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     try {
       if (levelRef.current.footprints && levelRef.current.footprints.length > 0) {
         levelRef.current.footprints.forEach((footprint: Footprint) => {
-          const age = Date.now() - footprint.createdAt;
+          const age = getGameNow() - footprint.createdAt;
           const lifetime = footprint.lifetime;
           const alpha = 1 - (age / lifetime); // Fade out over lifetime
           
@@ -3306,7 +3312,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       // Restore context state (resets globalAlpha and shadow)
       ctx.restore();
       
-      const drawNow = Date.now();
+      const drawNow = getGameNow();
       const entityCenterX = entity.pos.x * TILE_SIZE + TILE_SIZE / 2;
       const entityCenterY = entity.pos.y * TILE_SIZE + TILE_SIZE / 2;
 
@@ -3347,7 +3353,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     });
 
     if (levelRef.current.damageNumbers?.length) {
-      const drawNow = Date.now();
+      const drawNow = getGameNow();
       levelRef.current.damageNumbers.forEach((entry) => {
         const age = drawNow - entry.createdAt;
         const t = Math.min(1, age / entry.lifetime);
@@ -3393,7 +3399,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       const centerX = portal.pos.x * TILE_SIZE + TILE_SIZE / 2;
       const centerY = portal.pos.y * TILE_SIZE + TILE_SIZE / 2;
       const portalSize = TILE_SIZE * 0.8;
-      const time = Date.now() * 0.003; // Slow animation
+      const time = getGameNow() * 0.003; // Slow animation
       
       // Outer glow (pulsing)
       const glowRadius = portalSize / 2 + Math.sin(time) * 3;
@@ -3430,12 +3436,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           const angle = Math.random() * Math.PI * 2;
           const speed = 0.5 + Math.random() * 0.5;
           const particle = {
-            id: `portal-particle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `portal-particle-${getGameNow()}-${Math.random().toString(36).substr(2, 9)}`,
             pos: {
               x: centerX + Math.cos(angle) * (portalSize / 2 - 5),
               y: centerY + Math.sin(angle) * (portalSize / 2 - 5),
             },
-            createdAt: Date.now(),
+            createdAt: getGameNow(),
             lifetime: 1000 + Math.random() * 500, // 1-1.5 seconds
             velocity: {
               x: Math.cos(angle) * speed,
@@ -3447,7 +3453,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         
         // Draw existing particles
         if (levelRef.current.particles) {
-          const now = Date.now();
+          const now = getGameNow();
           levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
           if (p.id && p.id.startsWith('portal-particle-')) {
             const age = now - p.createdAt;
@@ -3594,12 +3600,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               if (Math.random() < 0.1 && levelRef.current) {
                 const angle = Math.random() * Math.PI * 2;
                 const sparkle = {
-                  id: `threatsense-sparkle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  id: `threatsense-sparkle-${getGameNow()}-${Math.random().toString(36).substr(2, 9)}`,
                   pos: {
                     x: entityScreenX + Math.cos(angle) * (size / 2),
                     y: entityScreenY + Math.sin(angle) * (size / 2),
                   },
-                  createdAt: Date.now(),
+                  createdAt: getGameNow(),
                   lifetime: 500 + Math.random() * 300,
                 };
                 levelRef.current.particles.push(sparkle as any);
@@ -3691,12 +3697,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             if (Math.random() < 0.1 && levelRef.current) {
               const angle = Math.random() * Math.PI * 2;
               const sparkle = {
-                id: `lootsense-sparkle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                id: `lootsense-sparkle-${getGameNow()}-${Math.random().toString(36).substr(2, 9)}`,
                 pos: {
                   x: itemScreenX + Math.cos(angle) * (itemSize / 2),
                   y: itemScreenY + Math.sin(angle) * (itemSize / 2),
                 },
-                createdAt: Date.now(),
+                createdAt: getGameNow(),
                 lifetime: 500 + Math.random() * 300,
               };
               levelRef.current.particles.push(sparkle as any);
@@ -3753,7 +3759,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       
       // Draw sparkling particles for sense effects
       if (levelRef.current && levelRef.current.particles) {
-        const particleNow = Date.now();
+        const particleNow = getGameNow();
         levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
           if (p.id && (p.id.startsWith('threatsense-sparkle-') || p.id.startsWith('lootsense-sparkle-'))) {
             const age = particleNow - p.createdAt;
@@ -3810,6 +3816,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       if (isFirstFrame) {
         lastTimeRef.current = time;
         isFirstFrame = false;
+        animationFrameId = requestAnimationFrame(loop);
+        return;
+      }
+
+      if (isGamePaused()) {
+        lastTimeRef.current = time;
+        drawFnRef.current();
         animationFrameId = requestAnimationFrame(loop);
         return;
       }
