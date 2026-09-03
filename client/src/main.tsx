@@ -13,6 +13,8 @@ import { initHapticsApi } from "./lib/game/haptics";
 import { initRuntimeRefsApi } from "./lib/game/runtimeRefs";
 import { initFloatingTouchApi } from "./lib/game/touch/floatingTouchRecogniser";
 import { initAiSchedulerHooks } from "./lib/game/ai/aiScheduler";
+import { initGameClockApi, subscribeGamePause } from "./lib/game/gameClock";
+import { audioManager } from "./lib/audio";
 import { initPhaseBudgetApi } from "./lib/game/ai/phaseBudget";
 import { initDamageModelApi } from "./lib/game/combat/damageModel";
 import { initMeleeLineOfSightApi } from "./lib/game/combat/meleeLineOfSight";
@@ -32,6 +34,13 @@ initHapticsApi();
 initRuntimeRefsApi();
 initFloatingTouchApi();
 initAiSchedulerHooks();
+initGameClockApi();
+// The run's music is scored to end as the sector timer expires, so it has to
+// freeze with the run — otherwise a spell in the menu desyncs it permanently.
+subscribeGamePause((paused) => {
+  if (paused) audioManager.pauseMusicForGamePause();
+  else audioManager.resumeMusicForGamePause();
+});
 initPhaseBudgetApi();
 initDamageModelApi();
 initMeleeLineOfSightApi();

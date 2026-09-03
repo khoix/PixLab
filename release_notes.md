@@ -1,5 +1,52 @@
 # Release Notes
 
+## Milestone 6.2 — Full Run Pause
+
+**Branch:** `claude/pixlab-mob-fixes`
+
+Opening the in-game menu, inventory, commerce vendor or bonus selection stopped
+the sector countdown but not the run: the RAF loop kept calling `update()`, so
+mobs walked, charged and attacked behind the dialog.
+
+### Fixed
+- **The simulation now pauses with the timer.** New `lib/game/gameClock.ts` owns
+  a simulation clock that stops advancing while any dialog is open, using the
+  same reference-counted reason set as `sectorTimer.ts` — a menu opened over an
+  inventory resumes only when both close.
+- The RAF loop skips `update()` while paused but keeps calling `draw()`, so the
+  dialog still has a live backdrop, and keeps `lastTimeRef` current so the first
+  frame after resume gets a normal delta rather than a clamped 100 ms jump.
+- Every `Date.now()` read in the game loop and draw pass now comes off
+  `getGameNow()`. Freezing the loop alone would not have been enough: cooldowns,
+  telegraphs, projectile lifetimes and particle ages are all absolute stamps, so
+  a wall-clock resume would have fast-forwarded every one of them at once —
+  mobs firing the instant the menu closed, projectiles expiring mid-flight.
+  `resetSectorTimer` keeps the wall clock, which is what it wants.
+
+- **The run's music pauses with it.** The track is scored to end as the sector
+  timer expires, so letting it run on behind a dialog desynced it permanently.
+  `audioManager.pauseMusicForGamePause()` holds the element at its position —
+  neither running on nor restarting — driven by a `subscribeGamePause` listener
+  on the clock so there is one source of truth for "the run is frozen". It is a
+  separate flag from the existing visibility pause so the two compose:
+  backgrounding the tab with the menu open does not resume music on return, and
+  a `playMusic` call for the already-loaded track is a no-op while paused rather
+  than a restart. The AudioContext keeps running, so UI click SFX still work
+  inside the menu.
+
+### Verification
+- `e2e/m6-2-pause.spec.ts` (7 tests): the clock freezes and resumes with < 50 ms
+  drift across a 250 ms pause; overlapping dialogs reference-count correctly;
+  with the menu open the scheduler records zero frames and zero mob ticks and no
+  mob position changes, and both resume on close; no HP is lost during or in the
+  first frame after a 2.5 s pause; timer and clock always agree; the run track
+  stops within 0.15 s of its pause position, holds there for 1.2 s, and resumes
+  from that position rather than zero; re-arming the same track behind an open
+  dialog neither resumes nor seeks. Run on both the desktop and mobile Playwright
+  projects, alongside the existing `e2e/audio.spec.ts` — 26 passed.
+
+---
+
 ## Milestone 6.1 — Mob Balance Pass
 
 **Branch:** `claude/pixlab-mob-fixes`  

@@ -36,6 +36,8 @@ declare global {
       getGraphKickCount: () => number;
       getPreloadState: () => MusicPreloadState;
       getTrackSources: () => Record<MusicTrack, string>;
+      isMusicPausedForGamePause: () => boolean;
+      getMusicCurrentTime: () => number | null;
     };
   }
 }
@@ -52,6 +54,9 @@ class AudioManager {
   private currentTrack: MusicTrack | null = null;
   private loadedMusicSrc: string | null = null;
   private musicPausedForVisibility = false;
+  // Separate from the visibility flag so the two compose: backgrounding the tab
+  // with the menu open must not resume the music when the tab comes back.
+  private musicPausedForGamePause = false;
   private musicFormat: MusicFormat | null = null;
   private graphRoutingFailed = false;
   private graphKicks = 0;
@@ -161,10 +166,12 @@ class AudioManager {
 
     if (this.musicElement && this.currentTrack && this.musicPausedForVisibility) {
       this.musicPausedForVisibility = false;
-      try {
-        await this.musicElement.play();
-      } catch {
-        // Ignore autoplay failures
+      if (!this.musicPausedForGamePause) {
+        try {
+          await this.musicElement.play();
+        } catch {
+          // Ignore autoplay failures
+        }
       }
     }
   }
@@ -183,6 +190,40 @@ class AudioManager {
         // Ignore suspend failures
       }
     }
+  }
+
+  /**
+   * Freeze the run's music with the rest of the simulation. The track keeps its
+   * position — the run music is timed to end as the sector timer runs out, so
+   * restarting or letting it run on would desync it from the countdown.
+   */
+  pauseMusicForGamePause() {
+    if (this.musicPausedForGamePause) return;
+    this.musicPausedForGamePause = true;
+    if (this.musicElement && !this.musicElement.paused) {
+      this.musicElement.pause();
+    }
+  }
+
+  resumeMusicForGamePause() {
+    if (!this.musicPausedForGamePause) return;
+    this.musicPausedForGamePause = false;
+    // A hidden tab keeps its own hold; visibility resume will pick it up.
+    if (this.musicPausedForVisibility) return;
+    if (this.musicElement && this.currentTrack && this.musicElement.paused) {
+      void this.musicElement.play().catch(() => {
+        // Ignore autoplay failures
+      });
+    }
+  }
+
+  isMusicPausedForGamePause() {
+    return this.musicPausedForGamePause;
+  }
+
+  /** Playback position in seconds; the run's music is scored against the timer. */
+  getMusicCurrentTime() {
+    return this.musicElement ? this.musicElement.currentTime : null;
   }
 
   setMusicVolume(volume: number) {
@@ -206,6 +247,7 @@ class AudioManager {
     this.currentTrack = null;
     this.loadedMusicSrc = null;
     this.musicPausedForVisibility = false;
+    this.musicPausedForGamePause = false;
   }
 
   playMusic(type: MusicTrack) {
@@ -218,8 +260,15 @@ class AudioManager {
       this.currentTrack === type &&
       this.musicElement &&
       !this.musicElement.paused &&
-      !this.musicPausedForVisibility
+      !this.musicPausedForVisibility &&
+      !this.musicPausedForGamePause
     ) {
+      return;
+    }
+
+    // Re-arming the same track while a dialog holds the run paused: keep the
+    // position and stay silent until the dialog closes.
+    if (this.musicPausedForGamePause && this.currentTrack === type) {
       return;
     }
 
@@ -231,6 +280,7 @@ class AudioManager {
 
     this.currentTrack = type;
     this.musicPausedForVisibility = false;
+    this.musicPausedForGamePause = false;
 
     if (!sameSource) {
       this.musicElement.pause();
@@ -409,6 +459,8 @@ if (typeof window !== 'undefined') {
     getGraphKickCount: () => audioManager.getGraphKickCount(),
     getPreloadState: () => musicPreloader.getState(),
     getTrackSources: () => audioManager.getTrackSources(),
+    isMusicPausedForGamePause: () => audioManager.isMusicPausedForGamePause(),
+    getMusicCurrentTime: () => audioManager.getMusicCurrentTime(),
   };
 
   const initAudio = async () => {

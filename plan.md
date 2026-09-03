@@ -369,6 +369,40 @@ documented a set of fixes that were never applied to the code.
 
 ---
 
+## Milestone 6.2 — Full Run Pause
+
+**Goal:** Opening a dialog mid-run should stop the run, not just the countdown.
+
+**Problem:** M4 paused the sector timer for inventory / menu / commerce / bonus
+dialogs, but the RAF loop kept calling `update()`, so mobs kept moving and
+attacking behind the dialog. Freezing the loop alone would not fix it either:
+every cooldown, telegraph and lifetime is an absolute `Date.now()` stamp, so a
+wall-clock resume fast-forwards all of them at once.
+
+**Tasks:**
+- [x] `lib/game/gameClock.ts`: a simulation clock that stops while paused, with the same reference-counted reasons as `sectorTimer.ts`
+- [x] Route every game-loop and draw `Date.now()` read through `getGameNow()`
+- [x] Skip `update()` while paused, keep drawing, keep `lastTimeRef` current
+- [x] Pause the clock wherever the timer is already paused (`Game.tsx` dialogs, `GameCanvas` bonus selection)
+- [x] Pause the run's music with it — the track is scored against the sector timer, so running on desyncs it permanently (`subscribeGamePause` listener, separate flag from the visibility pause so the two compose)
+
+**Files:**
+- `client/src/lib/game/gameClock.ts` (new), `client/src/lib/audio.ts`, `client/src/components/game/GameCanvas.tsx`, `client/src/pages/Game.tsx`, `client/src/main.tsx`
+- `e2e/m6-2-pause.spec.ts`
+
+**Exit criteria:**
+- No mob moves or attacks while a run dialog is open
+- No burst of banked attacks on the first frame after resume
+- Sector timer and game clock pause and resume together
+- The run's music holds its position while paused and resumes from it
+- Verified on both the desktop and mobile Playwright projects
+
+**Depends on:** Milestone 4 (dialog pause reasons), Milestone 7 (scheduler stats used to assert the loop is idle)
+
+**Estimated invasiveness:** Medium - changes gameplay-visible mob behaviour.
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Goal:** Keep frame times stable as enemy count and sector level grow.
@@ -483,6 +517,7 @@ M0 Baseline
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M6 | Balance & clarity | P2 | Medium | Done |
 | M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
+| M6.2 | Full run pause | P1 | Low | Done |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
 | M7.1 | Entity draw scaling | P2 | Low | Next |
 | M8 | Architecture split | **P1** | High | Next |
