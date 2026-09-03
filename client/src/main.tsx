@@ -13,6 +13,7 @@ import { initHapticsApi } from "./lib/game/haptics";
 import { initRuntimeRefsApi } from "./lib/game/runtimeRefs";
 import { initFloatingTouchApi } from "./lib/game/touch/floatingTouchRecogniser";
 import { initAiSchedulerHooks } from "./lib/game/ai/aiScheduler";
+import { initItemIconsApi, preloadItemIcons } from "./lib/game/itemIcons";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -27,6 +28,10 @@ initHapticsApi();
 initRuntimeRefsApi();
 initFloatingTouchApi();
 initAiSchedulerHooks();
+initItemIconsApi();
+// Start fetching the 20 item-icon PNGs at boot so they are cached long before
+// the first sector draws a pickup (GameCanvas re-requests anything missing).
+void preloadItemIcons();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)
