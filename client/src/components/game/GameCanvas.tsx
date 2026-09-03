@@ -530,6 +530,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         if (!level) return;
         level.entities = level.entities.filter((e) => e.type !== 'enemy' && e.type !== 'boss_enemy');
       },
+      spawnItem: (item, pos) => {
+        const level = levelRef.current;
+        if (!level) return;
+        level.items = [...level.items, { pos: { ...pos }, item }];
+      },
+      getItems: () => (levelRef.current?.items ?? []).map(({ pos, item }) => ({ pos: { ...pos }, item })),
       getLosCacheStats: () => (levelRef.current ? getLosCacheStats(levelRef.current) : null),
     };
     return () => {

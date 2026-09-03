@@ -38,6 +38,8 @@ import { BroadcastGlitchScope } from '../components/BroadcastGlitch';
 import { useIsMobile } from '../hooks/use-mobile';
 import { QuickHealButton } from '../components/game/QuickHealButton';
 import { QuickConsumablesButton } from '../components/game/QuickConsumablesButton';
+import { ConsumableIcon } from '../components/game/ConsumableIcon';
+import { getConsumableSummary } from '../lib/game/consumableKind';
 import { findSmallestHealingPotion } from '../lib/game/quickHeal';
 import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quickConsumables';
 import { triggerHaptic } from '../lib/game/haptics';
@@ -2355,37 +2357,42 @@ export default function Game() {
               </div>
               )}
 
-              {/* Consumables Panel - desktop only; mobile uses quick consumables menu */}
+              {/* Consumables Panel - desktop only; mobile uses quick consumables menu.
+                  Anchored below the MENU button and above the panel's bottom edge so it
+                  can never cover MENU; scrolls internally when the list is long. */}
               {!gameOverState && !isMobile && consumables.length > 0 && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30 md:z-50 flex flex-col gap-2 pointer-events-auto consumables-panel mobile-hud-consumables">
-            <div className="text-xs font-pixel text-white mb-1 text-right">CONSUMABLES</div>
+          <div
+            className="absolute right-4 top-16 bottom-4 z-30 md:z-40 flex flex-col pointer-events-auto consumables-panel w-52"
+            data-testid="consumables-panel"
+          >
+            <div className="text-xs font-pixel text-white mb-1 text-right shrink-0">CONSUMABLES</div>
+            <div className="consumables-panel-list flex flex-col gap-2 overflow-y-auto scroll-touch min-h-0 pr-0.5">
             {consumables.map(consumable => {
               const rarityColor = RARITY_COLORS[consumable.rarity];
+              const summary = getConsumableSummary(consumable);
               return (
                 <button
                   key={consumable.id}
-                  className="consumable-button p-2 border border-white/20 bg-black/70 hover:bg-primary/20 transition-all pixel-corners min-w-[80px] flex flex-col items-center gap-1"
+                  className="consumable-button p-2 border border-white/20 bg-black/70 hover:bg-primary/20 transition-all pixel-corners w-full flex flex-col items-center gap-1 shrink-0"
+                  title={`${consumable.name}${summary ? ` — ${summary}` : ''}`}
+                  data-testid={`consumable-button-${consumable.id}`}
                   onClick={() => {
                     handleUseConsumable(consumable.id);
                   }}
                 >
                   <div className="consumable-icon-wrapper flex items-center justify-center">
-                    <FlaskConical className="consumable-icon" size={24} style={{ color: rarityColor }} />
+                    <ConsumableIcon item={consumable} className="consumable-icon" size={24} />
                   </div>
-                  <div className="consumable-name text-xs font-pixel" style={{ color: rarityColor }}>
+                  <div className="consumable-name text-[10px] font-pixel w-full truncate text-center" style={{ color: rarityColor }}>
                     {consumable.name}
                   </div>
-                  <div className="consumable-stats flex flex-col items-center gap-0.5">
-                    {consumable.stats?.heal && (
-                      <div className="text-xs font-mono text-cyan-400">+{consumable.stats.heal} HP</div>
-                    )}
-                    {consumable.stats?.speed && (
-                      <div className="text-xs font-mono text-blue-400">+{consumable.stats.speed} SPD</div>
-                    )}
-                  </div>
+                  {summary && (
+                    <div className="consumable-stats text-xs font-mono text-cyan-400">{summary}</div>
+                  )}
                 </button>
               );
               })}
+            </div>
               </div>
               )}
 
