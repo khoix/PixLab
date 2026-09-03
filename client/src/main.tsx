@@ -20,6 +20,7 @@ import { initDamageModelApi } from "./lib/game/combat/damageModel";
 import { initMeleeLineOfSightApi } from "./lib/game/combat/meleeLineOfSight";
 import { initVisionDebuffApi } from "./lib/game/combat/visionDebuff";
 import { initMobBalanceApi } from "./lib/game/mobBalance";
+import { initItemIconsApi, preloadItemIcons } from "./lib/game/itemIcons";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -46,6 +47,10 @@ initDamageModelApi();
 initMeleeLineOfSightApi();
 initVisionDebuffApi();
 initMobBalanceApi();
+initItemIconsApi();
+// Start fetching the 20 item-icon PNGs at boot so they are cached long before
+// the first sector draws a pickup (GameCanvas re-requests anything missing).
+void preloadItemIcons();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

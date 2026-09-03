@@ -20,6 +20,8 @@ declare global {
       setPlayerPos: (pos: Position) => void;
       spawnMob: (subtype: MobSubtype, pos: Position) => string | null;
       clearMobs: () => void;
+      spawnItem: (item: Item, pos: Position) => void;
+      getItems: () => Array<{ pos: Position; item: Item }>;
       getLosCacheStats: () => { size: number; hits: number; misses: number } | null;
     };
     __PIXLAB_TEST__?: {
