@@ -88,6 +88,12 @@ export interface MobTypeDef {
   minLevel: number; // Minimum level to appear
   spawnWeight: number; // Higher = more common (relative to other mobs)
   aggroRange?: number; // Distance at which mob starts chasing player (default: unlimited)
+  // Per-level scaling for mobs whose speed/cadence ramps with sector depth.
+  // Previously hardcoded in engine.ts; kept here so every mob's tuning lives
+  // in one file.
+  speedPerLevel?: number;    // Added to moveSpeed per sector level
+  cooldownPerLevel?: number; // Subtracted from attackCooldown per sector level
+  minCooldown?: number;      // Floor for the scaled attackCooldown (ms)
 }
 
 export const MOB_TYPES: MobTypeDef[] = [
@@ -97,7 +103,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     baseHp: 20,
     hpPerLevel: 5,
     baseDamage: 5,
-    damagePerLevel: 1,
+    damagePerLevel: 0.7,
     moveSpeed: 1.0,
     attackCooldown: 500,
     coinReward: 10,
@@ -135,7 +141,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     baseDamage: 3,
     damagePerLevel: 0.5,
     moveSpeed: 0.8,
-    attackCooldown: 400,
+    attackCooldown: 600,
     coinReward: 12,
     canPhase: true,
     isRanged: false,
@@ -143,7 +149,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     isStationary: false,
     minLevel: 5,
     spawnWeight: 20,
-    aggroRange: 5, // Phase mobs aggro when player is within 5 tiles
+    aggroRange: 4, // Short: it phases through walls, so it needs no early warning
   },
   {
     subtype: 'charger',
@@ -153,7 +159,7 @@ export const MOB_TYPES: MobTypeDef[] = [
     baseDamage: 8,
     damagePerLevel: 1.5,
     moveSpeed: 1.8, // Fast
-    attackCooldown: 600,
+    attackCooldown: 900,
     coinReward: 12,
     canPhase: false,
     isRanged: false,
@@ -196,7 +202,9 @@ export const MOB_TYPES: MobTypeDef[] = [
     range: 1,
     isStationary: false,
     minLevel: 1,
-    spawnWeight: 25,
+    // Selections, not entities: each swarm selection spawns SWARM_SPAWN_COUNT
+    // mobs, so this weight is divided by that average to reach its real share.
+    spawnWeight: 10,
     aggroRange: 5, // Weak mobs, shorter detection range
   },
   {
@@ -224,8 +232,11 @@ export const MOB_TYPES: MobTypeDef[] = [
     hpPerLevel: 3,
     baseDamage: 9,
     damagePerLevel: 1.4,
-    moveSpeed: 1.55, // Base speed, will be scaled in engine.ts
-    attackCooldown: 1600, // Base cooldown, will be scaled in engine.ts
+    moveSpeed: 1.55,
+    speedPerLevel: 0.02,
+    attackCooldown: 1600,
+    cooldownPerLevel: 12,
+    minCooldown: 1100,
     coinReward: 4, // Base reward, may need scaling
     canPhase: false,
     isRanged: false,
@@ -242,8 +253,11 @@ export const MOB_TYPES: MobTypeDef[] = [
     hpPerLevel: 3,
     baseDamage: 6,
     damagePerLevel: 1,
-    moveSpeed: 1.35, // Base speed, will be scaled in engine.ts
-    attackCooldown: 1250, // Base cooldown, will be scaled in engine.ts
+    moveSpeed: 1.35,
+    speedPerLevel: 0.015,
+    attackCooldown: 1250,
+    cooldownPerLevel: 8,
+    minCooldown: 950,
     coinReward: 3, // Base reward, may need scaling
     canPhase: false,
     isRanged: true,
@@ -258,10 +272,13 @@ export const MOB_TYPES: MobTypeDef[] = [
     name: 'Cerberus Firewall',
     baseHp: 40,
     hpPerLevel: 7,
-    baseDamage: 7,
-    damagePerLevel: 1.2,
-    moveSpeed: 1.05, // Base speed, will be scaled in engine.ts
-    attackCooldown: 2200, // Base cooldown, will be scaled in engine.ts
+    baseDamage: 6,
+    damagePerLevel: 1.0,
+    moveSpeed: 1.05,
+    speedPerLevel: 0.02,
+    attackCooldown: 2200,
+    cooldownPerLevel: 15,
+    minCooldown: 1500,
     coinReward: 10, // Base reward, may need scaling
     canPhase: false,
     isRanged: false,
@@ -272,6 +289,9 @@ export const MOB_TYPES: MobTypeDef[] = [
     aggroRange: 7, // Boss-like, medium-long detection range
   },
 ];
+
+/** A swarm selection spawns this many mobs (inclusive range). */
+export const SWARM_SPAWN_COUNT: readonly [number, number] = [2, 3];
 
 export const MOB_TYPE_BY_SUBTYPE: ReadonlyMap<string, MobTypeDef> = new Map(
   MOB_TYPES.map((mob) => [mob.subtype, mob]),
@@ -289,6 +309,7 @@ export const MOTH_BLINK_MIN_MS = 3000;
 export const MOTH_BLINK_MAX_MS = 5000;
 export const rollMothBlinkDelay = (random: () => number = Math.random): number =>
   MOTH_BLINK_MIN_MS + random() * (MOTH_BLINK_MAX_MS - MOTH_BLINK_MIN_MS);
+
 
 // Re-export color theme utilities
 export { getThemeForLevel, generateColorPalette, type ColorPalette } from './colorThemes';

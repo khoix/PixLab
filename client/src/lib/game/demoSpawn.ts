@@ -2,6 +2,7 @@ import { Level, Position, Entity, MobSubtype, Item, Portal, Lightswitch, ScrollT
 import { MOB_TYPES } from './constants';
 import { generateItem, generateScroll } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
+import { scaledAttackCooldown, scaledMoveSpeed } from './mobBalance';
 import { PlayerStats, GameState } from './types';
 
 // Item templates - matching items.ts
@@ -200,8 +201,8 @@ export function spawnMobEntity(
     maxHp: hp,
     damage,
     mobSubtype,
-    moveSpeed: mobType.moveSpeed,
-    attackCooldown: mobType.attackCooldown,
+    moveSpeed: scaledMoveSpeed(mobType, levelNum),
+    attackCooldown: scaledAttackCooldown(mobType, levelNum),
     lastAttackTime: 0,
     canPhase: mobType.canPhase,
     isRanged: mobType.isRanged,
@@ -219,15 +220,12 @@ export function spawnMobEntity(
   if (mobSubtype === 'tracker') {
     entity.isStalking = true;
     entity.pounceDirection = null;
-    entity.moveSpeed = 1.55 + (levelNum * 0.04);
-    entity.attackCooldown = Math.max(1050, 1600 - (levelNum * 15));
   }
   
   if (mobSubtype === 'moth') {
     entity.orbitAngle = 0;
     entity.blinkCooldown = 0;
-    entity.moveSpeed = 1.35 + (levelNum * 0.03);
-    entity.attackCooldown = Math.max(850, 1250 - (levelNum * 10));
+    entity.nextBlinkAt = 0;
   }
   
   if (mobSubtype === 'cerberus') {

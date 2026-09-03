@@ -12,6 +12,8 @@ declare global {
   interface Window {
     __PIXLAB_LEVEL__?: {
       getPlayerPos: () => Position;
+      getPlayerHp: () => number;
+      isWall: (x: number, y: number) => boolean;
       getEntities: () => LevelDebugEntity[];
       getExitPos: () => Position | null;
       isFloor: (x: number, y: number) => boolean;

@@ -1,5 +1,6 @@
 import { Level, TileType, Position, Entity, Item, MobSubtype, PlayerStats, GameState } from './types';
-import { SHOP_INTERVAL, BOSS_INTERVAL, MOB_TYPES } from './constants';
+import { SHOP_INTERVAL, BOSS_INTERVAL, MOB_TYPES, SWARM_SPAWN_COUNT } from './constants';
+import { getAvailableMobs, scaledAttackCooldown, scaledMoveSpeed } from './mobBalance';
 import { generateItem } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
 import { recordItemOffer } from './itemEconomy';
@@ -187,73 +188,13 @@ export const generateLevel = (
     return validPositions[Math.floor(Math.random() * validPositions.length)];
   };
   
-  // Helper function to get available mobs based on progressive introduction
-  // Introduces one new mob every 4 normal levels (excluding shops and bosses)
-  // Mobs introduced in difficulty order: swarm/drone → phase → moth → sniper → charger → tracker → turret → guardian
-  function getAvailableMobsForLevel(levelNum: number, isBoss: boolean, isShop: boolean): typeof MOB_TYPES[0][] {
-    // Cerberus is boss-only, exclude from normal progression
-    const normalMobs = MOB_TYPES.filter(mob => mob.subtype !== 'cerberus');
-    
-    // Count only normal combat levels (exclude shops and bosses)
-    let normalLevelCount = 0;
-    for (let i = 1; i <= levelNum; i++) {
-      const isBossLevel = i % BOSS_INTERVAL === 0 && i > 0;
-      const isShopLevel = i % SHOP_INTERVAL === 0 && !isBossLevel;
-      if (!isBossLevel && !isShopLevel) {
-        normalLevelCount++;
-      }
-    }
-    
-    // Determine which mobs should be available based on progression
-    // Level 1: swarm, drone (starter mobs)
-    // Every 4 normal levels introduces a new mob in difficulty order
-    const availableMobs: typeof MOB_TYPES[0][] = [];
-    
-    // Always available from start
-    if (normalLevelCount >= 1) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'swarm' || m.subtype === 'drone'));
-    }
-    
-    // Progressive introduction every 4 normal levels
-    // Level 5 (normal level 4): phase
-    if (normalLevelCount >= 4) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'phase'));
-    }
-    // Level 9 (normal level 7): moth
-    if (normalLevelCount >= 7) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'moth'));
-    }
-    // Level 13 (normal level 10): sniper
-    if (normalLevelCount >= 10) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'sniper'));
-    }
-    // Level 17 (normal level 13): charger
-    if (normalLevelCount >= 13) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'charger'));
-    }
-    // Level 21 (normal level 16): tracker
-    if (normalLevelCount >= 16) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'tracker'));
-    }
-    // Level 25 (normal level 19): turret
-    if (normalLevelCount >= 19) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'turret'));
-    }
-    // Level 29 (normal level 22): guardian
-    if (normalLevelCount >= 22) {
-      availableMobs.push(...normalMobs.filter(m => m.subtype === 'guardian'));
-    }
-    
-    // Remove duplicates
-    const uniqueMobs = Array.from(new Map(availableMobs.map(m => [m.subtype, m])).values());
-    
-    return uniqueMobs;
-  }
-  
   // Helper function to select mob type based on level and weights
   const selectMobType = (levelNum: number, isBoss: boolean, isShop: boolean): typeof MOB_TYPES[0] | null => {
-    // Get available mobs based on progressive introduction
-    const availableMobs = getAvailableMobsForLevel(levelNum, isBoss, isShop);
+    // Progressive introduction, one new mob roughly every 4 normal levels, in
+    // difficulty order: swarm/drone -> phase -> moth -> sniper -> charger ->
+    // tracker -> turret -> guardian. `MobTypeDef.minLevel` is the whole rule; a
+    // hardcoded ladder here used to mirror it, giving two sources of truth.
+    const availableMobs = getAvailableMobs(levelNum);
     if (availableMobs.length === 0) return null;
     
     // Calculate total weight
@@ -340,10 +281,8 @@ export const generateLevel = (
             const hp = Math.floor(baseHp * cerberusScaling.hpMultiplier * modifiers.enemyHp);
             const damage = Math.floor(baseDamage * cerberusScaling.dmgMultiplier);
             
-            // Scale speed: 1.05 + 0.02/level
-            const moveSpeed = 1.05 + (levelNum * 0.02);
-            // Scale attack cooldown: 2.2s - 0.02s/level (min 1.4s) = 2200ms - 20ms/level (min 1400ms)
-            const attackCooldown = Math.max(1400, 2200 - (levelNum * 20));
+            const moveSpeed = scaledMoveSpeed(cerberusMob, levelNum);
+            const attackCooldown = scaledAttackCooldown(cerberusMob, levelNum);
             
             const cerberusEntity: Entity = {
               id: `cerberus-${cerberusCounter++}`,
@@ -371,21 +310,26 @@ export const generateLevel = (
     }
   } else if (!isShop) {
     // Normal enemies - prevent infinite loop with max attempts
-    // Number of enemies scales with level, with more variety at higher levels
-    // Cap at 50 enemies to prevent performance issues and overwhelming gameplay
+    // Number of enemies scales with level, with more variety at higher levels.
+    // The cap counts *entities*: a swarm selection spawns 2-3 mobs, so counting
+    // selections used to overshoot the cap by ~30% at high sectors.
     const numEnemies = Math.min(Math.floor(levelNum * 1.5) + 3, 50);
     const maxAttempts = 1000; // Safety limit
     let attempts = 0;
     let enemyCounter = 0;
+    let spawned = 0;
     
-    for (let i = 0; i < numEnemies && attempts < maxAttempts; i++) {
+    while (spawned < numEnemies && attempts < maxAttempts) {
       const mobType = selectMobType(levelNum, isBoss, isShop);
       if (!mobType) break; // No valid mob types available
       
-      // For swarm mobs, spawn 2-3 at once
-      const spawnCount = mobType.subtype === 'swarm' ? Math.floor(Math.random() * 2) + 2 : 1;
+      // For swarm mobs, spawn a small pack at once
+      const [swarmMin, swarmMax] = SWARM_SPAWN_COUNT;
+      const spawnCount = mobType.subtype === 'swarm'
+        ? Math.floor(Math.random() * (swarmMax - swarmMin + 1)) + swarmMin
+        : 1;
       
-      for (let j = 0; j < spawnCount && attempts < maxAttempts; j++) {
+      for (let j = 0; j < spawnCount && attempts < maxAttempts && spawned < numEnemies; j++) {
         // For stationary turrets, prefer positions with good sightlines
         let enemyPos: Position | null;
         if (mobType.isStationary) {
@@ -421,8 +365,8 @@ export const generateLevel = (
             maxHp: hp,
             damage: damage,
             mobSubtype: mobType.subtype as MobSubtype,
-            moveSpeed: mobType.moveSpeed,
-            attackCooldown: mobType.attackCooldown,
+            moveSpeed: scaledMoveSpeed(mobType, levelNum),
+            attackCooldown: scaledAttackCooldown(mobType, levelNum),
             lastAttackTime: 0,
             canPhase: mobType.canPhase,
             isRanged: mobType.isRanged,
@@ -441,23 +385,17 @@ export const generateLevel = (
           if (mobType.subtype === 'tracker') {
             entity.isStalking = true;
             entity.pounceDirection = null;
-            // Scale speed: 1.55 + 0.04/level
-            entity.moveSpeed = 1.55 + (levelNum * 0.04);
-            // Scale attack cooldown: 1.6s - 0.015s/level (min 1.05s) = 1600ms - 15ms/level (min 1050ms)
-            entity.attackCooldown = Math.max(1050, 1600 - (levelNum * 15));
           }
           
           // Initialize moth orbiting properties
           if (mobType.subtype === 'moth') {
             entity.orbitAngle = 0; // Will be set by behavior code based on position
             entity.blinkCooldown = 0;
-            // Scale speed: 1.35 + 0.03/level
-            entity.moveSpeed = 1.35 + (levelNum * 0.03);
-            // Scale attack cooldown: 1.25s - 0.01s/level (min 0.85s) = 1250ms - 10ms/level (min 850ms)
-            entity.attackCooldown = Math.max(850, 1250 - (levelNum * 10));
+            entity.nextBlinkAt = 0;
           }
           
           entities.push(entity);
+          spawned++;
         }
         attempts++;
       }

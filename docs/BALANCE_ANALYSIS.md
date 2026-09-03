@@ -1,134 +1,145 @@
-# Balance Analysis: New Mobs
+# Balance Analysis: Mob Roster
 
-## Level 10 Comparison
+Status of this document: **current as of M6.1.** Every value below is asserted
+by `e2e/m6-1-mob-balance.spec.ts` or read straight from
+`client/src/lib/game/constants.ts`. An earlier revision listed a "Fixes Applied"
+section whose numbers never reached the code — moth/tracker/cerberus kept their
+pre-fix ramps for several milestones. Keep this file and the tests in step, and
+prefer the tests as the source of truth.
 
-### Existing Mobs
-- **Drone**: HP 70, DMG 15, Speed 1.0, Cooldown 500ms
-- **Sniper**: HP 45, DMG 32, Speed 0.5, Cooldown 2000ms
-- **Charger**: HP 58, DMG 23, Speed 1.8, Cooldown 600ms
-- **Guardian**: HP 130, DMG 16, Speed 0.6, Cooldown 800ms
+## Where mob tuning lives
 
-### New Mobs
-- **Moth**: HP 46, DMG 16, Speed 1.65, Cooldown 1150ms
-- **Tracker**: HP 44, DMG 23, Speed 1.95, Cooldown 1450ms
-- **Cerberus**: HP 110, DMG 19, Speed 1.25, Cooldown 2000ms
+| Concern | File |
+|---|---|
+| Base stats, spawn weight, `minLevel`, per-level ramps | `client/src/lib/game/constants.ts` (`MOB_TYPES`) |
+| Archetype HP/damage constants | `client/src/lib/game/scaling.ts` (`ARCHETYPE_CONSTANTS`) |
+| Ramp maths, spawn-share maths, relative DPS | `client/src/lib/game/mobBalance.ts` |
+| Incoming-damage formula | `client/src/lib/game/combat/damageModel.ts` |
+| Nyx vision debuff bounds | `client/src/lib/game/combat/visionDebuff.ts` |
+| Phasing wall budget | `client/src/lib/game/ai/phaseBudget.ts` |
 
-## Issues Found
+`MobTypeDef.minLevel` is the single gate for progressive mob introduction.
+`speedPerLevel` / `cooldownPerLevel` / `minCooldown` describe the per-level ramp;
+mobs that omit them stay flat.
 
-### 1. Speed Scaling Too Aggressive
-- **Moth**: At level 20, speed = 1.35 + 0.6 = 1.95 (faster than Charger!)
-- **Tracker**: At level 20, speed = 1.55 + 0.8 = 2.35 (way too fast)
-- **Cerberus**: At level 20, speed = 1.05 + 0.4 = 1.45 (reasonable)
+## M6.1 findings and changes
 
-**Fix**: Reduce speed scaling or cap it.
+### 1. Incoming damage amplified the death spiral
 
-### 2. Cerberus Tri-Bite Damage Too High
-- At level 10: 19 damage × 3 = 57 total damage
-- At level 20: 31 damage × 3 = 93 total damage
-- This can kill player in 2 combos!
+`damage = (base - defense) * (1 - hpRatio * 0.3)` meant the player took **70%**
+of a hit at full HP and **97%** at 10% HP — mobs hit hardest exactly when the
+player was closest to dying. The term reads like an intended mercy rule with the
+sign inverted.
 
-**Fix**: Reduce base damage or combo damage multiplier.
+**Fixed:** `MERCY_FLOOR + hpRatio * (1 - MERCY_FLOOR)` with `MERCY_FLOOR = 0.7`.
+Full HP takes the whole hit; near-death hits land at 70%.
 
-### 3. Cooldown Scaling Creates Imbalance
-- New mobs get faster with level, existing mobs don't
-- At level 40, Moth cooldown = 850ms (very fast for debuff)
+### 2. Hades Phase was unescapable, not overstatted
 
-**Fix**: Reduce cooldown scaling or increase minimum.
+Its raw numbers are below average (8 relative DPS at L10 against the drone's
+15). Four mechanics compounded instead:
 
-### 4. Tracker Damage High for Melee
-- 23 damage at level 10 is high for a melee mob
-- But it has stalking behavior, so might be okay
+- `canPhase` with no budget — walls stopped being cover, so the mob could never
+  be broken off.
+- Diagonal movement at `moveSpeed` 0.8 — a diagonal step covers √2 tiles, giving
+  a **4.53 tiles/s** closing rate in a straight line, faster than the drone's 4.0
+  through a maze.
+- `canMoveDiagonally` also gates *attacking*, so it threatened all 8 neighbours
+  where cardinal mobs threaten 4.
+- Melee damage had no line-of-sight check while the player's attacks did, so a
+  mob embedded in a wall could hit a player who could not hit back.
 
-### 5. Moth Vision Debuff
-- 50% reduction for 5 seconds is punishing
-- Multiple moths could stack (but currently doesn't - good)
-- Debuff doesn't refresh, just resets timer (good)
+**Fixed:** melee damage is now line-of-sight gated (`combat/meleeLineOfSight.ts`),
+phasing is capped at `PHASE_MAX_WALL_TILES = 3` consecutive wall tiles, and the
+mob's cadence and detection were softened (`attackCooldown` 400 → 600,
+`aggroRange` 5 → 4).
 
-## Recommended Fixes
+### 3. Minion Swarm dominated the population
 
-1. **Reduce speed scaling**: Cap or reduce per-level speed gains
-2. **Reduce Cerberus damage**: Lower base damage or reduce combo effectiveness
-3. **Adjust cooldown scaling**: Make it less aggressive or increase minimums
-4. **Review spawn weights**: Ensure new mobs don't dominate spawns
+Spawn weights are rolled per *selection*, but a swarm selection spawns 2–3
+entities. At weight 25 that made swarm **67%** of level-1 mobs and 37% at L30 —
+and the "cap at 50 enemies" counted selections, so sector 30 actually generated
+~62 entities.
 
-## Fixes Applied
+**Fixed:** `spawnWeight` 25 → 10, and the generation loop counts entities so the
+cap means what it says. `SWARM_SPAWN_COUNT` is now a shared constant.
 
-### 1. Moth Balance Adjustments
-- **Speed scaling**: Reduced from 0.03 to 0.015 per level
-  - Level 20: 1.35 + 0.3 = 1.65 (was 1.95)
-  - More reasonable for orbiting mob
-- **Cooldown scaling**: Reduced from -10 to -8 per level
-  - Less aggressive attack speed increase
-- **Minimum cooldown**: Increased from 850ms to 950ms
-  - Prevents too-fast debuff spam at high levels
+### 4. Nyx vision debuff could end a run
 
-### 2. Tracker Balance Adjustments
-- **Speed scaling**: Reduced from 0.04 to 0.02 per level
-  - Level 20: 1.55 + 0.4 = 1.95 (was 2.35)
-  - Still fast but not overpowered
-- **Cooldown scaling**: Reduced from -15 to -12 per level
-  - Less aggressive attack speed increase
-- **Minimum cooldown**: Increased from 1050ms to 1100ms
-  - Slightly slower minimum attack rate
+Each shadow pulse added 0.15 with a cap of **1.0 (total blindness)** against
+**2%/s** decay. One L10 moth fires every ~1.15s, so it blinded the player in ~9s
+and needed 50s to clear on a 120s timer — with a lightswitch the player could no
+longer see as the only cure. An earlier revision of this document claimed the
+debuff did not stack; it did.
 
-### 3. Cerberus Balance Adjustments
-- **Base damage**: Reduced from 7 to 6
-  - Level 10: 6 + 10 = 16 damage per bite (was 19)
-  - Level 10 combo: 48 total damage (was 57)
-- **Damage scaling**: Reduced from 1.2 to 1.0 per level
-  - Level 20: 6 + 20 = 26 damage per bite (was 31)
-  - Level 20 combo: 78 total damage (was 93)
-- **Cooldown scaling**: Reduced from -20 to -15 per level
-  - Less aggressive attack speed increase
-- **Minimum cooldown**: Increased from 1400ms to 1500ms
-  - Slightly slower minimum attack rate
+**Fixed:** cap 0.6, decay 8%/s (full stack clears in ~8s), and one stack per
+source per 3s so a single moth cannot spam. A moth pack is still worse than one
+moth.
 
-## Updated Level 10 Stats (After Fixes)
+### 5. Archetype ordering was inverted at depth
 
-### New Mobs (Fixed)
-- **Moth**: HP 46, DMG 16, Speed 1.5, Cooldown 1170ms
-- **Tracker**: HP 44, DMG 23, Speed 1.75, Cooldown 1480ms
-- **Cerberus**: HP 110, DMG 16, Speed 1.25, Cooldown 2050ms
-  - Tri-bite combo: 48 total damage (was 57)
+Relative DPS — `(base + L·perLevel) × archetype.dmg × (1000 / cooldown)`, with
+the level's shared scaling multiplier factored out since it is common to every
+mob:
 
-## Balance Assessment
+| Mob | L10 | L20 | L30 | Unlocks |
+|---|---|---|---|---|
+| Swarm (per pack of 2.5) | 67 → 27 | 108 → 43 | 150 → 60 | 1 |
+| Drone | 30 → 24 | 50 → 34 | 70 → 45 | 1 |
+| Phase | 20 → 13 | 33 → 22 | 45 → 30 | 5 |
+| Moth | 17 | 30 | 46 | 9 |
+| Sniper | — | 31 | 43 | 13 |
+| Charger | — | 70 → 46 | 97 → 65 | 17 |
+| Tracker | — | 31 | 49 | 21 |
+| Turret | — | — | 44 | 25 |
+| Guardian | — | — | 50 | 29 |
 
-### ✅ Moth
-- HP: Low (46 at L10) - appropriate for annoying debuffer
-- Damage: Moderate (16) - balanced with debuff utility
-- Speed: Reasonable (1.5) - fast enough to orbit, not overpowered
-- Cooldown: Balanced (1170ms) - prevents spam
+`a → b` is before → after M6.1. The level-1 drone used to out-damage the
+Athena Guardian (unlocked at 29) by 1.4×.
 
-### ✅ Tracker
-- HP: Low (44 at L10) - appropriate for glass cannon
-- Damage: High (23) - balanced by stalking behavior
-- Speed: Fast (1.75) - appropriate for pouncer
-- Cooldown: Balanced (1480ms) - prevents spam
+**Fixed:** drone `damagePerLevel` 1 → 0.7 and archetype `dmg` 1.0 → 0.8; charger
+`attackCooldown` 600 → 900 (it already carries `moveSpeed` 1.8 and a charge).
+Swarm's pack DPS falls out of the spawn-weight fix above.
 
-### ✅ Cerberus
-- HP: High (110 at L10) - appropriate for elite
-- Damage: Moderate (16 per bite) - tri-bite is powerful but not OP
-- Speed: Slow (1.25) - appropriate for tank
-- Cooldown: Long (2050ms) - prevents combo spam
-- **Tri-bite combo**: 48 total damage is strong but manageable
-  - Player has 100 HP, so 2 combos = 96 damage (survivable)
-  - Requires player to be in melee range for extended time
+### 6. Ramps that the previous revision claimed but never shipped
 
-## Spawn Weight Analysis
+Now in `MOB_TYPES` and asserted by the tests:
 
-Total spawn weight (excluding Cerberus):
-- Existing: 30 + 15 + 20 + 12 + 8 + 25 + 5 = 115
-- New: 10 + 8 = 18
-- **New mobs represent ~13.5% of spawns** - reasonable
+| Mob | Speed/level | Cooldown/level | Min cooldown |
+|---|---|---|---|
+| Moth | 0.015 (was 0.03) | −8ms (was −10) | 950ms (was 850) |
+| Tracker | 0.02 (was 0.04) | −12ms (was −15) | 1100ms (was 1050) |
+| Cerberus | 0.02 | −15ms (was −20) | 1500ms (was 1400) |
 
-Cerberus spawns only in boss sectors (levels 8, 16, 24, etc.) alongside boss, so doesn't affect normal spawn weights.
+Cerberus also drops to `baseDamage` 6 (was 7) and `damagePerLevel` 1.0 (was 1.2),
+so the tri-bite combo lands 48 rather than 57 total damage at L10.
 
-## No Conflicts Detected
+At L20 the tracker now reaches speed 1.95 instead of 2.35, and the moth 1.65
+instead of 1.95.
 
-✅ Spawn logic correctly filters Cerberus for boss levels only
-✅ Vision debuff doesn't stack (resets timer)
-✅ Afterimage system properly initialized and cleaned up
-✅ Speed/cooldown scaling formulas work correctly
-✅ Tri-bite combo timing logic is sound
-✅ All mob-specific properties properly initialized
+## Progressive introduction
 
+Driven entirely by `minLevel`; `e2e/m6-1-mob-balance.spec.ts` pins the ladder so
+it cannot drift:
+
+| Level | Adds |
+|---|---|
+| 1 | swarm, drone |
+| 5 | phase |
+| 9 | moth |
+| 13 | sniper |
+| 17 | charger |
+| 21 | tracker |
+| 25 | turret |
+| 29 | guardian |
+
+Cerberus is boss-sector only (levels 8, 16, 24, …), spawned alongside the boss,
+and never enters the normal roster.
+
+## Known, not yet addressed
+
+- **Moth blink target search** (`GameCanvas.tsx`) scans every tile of the level
+  and calls `getEntitiesInRadius` per tile — O(W·H·N) per blinking moth. A perf
+  issue rather than a balance one; tracked as an M7 follow-up.
+- **Player DPS** is `damage × 2.0 attacks/s` with no crit or weapon cadence
+  variance, so weapon choice only moves the damage term. Out of scope here.

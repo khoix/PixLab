@@ -81,8 +81,9 @@ export interface ScalingResult {
  * These allow fine-tuning of different mob types.
  */
 const ARCHETYPE_CONSTANTS: Record<string, { hp: number; dmg: number }> = {
-  // Trash mobs - baseline
-  'drone': { hp: 1.0, dmg: 1.0 },
+  // Trash mobs - baseline. The drone carries a damage penalty so the starter
+  // mob stops out-damaging the elites introduced 20+ sectors later.
+  'drone': { hp: 1.0, dmg: 0.8 },
   'swarm': { hp: 1.0, dmg: 1.0 },
   
   // Ranged mobs - lower HP, higher damage
@@ -269,7 +270,7 @@ function calculateTierMultiplier(level: number, sectorType: 'normal' | 'boss' | 
  * @param archetype Mob archetype/subtype
  * @returns HP and damage multipliers for the archetype
  */
-function getArchetypeConstants(archetype?: string): { hp: number; dmg: number } {
+export function getArchetypeConstants(archetype?: string): { hp: number; dmg: number } {
   if (!archetype) {
     return { hp: 1.0, dmg: 1.0 };
   }

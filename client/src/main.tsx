@@ -13,6 +13,11 @@ import { initHapticsApi } from "./lib/game/haptics";
 import { initRuntimeRefsApi } from "./lib/game/runtimeRefs";
 import { initFloatingTouchApi } from "./lib/game/touch/floatingTouchRecogniser";
 import { initAiSchedulerHooks } from "./lib/game/ai/aiScheduler";
+import { initPhaseBudgetApi } from "./lib/game/ai/phaseBudget";
+import { initDamageModelApi } from "./lib/game/combat/damageModel";
+import { initMeleeLineOfSightApi } from "./lib/game/combat/meleeLineOfSight";
+import { initVisionDebuffApi } from "./lib/game/combat/visionDebuff";
+import { initMobBalanceApi } from "./lib/game/mobBalance";
 import "./lib/game/testHooks";
 
 initPerfMonitoring();
@@ -27,6 +32,11 @@ initHapticsApi();
 initRuntimeRefsApi();
 initFloatingTouchApi();
 initAiSchedulerHooks();
+initPhaseBudgetApi();
+initDamageModelApi();
+initMeleeLineOfSightApi();
+initVisionDebuffApi();
+initMobBalanceApi();
 // Base styles (shared between web and mobile)
 import "./index.css";
 // Web-specific styles (desktop optimizations with @media min-width: 768px)

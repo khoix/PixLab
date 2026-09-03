@@ -324,6 +324,51 @@ Execution plan for performance optimization and gameplay improvements on web and
 
 ---
 
+## Milestone 6.1 — Mob Balance Pass
+
+**Goal:** Make the mob roster's threat ordering match its intent, and remove the
+interactions that make individual mobs unfair rather than hard.
+
+**Problem:** A roster review found four issues with more impact than the one that
+prompted it. The incoming-damage mercy term was inverted, so mobs hit hardest at
+low HP. Hades Phase was unescapable through a combination of unbudgeted phasing,
+diagonal movement and melee that ignored line of sight while the player's attacks
+did not. Spawn weights are rolled per selection but swarm spawns 2-3 entities,
+making it 67% of early mobs and pushing the 50-entity cap to ~62. The Nyx vision
+debuff stacked to total blindness against 2%/s decay. And `docs/BALANCE_ANALYSIS.md`
+documented a set of fixes that were never applied to the code.
+
+**Tasks:**
+- [x] Invert the mercy term back (`combat/damageModel.ts`): full HP takes the full hit, near-death lands at 70%
+- [x] Gate mob melee on line of sight (`combat/meleeLineOfSight.ts`), matching the player's own attack rule
+- [x] Cap phasing at 3 consecutive wall tiles (`ai/phaseBudget.ts`); soften Phase cadence/aggro
+- [x] Fix swarm's population share (`spawnWeight` 25 -> 10) and make the entity cap count entities
+- [x] Bound the Nyx debuff: cap 0.6, decay 8%/s, one stack per source per 3s
+- [x] Restore archetype ordering: drone damage down, charger cadence down
+- [x] Apply the moth/tracker/cerberus ramps `BALANCE_ANALYSIS.md` claimed but never shipped
+- [x] Move per-level ramps into `MobTypeDef`; gate progressive introduction on `minLevel` alone
+- [x] Rewrite `docs/BALANCE_ANALYSIS.md` to describe the shipped code, and keep it test-backed
+- [ ] Playtest sectors 5 / 10 / 20 / 30 and record time-to-exit against the M0 table
+
+**Files:**
+- `client/src/lib/game/constants.ts`, `scaling.ts`, `engine.ts`, `demoSpawn.ts`, `types.ts`
+- `client/src/lib/game/mobBalance.ts`, `combat/damageModel.ts`, `combat/visionDebuff.ts`, `combat/meleeLineOfSight.ts`, `ai/phaseBudget.ts` (new)
+- `client/src/components/game/GameCanvas.tsx`
+- `e2e/m6-1-mob-balance.spec.ts`, `docs/BALANCE_ANALYSIS.md`
+
+**Exit criteria:**
+- No mob can damage the player from a tile the player cannot attack into
+- Swarm is under a third of the mob population at every level band
+- A single moth cannot blind the player for the rest of a sector
+- Relative DPS increases with unlock order at sectors 20 and 30
+- `docs/BALANCE_ANALYSIS.md` matches the code, enforced by e2e assertions
+
+**Depends on:** Milestone 6 (balance baseline), Milestone 7 (LOS cache reused by the melee gate)
+
+**Estimated invasiveness:** Medium - changes gameplay-visible mob behaviour.
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Goal:** Keep frame times stable as enemy count and sector level grow.
@@ -331,7 +376,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 **Tasks:**
 - [x] Skip AI updates for mobs outside `aggroRange + buffer` of player (`dormant` tier; also outside vision + buffer, so revealed mobs keep animating)
 - [x] Stagger mob AI: update subset per frame (⅓ of `active` mobs per frame; mobs within 3 tiles or mid-attack stay per-frame). Skipped mobs bank real elapsed time (cap 400 ms) so cadence is unchanged — verified by an on/off A/B in `e2e/m7-ai-perf.spec.ts`.
-- [x] Memoise line-of-sight per level by tile pair, invalidated on tile carve. **Scope note:** this serves the player's auto-attack targeting only — enemy AI never calls `hasLineOfSight` (it uses short lane checks), so there is no NPC-side win here.
+- [x] Memoise line-of-sight per level by tile pair, invalidated on tile carve. **Scope note:** this served the player's auto-attack targeting only — enemy chase AI never calls `hasLineOfSight` (it uses short lane checks), so there was no NPC-side win here. M6.1 added a second consumer: the mob melee gate.
 - [x] Profile mob update block at sector 20+ with 15+ enemies; target specific hotspots (O(1) mob-occupancy lookup, `MOB_TYPE_BY_SUBTYPE` map, off-camera entity draw culling)
 - [x] Moth blink target search: was a full `W×H` tile walk with an O(N) entity filter per tile (O(W·H·N) per blinking moth). Now scans only the 6-tile disc around the player and uses the frame's occupancy map. Measured at 6× throttle the old scan was **not** producing visible `maxUpdateMs` spikes (the 10–25 ms spikes in that block are first-execution JIT on the first AI frame of a sector, present before and after); the rewrite is kept for its complexity bound, not a measured win.
 - [x] Time-base fixes exposed by the scheduler: moth orbit angle advances by elapsed move-ticks instead of +0.1 per tick; blink threshold is rolled once into `nextBlinkAt` instead of re-rolled every tick.
@@ -418,7 +463,7 @@ Execution plan for performance optimization and gameplay improvements on web and
 ```
 M0 Baseline
   └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance
+                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance ──► M6.1 Mob Balance
                         └─► M3 Canvas/Fog (after M2)
                                       └─► M7 AI Perf ──► M8 Refactor ──► M9 Variety
                                                 └─► M7.1 Entity draw (before or alongside M8)
@@ -437,6 +482,7 @@ M0 Baseline
 | M5.3 | Floating touch sensitivity & control settings | P1 | Low | Done |
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M6 | Balance & clarity | P2 | Medium | Done |
+| M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
 | M7.1 | Entity draw scaling | P2 | Low | Next |
 | M8 | Architecture split | **P1** | High | Next |
@@ -534,6 +580,20 @@ npm run test:e2e            # full suite (includes baseline capture tests)
 npx tsx scripts/capture-baseline.ts   # JSON snapshot (dev server must be running)
 # In browser: http://localhost:5000/?perf=1
 ```
+
+---
+
+## Runtime Kill Switches
+
+Behaviour-changing systems expose a runtime toggle so a live regression can be
+disabled without a deploy:
+
+| System | Toggle |
+|--------|--------|
+| M7 AI scheduler | `window.__PIXLAB_AI__.setEnabled(false)` — falls back to ticking every mob every frame |
+
+Still to do: surface these behind a query param or settings flag rather than
+console-only, so a player can be talked through it.
 
 ---
 

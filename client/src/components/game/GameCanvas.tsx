@@ -16,6 +16,15 @@ import {
   LOW_TIME_ASSIST_SEC,
 } from '../../lib/game/constants';
 import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
+import { canEnterTile as phaseCanEnterTile, nextWallTilesTraversed } from '../../lib/game/ai/phaseBudget';
+import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
+import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
+import {
+  applyVisionDebuffStack,
+  createVisionDebuffState,
+  decayVisionDebuff,
+  resetVisionDebuff,
+} from '../../lib/game/combat/visionDebuff';
 import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
 import { spawnMobEntity } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
@@ -189,7 +198,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   const exitPathHintRef = useRef<Position[]>([]);
   const lastFootprintPosRef = useRef<Position | null>(null); // Track last position where footprint was created
   const nextFootIsLeftRef = useRef<boolean>(true); // Track which foot to place next (alternating)
-  const visionDebuffLevelRef = useRef<number>(0); // Track vision debuff level (0-1.0, where 1.0 = complete blindness)
+  // Nyx shadow-pulse debuff: bounded stack with per-source cooldown and decay
+  // (see lib/game/combat/visionDebuff.ts).
+  const visionDebuffRef = useRef(createVisionDebuffState());
   const lightswitchRevealEndTimeRef = useRef<number | null>(null); // Track when lightswitch reveal ends
   // Use refs to track current stats to avoid race conditions with async state updates
   const statsRef = useRef<typeof state.stats>(state.stats);
@@ -228,7 +239,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       activeMods: activeModsRef.current,
       temporaryVisionBoost: temporaryVisionBoostRef.current,
       lightswitchRevealEndTime: lightswitchRevealEndTimeRef.current,
-      visionDebuffLevel: visionDebuffLevelRef.current,
+      visionDebuffLevel: visionDebuffRef.current.level,
       logicalWidth: canvasSizeRef.current.logicalWidth,
       logicalHeight: canvasSizeRef.current.logicalHeight,
       tileSize: TILE_SIZE,
@@ -255,9 +266,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   };
 
   // Apply vision debuff (stacks up to complete blindness)
-  const applyVisionDebuff = (amount: number = 0.15) => {
-    // Add to debuff level, capped at 1.0 (complete blindness)
-    visionDebuffLevelRef.current = Math.min(1.0, visionDebuffLevelRef.current + amount);
+  const applyVisionDebuff = (sourceId: string | undefined, now: number) => {
+    applyVisionDebuffStack(visionDebuffRef.current, sourceId, now);
   };
 
   // Preload item icons and stairs image on mount
@@ -443,7 +453,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     projectileIdCounterRef.current = 0;
     afterimageIdCounterRef.current = 0;
     particleIdCounterRef.current = 0;
-    visionDebuffLevelRef.current = 0;
+    resetVisionDebuff(visionDebuffRef.current);
     runtimeVisionDebuffRef.current = 0;
     lightswitchRevealEndTimeRef.current = null;
     // Initialize afterimages array if not present
@@ -500,6 +510,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
   useEffect(() => {
     window.__PIXLAB_LEVEL__ = {
       getPlayerPos: () => ({ ...playerPosRef.current }),
+      getPlayerHp: () => statsRef.current.hp,
+      isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
       getEntities: () =>
         (levelRef.current?.entities ?? []).map((e) => ({
           id: e.id,
@@ -645,12 +657,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     const now = Date.now();
     const PROJECTILE_LIFETIME = 3000; // 3 seconds
     
-    // Decay vision debuff over time (reduces by 2% per second)
-    if (visionDebuffLevelRef.current > 0) {
-      const decayRate = 0.02 * (deltaTime / 1000); // 2% per second
-      visionDebuffLevelRef.current = Math.max(0, visionDebuffLevelRef.current - decayRate);
-    }
-    runtimeVisionDebuffRef.current = visionDebuffLevelRef.current;
+    runtimeVisionDebuffRef.current = decayVisionDebuff(visionDebuffRef.current, deltaTime);
 
     // Check if temporary vision boost has expired
     if (temporaryVisionBoostRef.current && now >= temporaryVisionBoostRef.current.endTime) {
@@ -823,7 +830,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
             audioManager.playSound('itemPickup'); // Reuse sound for lightswitch activation
             lightswitch.activated = true;
             lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
-            visionDebuffLevelRef.current = 0; // Clear Nyx effect
+            resetVisionDebuff(visionDebuffRef.current); // Clear Nyx effect
             runtimeVisionDebuffRef.current = 0;
 
             // Log lightswitch activation event
@@ -1144,15 +1151,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           
           if (distToPlayer < 0.5) {
             // Hit player - update stats synchronously but ensure loop continues
-            const defense = getTotalDefense(loadoutRef.current);
-            const damageAfterDefense = Math.max(1, projectile.damage - defense);
-            const hpRatio = baseStats.hp / baseStats.maxHp;
-            const damage = Math.max(1, Math.floor(damageAfterDefense * (1 - hpRatio * 0.3)));
+            const damage = computeIncomingDamage({
+              baseDamage: projectile.damage,
+              defense: getTotalDefense(loadoutRef.current),
+              hpRatio: baseStats.hp / baseStats.maxHp,
+            });
             const newHp = Math.max(0, baseStats.hp - damage);
             
-            // Apply vision debuff if shadow pulse (stacks)
+            // Apply vision debuff if shadow pulse (bounded stack, at most one
+            // per moth per cooldown window)
             if (projectile.isShadowPulse) {
-              applyVisionDebuff(0.15); // Add 15% to debuff stack
+              applyVisionDebuff(projectile.ownerId, now);
             }
             
             // Find the projectile owner to identify attacker
@@ -1761,7 +1770,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                     updatedEntity.blinkCooldown = now;
                     updatedEntity.nextBlinkAt = now + rollMothBlinkDelay();
                   } else {
-                    // Fallback to orbiting
+                    // Nowhere dark to go: orbit and wait out a fresh interval,
+                    // rather than re-running the disc scan on every tick.
+                    updatedEntity.nextBlinkAt = now + rollMothBlinkDelay();
                     nextPos = { x: orbitX, y: orbitY };
                     shouldMove = true;
                   }
@@ -2169,7 +2180,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
           
           // Apply movement if valid
           if (shouldMove && levelRef.current) {
-            const canMove = entity.canPhase || !checkCollision(nextPos, levelRef.current);
+            const targetIsWall = checkCollision(nextPos, levelRef.current);
+            // Phasing mobs may cut through walls, but only for a few tiles at a
+            // time — otherwise the maze stops being cover and they become
+            // unbreakable stalkers.
+            const canMove = targetIsWall
+              ? entity.canPhase &&
+                phaseCanEnterTile({
+                  wallTilesTraversed: entity.wallTilesTraversed ?? 0,
+                  targetIsWall: true,
+                })
+              : true;
             if (canMove) {
               // Check bounds
               if (nextPos.x >= 0 && nextPos.x < levelRef.current.width &&
@@ -2196,6 +2217,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 
                 if (canStack) {
                   updatedEntity.pos = nextPos;
+                  updatedEntity.wallTilesTraversed = nextWallTilesTraversed(
+                    entity.wallTilesTraversed ?? 0,
+                    targetIsWall,
+                  );
                   enemyMoveTimersRef.current.set(entity.id, 0);
                 }
               }
@@ -2217,8 +2242,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
         
         // For non-flying mobs, only allow attacks in cardinal directions
         const canAttack = canMoveDiagonally(updatedEntity) || isInCardinalDirection(updatedEntity.pos, playerPosRef.current);
+        // Symmetry with the player's attack rule: a mob cannot land a melee hit
+        // from a tile the player has no line of sight into (notably a phasing
+        // mob parked inside a wall, which the player cannot attack back).
+        const hasMeleeLineOfSight =
+          !levelRef.current || canMeleeReach(playerPosRef.current, updatedEntity.pos, levelRef.current);
         
-        if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack) {
+        if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack && hasMeleeLineOfSight) {
           if (!entity.isRanged || finalDistToPlayer <= 1) {
             // Special handling for Cerberus tri-bite combo
             if (mobSubtype === 'cerberus') {
@@ -2237,11 +2267,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
                 const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
                 // Use a short cooldown to prevent multiple hits on same bite
                 if (now - lastDamageTime >= 100) {
-                  const defense = getTotalDefense(loadoutRef.current);
-                  const baseDamage = entity.damage;
-                  const damageAfterDefense = Math.max(1, baseDamage - defense);
-                  const hpRatio = baseStats.hp / baseStats.maxHp;
-                  const damage = Math.max(1, Math.floor(damageAfterDefense * (1 - hpRatio * 0.3)));
+                  const damage = computeIncomingDamage({
+                    baseDamage: entity.damage,
+                    defense: getTotalDefense(loadoutRef.current),
+                    hpRatio: baseStats.hp / baseStats.maxHp,
+                  });
                   const newHp = Math.max(0, baseStats.hp - damage);
                   
                   // Mark this combo count as having dealt damage
@@ -2277,11 +2307,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               const DAMAGE_COOLDOWN_MS = entity.attackCooldown || 500;
               
               if (now - lastDamageTime >= DAMAGE_COOLDOWN_MS) {
-                const defense = getTotalDefense(loadoutRef.current);
-                const baseDamage = entity.damage;
-                const damageAfterDefense = Math.max(1, baseDamage - defense);
-                const hpRatio = baseStats.hp / baseStats.maxHp;
-                const damage = Math.max(1, Math.floor(damageAfterDefense * (1 - hpRatio * 0.3)));
+                const damage = computeIncomingDamage({
+                  baseDamage: entity.damage,
+                  defense: getTotalDefense(loadoutRef.current),
+                  hpRatio: baseStats.hp / baseStats.maxHp,
+                });
                 const newHp = Math.max(0, baseStats.hp - damage);
                 
                 enemyDamageCooldownRef.current.set(entity.id, now);
