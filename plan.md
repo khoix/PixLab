@@ -390,9 +390,23 @@ documented a set of fixes that were never applied to the code.
 - [x] Rewrite `docs/BALANCE_ANALYSIS.md` to describe the shipped code, and keep it test-backed
 - [ ] Playtest sectors 5 / 10 / 20 / 30 and record time-to-exit against the M0 table
 
+### Follow-up — Phase Cadence Correctness
+
+**Finding (2026-09-04):** The generic melee cooldown entry is removed when a mob leaves valid melee contact. A Phase can therefore hit, briefly separate, re-enter range, and hit again without honoring the remaining configured cooldown. Phase pursuit also advances on both axes during diagonal movement, which can make its effective closing speed exceed the nominal `moveSpeed` budget.
+
+**Additional tasks:**
+- [ ] Preserve a mob's successful-attack timestamp across disengagement/re-engagement; clear attack state only when the mob is removed or the sector resets
+- [ ] Add regression coverage: hit → disengage → immediate re-engage must still honor the remaining cooldown
+- [ ] Normalize Phase diagonal pursuit so diagonal motion does not exceed the intended world-space movement budget
+- [ ] Explicitly prevent Phase/Hades damage while occupying a wall
+- [ ] Prevent a Phase from both emerging from a wall and damaging the player on the same AI tick
+- [ ] Add a short emergence/readability window after wall → floor transition; begin tuning around 300 ms and validate by playtest
+- [ ] Retest the existing 600 ms Phase attack cadence after correctness fixes before increasing the numerical cooldown further
+- [ ] Complete the existing sectors 5 / 10 / 20 / 30 playtest task with Phase-specific pressure notes
+
 **Files:**
 - `client/src/lib/game/constants.ts`, `scaling.ts`, `engine.ts`, `demoSpawn.ts`, `types.ts`
-- `client/src/lib/game/mobBalance.ts`, `combat/damageModel.ts`, `combat/visionDebuff.ts`, `combat/meleeLineOfSight.ts`, `ai/phaseBudget.ts` (new)
+- `client/src/lib/game/mobBalance.ts`, `combat/damageModel.ts`, `combat/visionDebuff.ts`, `combat/meleeLineOfSight.ts`, `ai/phaseBudget.ts`
 - `client/src/components/game/GameCanvas.tsx`
 - `e2e/m6-1-mob-balance.spec.ts`, `docs/BALANCE_ANALYSIS.md`
 
@@ -402,10 +416,16 @@ documented a set of fixes that were never applied to the code.
 - A single moth cannot blind the player for the rest of a sector
 - Relative DPS increases with unlock order at sectors 20 and 30
 - `docs/BALANCE_ANALYSIS.md` matches the code, enforced by e2e assertions
+- Breaking melee contact never resets the remaining attack cooldown
+- Two attacks from the same ordinary melee mob cannot occur closer together than its configured cadence
+- Phase diagonal pursuit does not exceed its intended movement-speed budget
+- A Phase cannot emerge and damage the player without a readable reaction window
 
 **Depends on:** Milestone 6 (balance baseline), Milestone 7 (LOS cache reused by the melee gate)
 
 **Estimated invasiveness:** Medium - changes gameplay-visible mob behaviour.
+
+**Status:** Reopened for follow-up correctness work.
 
 ---
 
@@ -482,6 +502,191 @@ a complete solvability guarantee, and generation needs no changes.
 
 ---
 
+## Milestone 6.4 — Encounter Pressure Budget
+
+**Goal:** Scale sector difficulty through controlled encounter pressure rather than letting enemy count, stronger archetypes, and independent attack timers multiply each other without a shared budget.
+
+**Problem:** Normal sectors increase population while introducing stronger archetypes and scaling stats. Even individually balanced mobs can create unfair burst damage when several independent attack cycles align. The entity cap should remain a performance/simulation limit, not the primary difficulty model.
+
+**Threat-cost starting points (tuning seeds, not fixed final values):**
+
+| Archetype | Initial threat cost |
+|-----------|--------------------:|
+| Swarm entity | 0.4 |
+| Drone | 1.0 |
+| Phase | 1.4 |
+| Moth | 1.5 |
+| Sniper | 1.6 |
+| Charger | 2.0 |
+| Tracker | 2.1 |
+| Turret | 2.0 |
+| Guardian | 2.3 |
+
+**Tasks:**
+- [ ] Add a pure encounter-budget model separate from individual HP/damage scaling
+- [ ] Define gradually increasing threat budgets by sector/tier
+- [ ] Generate normal-sector rosters against threat budget rather than raw enemy count alone
+- [ ] Keep an independent hard entity cap strictly for performance
+- [ ] Preserve the existing mob-unlock sequence unless playtesting identifies a specific ordering problem
+- [ ] Add an **active attack-pressure budget** separate from the number of mobs that may pursue/reposition
+- [ ] Start with simultaneous attack-state caps of 2 (sectors 1–8), 3 (9–16), 4 (17–24), and 5 (25+); validate rather than treating these as final values
+- [ ] Hold an attack slot from telegraph/wind-up through execution and recovery, not merely during the damage frame
+- [ ] Allow aggroed mobs without an attack slot to pursue, flank, reposition, or wait
+- [ ] Permit especially disruptive attack cycles to consume more than one pressure unit where appropriate
+- [ ] Prevent ranged and melee systems from bypassing the shared pressure budget simply because they use different attack implementations
+- [ ] Instrument peak concurrent attackers, aggroed mob count, threat budget used, and rolling incoming damage over 1 s / 3 s windows
+- [ ] Add deterministic assertions for pressure-budget compliance at representative sector bands
+
+**Design principle:** The late game may look crowded without requiring every visible enemy to attack simultaneously.
+
+**Exit criteria:**
+- No normal sector exceeds its configured simultaneous attack-pressure budget
+- Increasing entity population does not automatically multiply peak incoming burst damage
+- Stronger archetypes consume more encounter budget instead of being added on top of the previous population at equal cost
+- Sector threat increases predictably across tier boundaries
+- Swarms can provide visual/numerical pressure without costing the same as equivalent numbers of elite mobs
+
+**Priority:** P1
+
+**Depends on:** M6.1 follow-up; preferably M8 so attack states and encounter scheduling live in the extracted `GameEngine`.
+
+---
+
+## Milestone 6.5 — Boss Encounter & Arena Rework
+
+**Goal:** Give Zeus, Hades, and Ares distinct, readable combat loops in arenas designed around their mechanics rather than relying on ordinary maze generation and random add pressure.
+
+**Problem:** Bosses share a common stat chassis, boss sectors still originate from normal maze generation, and every boss currently receives a random 2–4 Cerberus pack. Hades benefits disproportionately from maze topology because the player obeys walls while Hades shortcuts through them. Ares' charge is partly regulated by accidental wall collisions rather than an explicit wind-up/recovery cycle.
+
+### Shared boss attack model
+
+Every boss attack cycle should explicitly contain:
+
+**Telegraph → execution → recovery → reposition/decision**
+
+The long cooldown belongs after the complete attack cycle. Multi-hit attacks may have short internal gaps, but those gaps do not replace the cycle recovery.
+
+### Zeus — reference encounter
+
+Zeus currently feels closest to the intended standard and should be treated as the control rather than broadly reworked.
+
+- [ ] Preserve the existing ranged telegraph and general cadence unless telemetry/playtesting identifies a problem
+- [ ] Give Zeus a preferred combat band rather than always advancing toward the player; begin around 4–6 tiles
+- [ ] Advance when too far away; retreat/reposition when crowded
+- [ ] Measure Zeus + Cerberus pressure before changing his add schedule
+
+**Intent:** Zeus teaches the boss language: readable tell, dodgeable threat, recovery.
+
+### Hades — open pursuit/ambush arena
+
+- [ ] Replace normal maze topology for Hades encounters with a dedicated open-arena generator
+- [ ] Target roughly 70–80% traversable floor
+- [ ] Use separated wall/pillar islands instead of long maze corridors
+- [ ] Avoid one-tile choke corridors and player dead ends
+- [ ] Maintain at least two practical escape routes around major obstacles
+- [ ] Structure Hades as: pursue → phase through obstacle → emerge → telegraph → strike → recovery → reposition
+- [ ] Hades may violate obstacle topology, but emergence must create a readable attack opportunity rather than instant contact damage
+- [ ] Start the first Hades encounter without the current random 2–4 Cerberus pack
+- [ ] Initial staged-add experiment: introduce one Cerberus around 60% boss HP; consider a second phase only after playtest
+- [ ] Add deterministic arena tests for connectivity and escape-route availability
+
+**Intent:** Hades is dangerous because walls cannot be trusted completely, not because maze shortcuts make disengagement impossible.
+
+### Ares — charge-and-punish arena
+
+- [ ] Use a more open arena with intentionally placed charge-blocking pillars/walls
+- [ ] Add a visible pre-charge telegraph; begin tuning around 500 ms
+- [ ] Guarantee that one charge creates at most one boss damage event
+- [ ] Add explicit post-charge recovery; begin tuning around 800–1200 ms
+- [ ] Make the recovery window a clear player damage opportunity
+- [ ] Do not allow an immediate new charge on the first decision tick after recovery ends
+- [ ] First-cycle Ares should initially fight without Cerberus adds; add pressure only if the boss is demonstrably undertuned
+
+**Intent:** Ares is defeated by reading, baiting, and punishing charges rather than simply outrunning continuous pursuit.
+
+### Boss adds
+
+- [ ] Replace random `2–4 Cerberus` with boss-specific and/or health-threshold-driven add schedules
+- [ ] Count boss adds against a boss encounter pressure budget
+- [ ] Boss and add attack states share the same concurrency model so adds cannot create unavoidable synchronized bursts
+- [ ] Repeat encounters may add mechanics/add pressure, but first-cycle bosses establish their core mechanic before layering complexity
+
+**Exit criteria:**
+- Hades uses a genuinely open arena rather than normal maze generation
+- Every boss has a readable telegraph/execution/recovery loop
+- Every boss attack has an explicit recovery opportunity
+- Ares cannot chain charges indefinitely
+- Boss difficulty does not vary dramatically because RNG chose two versus four Cerberus
+- Zeus remains approximately at its current perceived difficulty unless objective testing indicates otherwise
+- First-cycle bosses test understanding of mechanics rather than tolerance for stacked damage
+
+**Priority:** P1
+
+**Depends on:** M6.4 pressure model; preferably M8 architecture split.
+
+---
+
+## Milestone 6.6 — Tier Scaling Calibration & Balance Harness
+
+**Goal:** Make difficulty scale deliberately across the full run after individual mob cadence, encounter pressure, and boss mechanics have been corrected.
+
+**Problem:** Current difficulty combines base stat growth, adaptive scaling, tier multipliers, boss multipliers, population growth, cooldown ramps, and newly unlocked mechanics. Safety clamps can cause parts of the adaptive model to saturate relatively early, leaving later difficulty to rise disproportionately through other systems. Tuning global numbers before fixing cadence/concurrency would tune around broken mechanics.
+
+### Scaling review
+
+- [ ] Audit where HP and damage scaling reach their safety clamps for weak, expected, and strong player builds
+- [ ] Avoid a curve where most later sectors permanently sit against the same global multiplier ceiling
+- [ ] Evaluate separate HP and damage caps rather than one shared `maxScaling`
+- [ ] Prefer HP/endurance progression over large late-game per-hit damage increases
+- [ ] Keep adaptive scaling bounded so strong builds remain rewarding and weak builds are not punished twice
+- [ ] Ensure tier bumps do not coincide with uncontrolled increases in population, attack concurrency, and per-hit damage
+- [ ] Treat a newly unlocked enemy mechanic as part of the difficulty budget for that tier
+
+### Reference player profiles
+
+Create deterministic profiles for at least:
+- **Behind curve:** unlucky/under-equipped run
+- **Expected:** representative equipment for the sector
+- **Ahead of curve:** strong but plausible build
+
+Use the same profiles when evaluating every tier.
+
+### Balance harness
+
+- [ ] Add deterministic calculations/reporting for mob HP, damage per hit, attack cadence, sustained exposure DPS, encounter threat budget, maximum simultaneous attackers, player TTK against a target, enemy TTK against the player under continuous exposure, and boss HP/damage/cadence
+- [ ] Flag abrupt changes across adjacent sector/tier boundaries
+- [ ] Explicitly inspect 4→5, 8→9, 12→13, 16→17, 20→21, 24→25, and 28→29 where roster/tier changes occur
+- [ ] Validate first-cycle bosses at sectors 8 / 16 / 24
+- [ ] Validate repeated bosses at 32 / 40 / 48 so repetition scales without degenerating into pure stat inflation
+- [ ] Use repeat-boss tiers to layer modest additional pressure only after the first-cycle mechanic is proven readable
+
+### Playtest matrix
+
+Record focused runs at **5, 8, 10, 16, 20, 24, 30, 32, 40, 48**.
+
+For each, record:
+- perceived crowding
+- peak incoming burst
+- deaths and immediate cause
+- ability to disengage
+- boss time-to-kill
+- whether damage felt avoidable
+- whether recognizable recovery windows existed
+
+**Exit criteria:**
+- Difficulty rises across tiers without major unexplained spikes at unlock boundaries
+- A newly introduced enemy increases tactical complexity without simultaneously causing an uncontrolled population spike
+- An expected build does not become weaker relative to the same-tier encounter solely because adaptive scaling unexpectedly hit a ceiling/floor
+- Boss repeat cycles become harder in controlled increments
+- No boss or normal encounter relies on several independent attack timers accidentally aligning
+- Balance values and runtime behavior are covered by automated assertions where deterministic testing is possible
+
+**Priority:** P1
+
+**Depends on:** M6.4 and M6.5.
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Goal:** Keep frame times stable as enemy count and sector level grow.
@@ -543,6 +748,17 @@ a complete solvability guarantee, and generation needs no changes.
 - [ ] Add unit tests for `GameEngine` update ticks (movement, collision, damage)
 - [ ] Keep public behavior identical; no gameplay changes in this milestone unless fixing bugs found during extraction
 
+### Balance-enabler requirements
+
+These are architecture requirements only; M8 must remain behavior-preserving.
+
+- [ ] Enemy attack-cycle state lives in the extracted game engine, not React component state
+- [ ] Attack timestamps/recovery state survive normal range transitions and are cleaned up only at entity/sector lifecycle boundaries
+- [ ] Expose deterministic clock input to engine tests
+- [ ] Make encounter-budget / attack-slot scheduling independently testable
+- [ ] Make boss arena generation independently testable from rendering
+- [ ] Allow deterministic RNG injection or seeded generation for balance tests where randomness materially affects encounters
+
 **Files:**
 - `client/src/lib/game/engine/` (new directory)
 - `client/src/components/game/GameCanvas.tsx` (slimmed)
@@ -551,8 +767,9 @@ a complete solvability guarantee, and generation needs no changes.
 - `GameCanvas.tsx` under ~800 lines
 - At least 5 engine unit tests passing
 - No regressions in manual smoke test (move, fight, exit, boss, shop)
+- Engine tests can drive attack-cycle timing and seeded encounter generation without Canvas/DOM dependencies
 
-**Depends on:** Milestones 1–4 (stabilize hot path before large refactor). **Now unblocked and promoted to P1:** every remaining perf idea (fixed-step AI, flow-field, sprite batching, spatial hash) is materially cheaper to build and test after the split. Sequence M8 before further AI micro-optimisation; M7.1's two render tasks can land before or alongside it.
+**Depends on:** Milestones 1–4 (stabilize hot path before large refactor). **Now unblocked and promoted to P1:** every remaining perf idea (fixed-step AI, flow-field, sprite batching, spatial hash) is materially cheaper to build and test after the split. Sequence M8 after the M6.1 correctness follow-up and before M6.4–M6.6; M7.1's render tasks can land before or alongside it.
 
 ---
 
@@ -567,19 +784,33 @@ a complete solvability guarantee, and generation needs no changes.
 - [ ] Rebalance mystery box / skip bonuses at high levels
 - [ ] Compact mid-run commerce UI for mobile
 
-**Depends on:** Milestone 8 (easier to add systems cleanly)
+**Depends on:** Milestone 8 (easier to add systems cleanly), and core M6.4–M6.6 combat/balance work should land before optional post-launch variety.
 
 ---
 
 ## Execution Order Summary
 
-```
-M0 Baseline
-  └─► M1 Input & Loop ──┬─► M2 Render Quality
-                        ├─► M4 State & HUD ──► M5 Mobile UX ──► M5.1 Floating Touch ──► M5.2 Viewport Layout ──► M5.3 Touch Sensitivity ──► M5.4 Timer/Sensitivity/Fonts ──► M6 Balance ──► M6.1 Mob Balance
-                        └─► M3 Canvas/Fog (after M2)
-                                      └─► M7 AI Perf ──► M8 Refactor ──► M9 Variety
-                                                └─► M7.1 Entity draw (before or alongside M8)
+```text
+Completed foundation: M0–M6, M6.2, M6.3, M7
+
+M6.1 follow-up — Phase/cadence correctness
+        │
+        ▼
+M8 Architecture split
+        │
+        ├────────────► M7.1 Entity draw scaling (parallel/non-blocking)
+        │
+        ▼
+M6.4 Encounter pressure budget
+        │
+        ▼
+M6.5 Boss encounters & arenas
+        │
+        ▼
+M6.6 Tier scaling calibration
+        │
+        ▼
+M9 Progression & Variety
 ```
 
 | Milestone | Theme | Priority | Risk | Status |
@@ -596,12 +827,15 @@ M0 Baseline
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M5.5 | Floating joystick re-anchor | P1 | Medium — changes how every mobile turn reads | Done |
 | M6 | Balance & clarity | P2 | Medium | Done |
-| M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
+| M6.1 | Mob balance pass + Phase cadence follow-up | **P1** | Medium — gameplay-visible cadence/movement fairness | **Reopened — follow-up findings** |
 | M6.2 | Full run pause | P1 | Low | Done |
 | M6.3 | Opt-in portals | P1 | Medium — changes how a traversal feature works | Done |
+| M6.4 | Encounter pressure budget | **P1** | Medium — changes roster composition and attack concurrency | Planned |
+| M6.5 | Boss encounters & arenas | **P1** | High — changes boss layouts/behavior/add pressure | Planned |
+| M6.6 | Tier scaling calibration | **P1** | Medium — changes global difficulty curves after mechanics stabilize | Planned |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
-| M7.1 | Entity draw scaling | P2 | Low | Next |
-| M8 | Architecture split | **P1** | High | Next |
+| M7.1 | Entity draw scaling | P2 | Low | Next / parallel |
+| M8 | Architecture split | **P1** | High | **Next after M6.1 follow-up** |
 | M9 | Content/variety | P3 | Low | — |
 
 ---
