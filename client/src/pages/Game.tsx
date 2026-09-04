@@ -2081,7 +2081,7 @@ export default function Game() {
                   onPointerUp={(e) => handlePortalPointer(e.clientX, e.clientY)}
                 />
               )}
-              <PortalPrompt visible={standingOnPortal && !dialogOpen} isMobile={isMobile} />
+              <PortalPrompt visible={standingOnPortal && !dialogOpen} isMobile={isMobile} onEnter={handleEnterPortal} />
               {!gameOverState && isMobile && (state.settings.mobileControlType || 'floating') === 'floating' && (
                 <FloatingTouchControl
                   onMove={handleMove}

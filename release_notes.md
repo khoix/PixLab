@@ -30,6 +30,11 @@ trap. Entry is now voluntary.
   per-entry rolling would have made it fire far more often, since items get
   collected during a run.
 - Entering now also fires a success haptic, matching the exit tile.
+- **The prompt itself is the button.** It said "TAP TO ENTER" but was
+  `pointer-events-none`, so a press fell through to a tile several rows below the
+  player — outside the forgiveness square — and was rejected. It is now a real
+  button that enters directly; it only renders while standing on a portal, so its
+  presence is already the gate.
 
 Because entry is voluntary, the exit-path hint stays wall-only and the
 solvability check is unchanged.

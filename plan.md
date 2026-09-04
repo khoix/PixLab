@@ -462,7 +462,7 @@ a complete solvability guarantee, and generation needs no changes.
 - [x] `screenToTile` inverts the camera transform; `tryEnterPortalAt` gates on standing on the portal
 - [x] Re-roll the destination on **every** entry, from the live item list
 - [x] Fix the odds: with no items left it is 5% near-exit / 95% random. A sub-0.30 roll used to fall through to the near-exit branch, making that 35%
-- [x] Styled prompt above the touch layer, below the CRT overlay
+- [x] Styled prompt above the touch layer, below the CRT overlay — and the prompt is itself the button, since that is where players aim
 - [ ] Phone pass: walk over a portal without entering, then enter deliberately
 
 **Files:**
