@@ -97,6 +97,25 @@ test.describe('M6.3 — portals are opt-in', () => {
     }
   });
 
+  test('pressing the prompt itself enters the portal', async ({ page }) => {
+    const portal = await startSectorWithPortal(page);
+    expect(portal).not.toBeNull();
+    await standOnPortal(page, portal!);
+
+    const prompt = page.getByTestId('portal-prompt');
+    await expect(prompt).toBeVisible();
+    // It has to be a hit target: with pointer-events:none the press fell through
+    // to a tile several rows below the player, outside the forgiveness square.
+    expect(await prompt.evaluate((el) => getComputedStyle(el).pointerEvents)).not.toBe('none');
+
+    const before = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getPlayerPos());
+    await prompt.click();
+    await page.waitForTimeout(200);
+    const after = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getPlayerPos());
+
+    expect(after).not.toEqual(before);
+  });
+
   test('a tap outside the forgiveness square does not enter', async ({ page }) => {
     const portal = await startSectorWithPortal(page);
     expect(portal).not.toBeNull();
