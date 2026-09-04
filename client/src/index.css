@@ -114,6 +114,40 @@
   );
 }
 
+/* Run screen viewport lock.
+   The run root used 100vh while html/body use 100dvh on mobile; on iOS Safari
+   with the toolbar showing, 100vh is taller than the dynamic viewport, so the
+   root overflowed the document and the page could scroll. Opening the menu or
+   inventory then focused an element inside the dialog and the browser scrolled
+   the page to it — the whole screen "jumped up" on pause. Size the root to the
+   dynamic viewport and lock document scrolling while a run is on screen. */
+.run-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+html.run-active,
+html.run-active body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* PAUSED badge — gentle pulse; static under reduced motion */
+.pause-indicator__badge {
+  animation: pause-indicator-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pause-indicator-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pause-indicator__badge {
+    animation: none;
+  }
+}
+
 /* Lobby viewport lock — confine scroll to inner tab panels (M5.2) */
 .lobby-page {
   overflow: hidden;

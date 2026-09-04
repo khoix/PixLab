@@ -51,8 +51,9 @@ test.describe('In-game inventory dialog', () => {
 
     expect(stacking.topmostIsBlinds).toBe(true);
     expect(stacking.blindsZ).toBeGreaterThan(stacking.dialogZ);
-    // Toasts stay above the scanlines, as agreed.
-    expect(stacking.toastZ).toBeGreaterThan(stacking.blindsZ);
+    // Toasts clear the dialog but stay under the scanlines too.
+    expect(stacking.toastZ).toBeGreaterThan(stacking.dialogZ);
+    expect(stacking.toastZ).toBeLessThan(stacking.blindsZ);
   });
 
   for (const vp of [

@@ -33,9 +33,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           {/* Screen-wide CRT scanlines. Sits above every game layer — HUD, event
-              log console (z-201), dialogs (z-250) — so the inventory and other
-              modals read as part of the same screen. Toasts (z-260) and the
-              debug perf overlay (z-300) stay above it. */}
+              log console (z-201), dialogs (z-250), toasts (z-252) — so every
+              piece of UI reads as part of the same screen. Only the debug perf
+              overlay (z-300) stays above it. */}
           <div
             className="crt fixed inset-0 pointer-events-none z-[255]"
             aria-hidden="true"

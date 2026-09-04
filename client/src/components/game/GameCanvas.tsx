@@ -3792,6 +3792,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
     // Mobile sector timer is rendered in HUD (SectorTimerBar) to avoid browser chrome overlap.
 
+    // Frozen run: dim the world so the pause is visible even when the dialog that
+    // caused it is small (menu dropdown) or off to one side. The PAUSED badge is
+    // DOM (PauseIndicator) so it stays crisp under the HUD scale.
+    if (isGamePaused()) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+    }
+
     // CRT Scanlines overlay is now handled by GameOverlay component
     // to ensure consistent application across canvas and React UI elements
     } catch (error) {
@@ -3828,6 +3836,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
 
       if (isGamePaused()) {
         lastTimeRef.current = time;
+        // Still a new frame for the derived-stats memo: the canvas can be
+        // resized while paused (browser chrome showing/hiding on phones) and the
+        // camera anchor must follow the new dimensions immediately.
+        frameCounterRef.current += 1;
         drawFnRef.current();
         animationFrameId = requestAnimationFrame(loop);
         return;
