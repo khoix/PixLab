@@ -9,6 +9,7 @@ export interface PointerSample {
 
 export type FloatingTouchIntent =
   | { kind: 'direction'; direction: Direction }
+  | { kind: 'tap'; x: number; y: number }
   | { kind: 'clear' };
 
 /** Legacy default slop — use DEFAULT_DRAG_SLOP_PX from touchSensitivity. */
@@ -32,6 +33,12 @@ export const TURN_MIN_INCREMENT_PX = 1.5;
  * so the next push reads as a fresh swipe from that point.
  */
 export const REST_MS = 150;
+
+/**
+ * Longest a touch can last and still count as a tap. Paired with the slop test:
+ * a tap is a quick press that never travelled far enough to steer.
+ */
+export const TAP_MAX_MS = 250;
 
 interface ActiveTouch {
   /** Touch-down point. Never moves — the origin does. */
@@ -183,9 +190,27 @@ export class FloatingTouchRecogniser {
     return [{ kind: 'direction', direction: turned }];
   }
 
-  end(_sample: PointerSample): FloatingTouchIntent[] {
+  /**
+   * A press that never committed a direction, stayed inside the slop of where it
+   * landed, and lifted quickly is a tap. The floating layer covers the whole
+   * playfield and captures the pointer, so nothing underneath can see these —
+   * they have to be reported from here.
+   */
+  private isTap(sample: PointerSample): boolean {
+    const active = this.active;
+    if (!active || active.heldDirection) return false;
+    if (sample.t - active.startT > TAP_MAX_MS) return false;
+    const dx = sample.x - active.downX;
+    const dy = sample.y - active.downY;
+    return Math.sqrt(dx * dx + dy * dy) < this.slopPx;
+  }
+
+  end(sample: PointerSample): FloatingTouchIntent[] {
+    const tapped = this.isTap(sample);
     this.active = null;
-    return [{ kind: 'clear' }];
+    return tapped
+      ? [{ kind: 'tap', x: sample.x, y: sample.y }, { kind: 'clear' }]
+      : [{ kind: 'clear' }];
   }
 
   cancel(): FloatingTouchIntent[] {
@@ -224,6 +249,7 @@ export function initFloatingTouchApi(): void {
     TURN_SLOP_RATIO,
     TURN_MIN_INCREMENT_PX,
     REST_MS,
+    TAP_MAX_MS,
   };
 }
 
@@ -237,6 +263,7 @@ declare global {
       TURN_SLOP_RATIO: number;
       TURN_MIN_INCREMENT_PX: number;
       REST_MS: number;
+      TAP_MAX_MS: number;
     };
   }
 }

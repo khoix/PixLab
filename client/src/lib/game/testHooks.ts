@@ -23,6 +23,12 @@ declare global {
       spawnItem: (item: Item, pos: Position) => void;
       getItems: () => Array<{ pos: Position; item: Item }>;
       getLosCacheStats: () => { size: number; hits: number; misses: number } | null;
+      spawnPortal: (pos: Position) => string | null;
+      clearPortals: () => void;
+      getPortals: () => Array<{ id: string; pos: Position; exitPos: Position }>;
+      isStandingOnPortal: () => boolean;
+      screenToTile: (x: number, y: number) => Position | null;
+      tapAt: (x: number, y: number) => boolean;
     };
     __PIXLAB_TEST__?: {
       updateSettings: (payload: Partial<GameState['settings']>) => void;

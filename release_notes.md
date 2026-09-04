@@ -1,5 +1,52 @@
 # Release Notes
 
+## Milestone 6.3 — Opt-in Portals
+
+**Branch:** `claude/m6-3-opt-in-portals`
+
+Portals teleported on contact, which made them an involuntary edge in the
+movement graph — you could not walk past one, and the tile was effectively a
+trap. Entry is now voluntary.
+
+### Changed
+- **Walking onto a portal does nothing.** The tile is ordinary floor. Standing on
+  one shows a prompt; entering is a tap (mobile), or a click, `E` or `Enter`
+  (desktop). Tapping a portal you are not standing on does nothing — there is no
+  auto-walk.
+- **The tap is forgiving.** Anywhere in the 3×3 around the portal counts, because
+  your thumb covers the tile you are standing on. Entry is gated on standing on
+  the portal regardless, so this cannot reach a portal elsewhere on the map.
+- **Taps now exist at all.** The floating touch layer covers the playfield and
+  captures the pointer, so nothing underneath could ever see a tap. The
+  recogniser reports one when a press never steered, stayed inside slop, and
+  lifted within 250ms. `applyIntents` also switches exhaustively on intent kind —
+  a catch-all `else` previously turned any non-direction intent into "stop".
+- **The destination is re-rolled on every entry**, from the item list as it stands
+  at that moment. The same portal can send you somewhere different the second
+  time, which is what makes voluntary entry a gamble rather than a known shortcut.
+- **Odds fix:** with no items left on the level it is now 5% near-exit / 95%
+  random. A roll under 0.30 used to fall through into the near-exit branch
+  whenever the level had no items, silently turning that 5% into 35% — and
+  per-entry rolling would have made it fire far more often, since items get
+  collected during a run.
+- Entering now also fires a success haptic, matching the exit tile.
+
+Because entry is voluntary, the exit-path hint stays wall-only and the
+solvability check is unchanged.
+
+### Verification
+- `e2e/m6-3-opt-in-portals.spec.ts` (8 tests): walking on shows the prompt and does
+  not teleport, and still hasn't after 600ms; every offset in the 3×3 enters; a tap
+  3 tiles away does not; a tap while standing elsewhere does nothing and shows no
+  prompt; `E` enters on desktop; 30 consecutive entries yield more than one
+  distinct destination; a quick still press is a tap while a 400ms hold and a
+  40px drag are not; and the near-exit share measures ~5% over 4000 trials both
+  with and without items.
+- Portals are spawned through a new `__PIXLAB_LEVEL__.spawnPortal` hook rather
+  than by re-entering sectors until one appears, so the suite is deterministic.
+
+---
+
 ## Milestone 5.5 — Floating Joystick Re-anchor
 
 **Branch:** `claude/m5-5-joystick-reanchor`
