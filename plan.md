@@ -443,6 +443,45 @@ wall-clock resume fast-forwards all of them at once.
 
 ---
 
+## Milestone 6.3 — Opt-in Portals
+
+**Goal:** Stop portals teleporting you against your will.
+
+**Problem:** Walking onto a portal teleported on contact, so a portal was an
+involuntary edge in the movement graph — you could not walk past one, and the
+tile it sat on was effectively a trap. With entry voluntary the tile is ordinary
+floor again, the existing "exit is BFS-reachable over walkable tiles" check stays
+a complete solvability guarantee, and generation needs no changes.
+
+**Tasks:**
+- [x] Remove the teleport-on-contact block; the portal tile is walkable floor
+- [x] Enter by tapping (mobile) or clicking / pressing `E` or `Enter` (desktop) while standing on it
+- [x] Accept the tap anywhere in the 3×3 around the portal — the thumb covers the tile being stood on
+- [x] Tap intent in the floating recogniser: a quick press that never steered and stayed inside slop. The floating layer captures the pointer, so nothing underneath can see taps
+- [x] `applyIntents` switches exhaustively on intent kind — a catch-all `else` used to turn any new intent into a stop
+- [x] `screenToTile` inverts the camera transform; `tryEnterPortalAt` gates on standing on the portal
+- [x] Re-roll the destination on **every** entry, from the live item list
+- [x] Fix the odds: with no items left it is 5% near-exit / 95% random. A sub-0.30 roll used to fall through to the near-exit branch, making that 35%
+- [x] Styled prompt above the touch layer, below the CRT overlay
+- [ ] Phone pass: walk over a portal without entering, then enter deliberately
+
+**Files:**
+- `client/src/lib/game/engine.ts` (`rollPortalDestination`), `client/src/lib/game/touch/floatingTouchRecogniser.ts`
+- `client/src/components/game/GameCanvas.tsx`, `FloatingTouchControl.tsx`, new `PortalPrompt.tsx`
+- `client/src/pages/Game.tsx`, `client/src/lib/game/testHooks.ts`
+- `e2e/m6-3-opt-in-portals.spec.ts`
+
+**Exit criteria:**
+- No teleport from walking onto a portal
+- Tap / click / `E` / `Enter` all enter while standing on it; nothing enters from elsewhere
+- The same portal yields more than one distinct destination across repeated entries
+- Near-exit share is ~5% with and without items
+- Exit-path hint and solvability code untouched
+
+**Depends on:** Milestone 5.5 (the tap intent extends that recogniser)
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Goal:** Keep frame times stable as enemy count and sector level grow.
@@ -559,6 +598,7 @@ M0 Baseline
 | M6 | Balance & clarity | P2 | Medium | Done |
 | M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
 | M6.2 | Full run pause | P1 | Low | Done |
+| M6.3 | Opt-in portals | P1 | Medium — changes how a traversal feature works | Done |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
 | M7.1 | Entity draw scaling | P2 | Low | Next |
 | M8 | Architecture split | **P1** | High | Next |
