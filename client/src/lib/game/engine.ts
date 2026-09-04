@@ -464,63 +464,16 @@ export const generateLevel = (
       // Select random portal entrance position
       const portalPos = validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
       
-      // Determine portal exit position based on probabilities
-      let portalExitPos: Position;
-      const exitRoll = Math.random();
-      
-      if (exitRoll < 0.30 && items.length > 0) {
-        // 30% chance: near an item (2-3 tiles away, not on item tile)
-        const targetItem = items[Math.floor(Math.random() * items.length)];
-        const nearbyPositions: Position[] = [];
-        for (let dy = -3; dy <= 3; dy++) {
-          for (let dx = -3; dx <= 3; dx++) {
-            const dist = Math.abs(dx) + Math.abs(dy);
-            if (dist >= 2 && dist <= 3) {
-              const x = targetItem.pos.x + dx;
-              const y = targetItem.pos.y + dy;
-              if (x >= 0 && x < width && y >= 0 && y < height && 
-                  tiles[y][x] === 'floor' &&
-                  (x !== targetItem.pos.x || y !== targetItem.pos.y) &&
-                  (x !== portalPos.x || y !== portalPos.y)) {
-                nearbyPositions.push({ x, y });
-              }
-            }
-          }
-        }
-        portalExitPos = nearbyPositions.length > 0 
-          ? nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)]
-          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
-      } else if (exitRoll < 0.35) {
-        // 5% chance: near the level exit (2-3 tiles away, not on exit tile)
-        const nearbyPositions: Position[] = [];
-        for (let dy = -3; dy <= 3; dy++) {
-          for (let dx = -3; dx <= 3; dx++) {
-            const dist = Math.abs(dx) + Math.abs(dy);
-            if (dist >= 2 && dist <= 3) {
-              const x = exitPos.x + dx;
-              const y = exitPos.y + dy;
-              if (x >= 0 && x < width && y >= 0 && y < height && 
-                  tiles[y][x] === 'floor' &&
-                  (x !== exitPos.x || y !== exitPos.y) &&
-                  (x !== portalPos.x || y !== portalPos.y)) {
-                nearbyPositions.push({ x, y });
-              }
-            }
-          }
-        }
-        portalExitPos = nearbyPositions.length > 0 
-          ? nearbyPositions[Math.floor(Math.random() * nearbyPositions.length)]
-          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
-      } else {
-        // 65% chance: random floor position
-        const randomPositions = validPortalPositions.filter(
-          pos => pos.x !== portalPos.x || pos.y !== portalPos.y
-        );
-        portalExitPos = randomPositions.length > 0
-          ? randomPositions[Math.floor(Math.random() * randomPositions.length)]
-          : validPortalPositions[Math.floor(Math.random() * validPortalPositions.length)];
-      }
-      
+      const portalExitPos = rollPortalDestination({
+        tiles,
+        width,
+        height,
+        exitPos,
+        itemPositions: items.map((item) => item.pos),
+        candidates: validPortalPositions,
+        portalPos,
+      });
+
       portals.push({
         id: `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         pos: portalPos,
@@ -602,6 +555,90 @@ export const generateLevel = (
     isShop,
   };
 };
+
+/** Everything rollPortalDestination needs, from a generating or a live level. */
+export interface PortalDestinationContext {
+  tiles: TileType[][];
+  width: number;
+  height: number;
+  exitPos: Position;
+  /** Item tiles still on the floor. Shrinks as the player collects them. */
+  itemPositions: Position[];
+  /** Floor tiles legal for a portal endpoint. */
+  candidates: Position[];
+  /** The portal's own tile — never a valid destination. */
+  portalPos: Position;
+}
+
+/** Floor tiles 2-3 tiles (Manhattan) from `around`, excluding it and the portal. */
+function tilesNear(ctx: PortalDestinationContext, around: Position): Position[] {
+  const out: Position[] = [];
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const dist = Math.abs(dx) + Math.abs(dy);
+      if (dist < 2 || dist > 3) continue;
+      const x = around.x + dx;
+      const y = around.y + dy;
+      if (x < 0 || x >= ctx.width || y < 0 || y >= ctx.height) continue;
+      if (ctx.tiles[y]?.[x] !== 'floor') continue;
+      if (x === around.x && y === around.y) continue;
+      if (x === ctx.portalPos.x && y === ctx.portalPos.y) continue;
+      out.push({ x, y });
+    }
+  }
+  return out;
+}
+
+function pickRandom<T>(list: T[]): T | null {
+  return list.length > 0 ? list[Math.floor(Math.random() * list.length)] : null;
+}
+
+/**
+ * Where a portal drops the player.
+ *
+ * Rolled fresh on every entry (M6.3), not once at generation, so the same portal
+ * can send you somewhere different the second time — which is what makes opt-in
+ * entry a gamble rather than a known shortcut. Because it runs mid-run it reads
+ * the *live* item list, so the no-items case is reachable once the floor is
+ * cleared.
+ *
+ * Odds: 30% near an item, 5% near the exit, 65% random. With no items left the
+ * item share goes to random (5/95) — the near-exit chance stays at 5%. Before
+ * M6.3 a sub-0.30 roll fell through into the near-exit branch whenever the level
+ * had no items, silently turning that 5% into 35%.
+ */
+export const rollPortalDestination = (ctx: PortalDestinationContext): Position => {
+  const hasItems = ctx.itemPositions.length > 0;
+  const roll = Math.random();
+  const nearExitCeiling = hasItems ? 0.35 : 0.05;
+
+  const elsewhere = ctx.candidates.filter(
+    (pos) => pos.x !== ctx.portalPos.x || pos.y !== ctx.portalPos.y,
+  );
+  const fallback = () => pickRandom(elsewhere) ?? pickRandom(ctx.candidates) ?? ctx.portalPos;
+
+  if (hasItems && roll < 0.3) {
+    const target = pickRandom(ctx.itemPositions);
+    return (target ? pickRandom(tilesNear(ctx, target)) : null) ?? fallback();
+  }
+  if (roll < nearExitCeiling) {
+    return pickRandom(tilesNear(ctx, ctx.exitPos)) ?? fallback();
+  }
+  return fallback();
+};
+
+export function initEngineApi(): void {
+  if (typeof window === 'undefined') return;
+  window.__PIXLAB_ENGINE__ = { rollPortalDestination };
+}
+
+declare global {
+  interface Window {
+    __PIXLAB_ENGINE__?: {
+      rollPortalDestination: typeof rollPortalDestination;
+    };
+  }
+}
 
 export const checkCollision = (pos: Position, level: Level): boolean => {
   // Convert floating point position to integer tile coordinates

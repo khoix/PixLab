@@ -4,6 +4,8 @@ import { useGame } from '../lib/store';
 import { useLocation } from '../lib/router';
 import { GameCanvas } from '../components/game/GameCanvas';
 import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
+import { PortalPrompt } from '../components/game/PortalPrompt';
+import type { PortalApi } from '../components/game/GameCanvas';
 import { DirectionalPadControl } from '../components/game/DirectionalPadControl';
 import { HUD } from '../components/game/HUD';
 import { pushSectorTimerPause, popSectorTimerPause, setSectorTimerContext } from '../lib/game/sectorTimer';
@@ -178,6 +180,10 @@ export default function Game() {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [showMenu, setShowMenu] = useState(false);
+  // Portals are opt-in (M6.3): the canvas tells us when the player is standing
+  // on one, and hands us the API to enter it.
+  const [standingOnPortal, setStandingOnPortal] = useState(false);
+  const portalApiRef = React.useRef<PortalApi | null>(null);
   const [lobbyTab, setLobbyTab] = useState('mission');
   const [showInventory, setShowInventory] = useState(false);
   const [lastItemCount, setLastItemCount] = useState(state.inventory.length);
@@ -471,6 +477,31 @@ export default function Game() {
     toast,
   ]);
 
+  const handlePortalApiReady = React.useCallback((api: PortalApi | null) => {
+    portalApiRef.current = api;
+    if (!api) setStandingOnPortal(false);
+  }, []);
+
+  const dialogOpen = !!gameOverState || showInventory || showMenu || showCommerceVendor;
+
+  /** Enter the portal underfoot, from a key press. */
+  const handleEnterPortal = React.useCallback(() => {
+    if (gameOverState || showInventory || showMenu || showCommerceVendor) return false;
+    return portalApiRef.current?.enterPortalUnderPlayer() ?? false;
+  }, [gameOverState, showInventory, showMenu, showCommerceVendor]);
+
+  /** Enter from a tap or click at a viewport point, with 3x3 forgiveness. */
+  const handlePortalPointer = React.useCallback(
+    (clientX: number, clientY: number) => {
+      if (gameOverState || showInventory || showMenu || showCommerceVendor) return;
+      const api = portalApiRef.current;
+      if (!api) return;
+      const tile = api.screenToTile(clientX, clientY);
+      if (tile) api.tryEnterPortalAt(tile);
+    },
+    [gameOverState, showInventory, showMenu, showCommerceVendor],
+  );
+
   // Keyboard support
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -484,6 +515,23 @@ export default function Game() {
         return;
       }
       
+      // Handle E / Enter: step into the portal underfoot
+      if (e.key === 'e' || e.key === 'E' || e.key === 'Enter') {
+        if (gameOverState || showInventory || showMenu || showCommerceVendor) {
+          return;
+        }
+        // Enter also activates whatever button has focus, so only claim it when
+        // the player is not typing into or focused on a control.
+        const active = document.activeElement;
+        if (e.key === 'Enter' && active && active !== document.body) {
+          return;
+        }
+        if (handleEnterPortal()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
       // Handle Tab key: Toggle inventory dialog
       if (e.key === 'Tab') {
         // Don't toggle if game is over or other dialogs are open
@@ -523,7 +571,7 @@ export default function Game() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [gameOverState, showInventory, showMenu, showCommerceVendor, handleQuickHeal]);
+  }, [gameOverState, showInventory, showMenu, showCommerceVendor, handleQuickHeal, handleEnterPortal]);
 
   const handleGameOver = () => {
     setGameOverState({ type: 'death' });
@@ -2021,10 +2069,23 @@ export default function Game() {
                 onLevelComplete={handleLevelComplete}
                 onTimeOut={handleTimeOut}
                 gameOverState={gameOverState}
+                onPortalApiReady={handlePortalApiReady}
+                onStandingOnPortalChange={setStandingOnPortal}
               />
+              {/* Desktop click-to-enter. On mobile the floating layer captures
+                  the pointer, so taps arrive through its onTap instead. */}
+              {!gameOverState && !isMobile && standingOnPortal && (
+                <div
+                  data-testid="portal-click-layer"
+                  className="hidden md:block absolute inset-0 z-[34]"
+                  onPointerUp={(e) => handlePortalPointer(e.clientX, e.clientY)}
+                />
+              )}
+              <PortalPrompt visible={standingOnPortal && !dialogOpen} isMobile={isMobile} />
               {!gameOverState && isMobile && (state.settings.mobileControlType || 'floating') === 'floating' && (
                 <FloatingTouchControl
                   onMove={handleMove}
+                  onTap={handlePortalPointer}
                   slopPx={slopPxFromSensitivity(normalizeTouchSensitivity(state.settings.touchSensitivity))}
                 />
               )}

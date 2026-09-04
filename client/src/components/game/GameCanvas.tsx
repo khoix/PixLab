@@ -17,6 +17,7 @@ import {
 } from '../../lib/game/constants';
 import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
 import { canEnterTile as phaseCanEnterTile, nextWallTilesTraversed } from '../../lib/game/ai/phaseBudget';
+import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
@@ -27,9 +28,9 @@ import {
   resetVisionDebuff,
 } from '../../lib/game/combat/visionDebuff';
 import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
-import { spawnMobEntity } from '../../lib/game/demoSpawn';
+import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
-import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Footprint } from '../../lib/game/types';
+import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Portal, Footprint } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
 import { recordItemOffer, getSoftAssistAdjustments, getOfferPowerMetrics } from '../../lib/game/itemEconomy';
@@ -173,9 +174,31 @@ interface GameCanvasProps {
   onLevelComplete: () => void;
   onTimeOut: () => void;
   gameOverState: { type: 'death' | 'timeout' } | null;
+  /** Receives the portal API once the canvas mounts; null on unmount. */
+  onPortalApiReady?: (api: PortalApi | null) => void;
+  /** Called when the tile the player stands on gains or loses a portal. */
+  onStandingOnPortalChange?: (standing: boolean) => void;
 }
 
-export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOver, onLevelComplete, onTimeOut, gameOverState }) => {
+export interface PortalApi {
+  /** Viewport pixel -> tile, inverting the camera transform. */
+  screenToTile: (clientX: number, clientY: number) => Position | null;
+  /** Enter the portal underfoot if `tile` is within the forgiveness square. */
+  tryEnterPortalAt: (tile: Position) => boolean;
+  /** Enter the portal underfoot, wherever the input came from. */
+  enterPortalUnderPlayer: () => boolean;
+  isStandingOnPortal: () => boolean;
+}
+
+export const GameCanvas: React.FC<GameCanvasProps> = ({
+  inputDirection,
+  onGameOver,
+  onLevelComplete,
+  onTimeOut,
+  gameOverState,
+  onPortalApiReady,
+  onStandingOnPortalChange,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { state, dispatch } = useGame();
   
@@ -455,6 +478,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     enemyDamageCooldownRef.current.clear();
     enemyMoveTimersRef.current.clear();
     aiScheduler.reset();
+    if (wasStandingOnPortalRef.current) {
+      wasStandingOnPortalRef.current = false;
+      onStandingOnPortalChangeRef.current?.(false);
+    }
     previousEnemyIdsRef.current = new Set(level.entities.map(e => e.id));
     projectileIdCounterRef.current = 0;
     afterimageIdCounterRef.current = 0;
@@ -511,6 +538,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     }
   }, [state.currentLevel, state.screen]);
 
+  // Hand the parent the portal API. Refs only, so this mounts once and the
+  // closures stay valid for the life of the canvas.
+  const wasStandingOnPortalRef = useRef(false);
+  const onStandingOnPortalChangeRef = useRef(onStandingOnPortalChange);
+  onStandingOnPortalChangeRef.current = onStandingOnPortalChange;
+  const portalApiRef = useRef<PortalApi | null>(null);
+  useEffect(() => {
+    if (!onPortalApiReady) return;
+    const api: PortalApi = {
+      screenToTile: (x, y) => portalApiRef.current!.screenToTile(x, y),
+      tryEnterPortalAt: (tile) => portalApiRef.current!.tryEnterPortalAt(tile),
+      enterPortalUnderPlayer: () => portalApiRef.current!.enterPortalUnderPlayer(),
+      isStandingOnPortal: () => portalApiRef.current!.isStandingOnPortal(),
+    };
+    onPortalApiReady(api);
+    return () => onPortalApiReady(null);
+  }, [onPortalApiReady]);
+
   // E2e/debug hook: read-only view of the live level plus controlled mob spawning,
   // so AI scheduling can be verified without relying on random level layouts.
   useEffect(() => {
@@ -555,6 +600,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
       },
       getItems: () => (levelRef.current?.items ?? []).map(({ pos, item }) => ({ pos: { ...pos }, item })),
       getLosCacheStats: () => (levelRef.current ? getLosCacheStats(levelRef.current) : null),
+      spawnPortal: (pos: Position) => {
+        const level = levelRef.current;
+        if (!level) return null;
+        const portal = spawnPortalAtPosition(level, { ...pos });
+        if (!portal) return null;
+        level.portals = [...(level.portals ?? []), portal];
+        return portal.id;
+      },
+      clearPortals: () => {
+        const level = levelRef.current;
+        if (level) level.portals = [];
+      },
+      getPortals: () =>
+        (levelRef.current?.portals ?? []).map((p) => ({
+          id: p.id,
+          pos: { ...p.pos },
+          exitPos: { ...p.exitPos },
+        })),
+      isStandingOnPortal: () => portalApiRef.current?.isStandingOnPortal() ?? false,
+      screenToTile: (x: number, y: number) => portalApiRef.current?.screenToTile(x, y) ?? null,
+      tapAt: (x: number, y: number) => {
+        const tile = portalApiRef.current?.screenToTile(x, y);
+        if (!tile) return false;
+        return portalApiRef.current?.tryEnterPortalAt(tile) ?? false;
+      },
     };
     return () => {
       delete window.__PIXLAB_LEVEL__;
@@ -630,6 +700,106 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     const dy = toPos.y - fromPos.y;
     // Cardinal direction means either dx or dy is zero (or both, meaning same position)
     return dx === 0 || dy === 0;
+  };
+
+  /**
+   * Tiles the tap may land on and still count. The player's own thumb covers the
+   * tile they are standing on, so accept the 3x3 around the portal. Entry is
+   * gated on standing on the portal regardless, so this cannot reach a portal
+   * somewhere else on the map.
+   */
+  const PORTAL_TAP_FORGIVENESS_TILES = 1;
+
+  const portalUnderPlayer = (): Portal | null => {
+    const level = levelRef.current;
+    if (!level?.portals) return null;
+    const px = Math.floor(playerPosRef.current.x);
+    const py = Math.floor(playerPosRef.current.y);
+    return level.portals.find((p) => Math.floor(p.pos.x) === px && Math.floor(p.pos.y) === py) ?? null;
+  };
+
+  /**
+   * Take the portal underfoot. The destination is rolled here rather than read
+   * from `portal.exitPos`, so the same portal can send you somewhere different
+   * on a second use (M6.3) and the roll sees the items still on the floor.
+   */
+  const enterPortalUnderPlayer = (): boolean => {
+    const level = levelRef.current;
+    const portal = portalUnderPlayer();
+    if (!level || !portal) return false;
+
+    const candidates: Position[] = [];
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        if (level.tiles[y]?.[x] !== 'floor') continue;
+        if (x === level.exitPos.x && y === level.exitPos.y) continue;
+        candidates.push({ x, y });
+      }
+    }
+
+    const destination = rollPortalDestination({
+      tiles: level.tiles,
+      width: level.width,
+      height: level.height,
+      exitPos: level.exitPos,
+      itemPositions: level.items.map((entry) => entry.pos),
+      candidates,
+      portalPos: { x: Math.floor(portal.pos.x), y: Math.floor(portal.pos.y) },
+    });
+
+    audioManager.playSound('itemPickup'); // Reuse sound for portal activation
+    haptic('success');
+    playerPosRef.current = { ...destination };
+    visualPosRef.current = { ...destination };
+    moveStartPosRef.current = { ...destination };
+    moveProgressRef.current = 1;
+    lastPlayerPosRef.current = { ...destination };
+
+    eventLogger.logEvent('environment', 'Used portal', {
+      type: 'portal',
+      fromPos: { x: Math.floor(portal.pos.x), y: Math.floor(portal.pos.y) },
+      toPos: destination,
+    });
+
+    const stillOnPortal = portalUnderPlayer() !== null;
+    if (stillOnPortal !== wasStandingOnPortalRef.current) {
+      wasStandingOnPortalRef.current = stillOnPortal;
+      onStandingOnPortalChangeRef.current?.(stillOnPortal);
+    }
+    return true;
+  };
+
+  const screenToTile = (clientX: number, clientY: number): Position | null => {
+    const canvas = canvasRef.current;
+    if (!canvas || !levelRef.current) return null;
+    const rect = canvas.getBoundingClientRect();
+    const frame = getFrameSnapshot();
+    // Inverse of the draw transform: world px = screen px + camera offset. All
+    // canvas drawing is in CSS pixels, so DPR cancels out.
+    const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
+    const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
+    return {
+      x: Math.floor((clientX - rect.left + camX) / TILE_SIZE),
+      y: Math.floor((clientY - rect.top + camY) / TILE_SIZE),
+    };
+  };
+
+  const tryEnterPortalAt = (tile: Position): boolean => {
+    const portal = portalUnderPlayer();
+    if (!portal) return false;
+    const dx = Math.abs(tile.x - Math.floor(portal.pos.x));
+    const dy = Math.abs(tile.y - Math.floor(portal.pos.y));
+    if (dx > PORTAL_TAP_FORGIVENESS_TILES || dy > PORTAL_TAP_FORGIVENESS_TILES) return false;
+    return enterPortalUnderPlayer();
+  };
+
+  // Refreshed every render so the published API always calls the current
+  // closures; they only read refs, so any generation behaves identically.
+  portalApiRef.current = {
+    screenToTile,
+    tryEnterPortalAt,
+    enterPortalUnderPlayer,
+    isStandingOnPortal: () => portalUnderPlayer() !== null,
   };
 
   // Helper function to calculate wall phase chance based on base chance and level
@@ -810,27 +980,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
               perfMonitor.recordSectorClear(state.currentLevel, true);
             }
             onLevelComplete();
-          }
-
-          // Check for portal collision
-          const portal = levelRef.current.portals.find(
-            p => Math.floor(p.pos.x) === nextPos.x && Math.floor(p.pos.y) === nextPos.y
-          );
-          if (portal) {
-            // Teleport player to portal exit position
-            audioManager.playSound('itemPickup'); // Reuse sound for portal activation
-            playerPosRef.current = { ...portal.exitPos };
-            visualPosRef.current = { ...portal.exitPos };
-            moveStartPosRef.current = { ...portal.exitPos };
-            moveProgressRef.current = 1;
-            lastPlayerPosRef.current = { ...portal.exitPos };
-            
-            // Log portal usage event
-            eventLogger.logEvent('environment', 'Used portal', {
-              type: 'portal',
-              fromPos: { x: nextPos.x, y: nextPos.y },
-              toPos: portal.exitPos
-            });
           }
 
           // Check for lightswitch collision
@@ -1428,6 +1577,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ inputDirection, onGameOv
     // The scheduler decides per mob whether it gets a tick this frame (see
     // lib/game/ai/aiScheduler.ts): far-away mobs sleep, mid-range mobs are
     // staggered across frames, nearby / mid-attack mobs run every frame.
+    // Tell the parent when the player steps on or off a portal, so the prompt
+    // appears and disappears without polling from React.
+    const standingOnPortal = portalUnderPlayer() !== null;
+    if (standingOnPortal !== wasStandingOnPortalRef.current) {
+      wasStandingOnPortalRef.current = standingOnPortal;
+      onStandingOnPortalChangeRef.current?.(standingOnPortal);
+    }
+
     aiScheduler.beginFrame();
     // Anything inside this radius is visible to the player and must keep animating.
     const awakeRadiusTiles = activeScrollEffectsRef.current.threatSense
