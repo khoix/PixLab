@@ -1336,6 +1336,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               baseDamage: projectile.damage,
               defense: getTotalDefense(loadoutRef.current),
               hpRatio: baseStats.hp / baseStats.maxHp,
+              maxHp: baseStats.maxHp,
+              // The cadence the shot was fired at, not the shooter's current
+              // one — the shooter may already be dead.
+              cadenceMs: projectile.cadenceMs,
+              isBoss: projectile.isBoss,
             });
             const newHp = Math.max(0, baseStats.hp - damage);
             
@@ -1692,6 +1697,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     velocity,
                     damage: entity.damage,
                     ownerId: entity.id,
+                    cadenceMs: entity.attackCooldown ?? 1000,
+                    isBoss: entity.isBoss === true,
                     lifetime: PROJECTILE_LIFETIME,
                     createdAt: now,
                     ...(wallPhaseChance !== undefined && { wallPhaseChance }),
@@ -1833,6 +1840,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                       velocity,
                       damage: entity.damage,
                       ownerId: entity.id,
+                      cadenceMs: entity.attackCooldown ?? 1000,
+                      isBoss: entity.isBoss === true,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
                       wallPhaseChance,
@@ -2024,6 +2033,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                       velocity,
                       damage: entity.damage,
                       ownerId: entity.id,
+                      cadenceMs: entity.attackCooldown ?? 1000,
+                      isBoss: entity.isBoss === true,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
                       isShadowPulse: true,
@@ -2265,6 +2276,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                       velocity,
                       damage: entity.damage,
                       ownerId: entity.id,
+                      cadenceMs: entity.attackCooldown ?? 1000,
+                      isBoss: entity.isBoss === true,
                       lifetime: PROJECTILE_LIFETIME,
                       createdAt: now,
                       wallPhaseChance,
@@ -2483,6 +2496,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     baseDamage: entity.damage,
                     defense: getTotalDefense(loadoutRef.current),
                     hpRatio: baseStats.hp / baseStats.maxHp,
+                    maxHp: baseStats.maxHp,
+                    // The tri-bite's cadence is the whole combo, not the 100 ms
+                    // guard between individual bites.
+                    cadenceMs: entity.attackCooldown ?? 500,
+                    isBoss: entity.isBoss === true,
                   });
                   const newHp = Math.max(0, baseStats.hp - damage);
                   
@@ -2529,6 +2547,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   baseDamage: entity.damage,
                   defense: getTotalDefense(loadoutRef.current),
                   hpRatio: baseStats.hp / baseStats.maxHp,
+                  maxHp: baseStats.maxHp,
+                  cadenceMs: DAMAGE_COOLDOWN_MS,
+                  isBoss: entity.isBoss === true,
                 });
                 const newHp = Math.max(0, baseStats.hp - damage);
                 

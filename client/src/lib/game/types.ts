@@ -91,6 +91,10 @@ export interface Projectile {
   velocity: { x: number; y: number };
   damage: number;
   ownerId: string;
+  /** Shooter's cadence when it fired; drives the per-hit cap on impact. */
+  cadenceMs: number;
+  /** Whether the shooter was a boss, which uses a flat per-hit share. */
+  isBoss?: boolean;
   lifetime: number; // ms
   createdAt: number;
   isShadowPulse?: boolean; // For moth shadow pulse attack

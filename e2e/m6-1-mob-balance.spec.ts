@@ -6,15 +6,18 @@ test.describe('M6.1 — incoming damage model', () => {
     await page.goto('/');
     const result = await page.evaluate(() => {
       const api = window.__PIXLAB_DAMAGE__!;
-      const at = (hpRatio: number) => api.computeIncomingDamage({ baseDamage: 100, defense: 0, hpRatio });
+      // A large bar and a slow attacker, so the M6.4a per-hit cap is not the
+      // binding constraint here — this test is about the mercy term alone.
+      const base = { maxHp: 10_000, cadenceMs: 2000 };
+      const at = (hpRatio: number) => api.computeIncomingDamage({ ...base, baseDamage: 100, defense: 0, hpRatio });
       return {
         floor: api.mercyFloor,
         full: at(1),
         half: at(0.5),
         nearDeath: at(0.05),
         empty: at(0),
-        withDefense: api.computeIncomingDamage({ baseDamage: 100, defense: 40, hpRatio: 1 }),
-        overkillDefense: api.computeIncomingDamage({ baseDamage: 5, defense: 500, hpRatio: 1 }),
+        withDefense: api.computeIncomingDamage({ ...base, baseDamage: 100, defense: 40, hpRatio: 1 }),
+        overkillDefense: api.computeIncomingDamage({ ...base, baseDamage: 5, defense: 500, hpRatio: 1 }),
       };
     });
 
