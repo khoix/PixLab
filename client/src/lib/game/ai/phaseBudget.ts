@@ -10,6 +10,15 @@
 /** Consecutive wall tiles a phasing mob may occupy before it must surface. */
 export const PHASE_MAX_WALL_TILES = 3;
 
+/**
+ * Beat between surfacing from a wall and being able to land a hit.
+ *
+ * Without it a Phase emerges and damages on the same AI tick: the player's
+ * first frame of warning is the damage number. The window turns the emergence
+ * into a tell — the same readable telegraph every other threat gets.
+ */
+export const PHASE_EMERGENCE_MS = 300;
+
 export interface PhaseBudgetInput {
   /** Wall tiles the mob has occupied back-to-back so far. */
   wallTilesTraversed: number;
@@ -28,13 +37,30 @@ export function nextWallTilesTraversed(current: number, movedIntoWall: boolean):
   return movedIntoWall ? current + 1 : 0;
 }
 
+/** True when a step moves a mob out of solid rock and onto open floor. */
+export function isEmergingStep(wallTilesTraversed: number, targetIsWall: boolean): boolean {
+  return wallTilesTraversed > 0 && !targetIsWall;
+}
+
+/**
+ * True once a mob that surfaced at `emergedAt` may attack again. Mobs that
+ * never phase carry no stamp and are never gated.
+ */
+export function canAttackAfterEmerging(emergedAt: number | undefined, now: number): boolean {
+  if (emergedAt === undefined) return true;
+  return now - emergedAt >= PHASE_EMERGENCE_MS;
+}
+
 export function initPhaseBudgetApi(): void {
   if (typeof window === 'undefined') return;
 
   window.__PIXLAB_PHASE__ = {
     canEnterTile,
     nextWallTilesTraversed,
+    isEmergingStep,
+    canAttackAfterEmerging,
     maxWallTiles: PHASE_MAX_WALL_TILES,
+    emergenceMs: PHASE_EMERGENCE_MS,
   };
 }
 
@@ -43,7 +69,10 @@ declare global {
     __PIXLAB_PHASE__?: {
       canEnterTile: typeof canEnterTile;
       nextWallTilesTraversed: typeof nextWallTilesTraversed;
+      isEmergingStep: typeof isEmergingStep;
+      canAttackAfterEmerging: typeof canAttackAfterEmerging;
       maxWallTiles: number;
+      emergenceMs: number;
     };
   }
 }

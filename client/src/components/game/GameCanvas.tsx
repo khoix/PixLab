@@ -16,11 +16,17 @@ import {
   LOW_TIME_ASSIST_SEC,
 } from '../../lib/game/constants';
 import { aiScheduler, isTimingSensitive } from '../../lib/game/ai/aiScheduler';
-import { canEnterTile as phaseCanEnterTile, nextWallTilesTraversed } from '../../lib/game/ai/phaseBudget';
+import {
+  canEnterTile as phaseCanEnterTile,
+  isEmergingStep,
+  nextWallTilesTraversed,
+} from '../../lib/game/ai/phaseBudget';
+import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
 import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
+import { canLandMeleeHit } from '../../lib/game/combat/meleeCadence';
 import {
   applyVisionDebuffStack,
   createVisionDebuffState,
@@ -2385,12 +2391,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
                 
                 if (canStack) {
+                  const stepDx = nextPos.x - entity.pos.x;
+                  const stepDy = nextPos.y - entity.pos.y;
+                  // Surfacing is a tell, not a hit: stamp it so the melee gate
+                  // can hold the mob for a readable beat.
+                  if (isEmergingStep(entity.wallTilesTraversed ?? 0, targetIsWall)) {
+                    updatedEntity.phaseEmergedAt = now;
+                  }
                   updatedEntity.pos = nextPos;
                   updatedEntity.wallTilesTraversed = nextWallTilesTraversed(
                     entity.wallTilesTraversed ?? 0,
                     targetIsWall,
                   );
-                  enemyMoveTimersRef.current.set(entity.id, 0);
+                  // A diagonal step covers √2 tiles, so it costs √2 delays.
+                  // Cardinal steps still carry 0, exactly as before.
+                  enemyMoveTimersRef.current.set(
+                    entity.id,
+                    nextMoveTimer(baseMoveDelay, stepDx, stepDy),
+                  );
                 }
               }
             }
@@ -2416,6 +2434,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // mob parked inside a wall, which the player cannot attack back).
         const hasMeleeLineOfSight =
           !levelRef.current || canMeleeReach(playerPosRef.current, updatedEntity.pos, levelRef.current);
+        // Stated outright rather than left to LOS geometry: a mob standing in
+        // solid rock is a mob the player cannot attack back, so it does not get
+        // to attack either.
+        const attackerInWall = !!levelRef.current && checkCollision(updatedEntity.pos, levelRef.current);
         
         if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack && hasMeleeLineOfSight) {
           if (!entity.isRanged || finalDistToPlayer <= 1) {
@@ -2434,8 +2456,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               
               if (shouldDamage) {
                 const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
-                // Use a short cooldown to prevent multiple hits on same bite
-                if (now - lastDamageTime >= 100) {
+                // Short cooldown, only to stop one bite landing twice — the
+                // tri-bite cadence itself is `shouldCerberusBiteDamage`.
+                if (canLandMeleeHit({
+                  now,
+                  lastDamageTime,
+                  cooldownMs: 100,
+                  attackerInWall,
+                  emergedAt: updatedEntity.phaseEmergedAt,
+                })) {
                   const damage = computeIncomingDamage({
                     baseDamage: entity.damage,
                     defense: getTotalDefense(loadoutRef.current),
@@ -2474,8 +2503,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               // Normal melee damage cooldown
               const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
               const DAMAGE_COOLDOWN_MS = entity.attackCooldown || 500;
-              
-              if (now - lastDamageTime >= DAMAGE_COOLDOWN_MS) {
+
+              if (canLandMeleeHit({
+                now,
+                lastDamageTime,
+                cooldownMs: DAMAGE_COOLDOWN_MS,
+                attackerInWall,
+                emergedAt: updatedEntity.phaseEmergedAt,
+              })) {
                 const damage = computeIncomingDamage({
                   baseDamage: entity.damage,
                   defense: getTotalDefense(loadoutRef.current),
@@ -2507,9 +2542,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               }
             }
           }
-        } else {
-          enemyDamageCooldownRef.current.delete(entity.id);
         }
+        // No `else` clearing the cooldown here. Dropping the entry on every
+        // loss of contact made `attackCooldown` a floor only while contact was
+        // continuous, so any oscillating mob could launder its own cadence.
+        // The entry is released in `releaseMobBookkeeping` when the mob leaves
+        // the level, and cleared wholesale on sector change.
 
         return updatedEntity;
       }

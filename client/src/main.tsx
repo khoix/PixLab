@@ -17,6 +17,8 @@ import { initGameClockApi, subscribeGamePause } from "./lib/game/gameClock";
 import { initEngineApi } from "./lib/game/engine";
 import { audioManager } from "./lib/audio";
 import { initPhaseBudgetApi } from "./lib/game/ai/phaseBudget";
+import { initMovementBudgetApi } from "./lib/game/ai/movementBudget";
+import { initMeleeCadenceApi } from "./lib/game/combat/meleeCadence";
 import { initDamageModelApi } from "./lib/game/combat/damageModel";
 import { initMeleeLineOfSightApi } from "./lib/game/combat/meleeLineOfSight";
 import { initVisionDebuffApi } from "./lib/game/combat/visionDebuff";
@@ -45,6 +47,8 @@ subscribeGamePause((paused) => {
   else audioManager.resumeMusicForGamePause();
 });
 initPhaseBudgetApi();
+initMovementBudgetApi();
+initMeleeCadenceApi();
 initDamageModelApi();
 initMeleeLineOfSightApi();
 initVisionDebuffApi();

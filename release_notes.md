@@ -1,5 +1,46 @@
 # Release Notes
 
+## Milestone 6.1 follow-up — Cadence & Movement Correctness
+
+**Branch:** `cursor/m7-ai-perf-aa59`
+
+Two of the numbers in `constants.ts` were fiction: the engine did not enforce
+the melee cadence, and it did not enforce the Phase's move speed. M6.1 tuned
+both and neither tune reached the game.
+
+### Fixed
+- **Mobs can no longer refund their own attack cooldown.** The cooldown entry was
+  dropped whenever a mob left melee contact — out of range, off-cardinal, *or*
+  without line of sight — so `attackCooldown` only held while contact stayed
+  continuous. Anything that oscillates reset its clock: a Phase dipping into a
+  wall, a charger bouncing off one, a moth orbiting through range 1, a tracker
+  pouncing. Measured on a guardian (800 ms cadence) with the player stepping in
+  and out of range for 1.44 s: **8 hits where 3 were allowed.** The cooldown now
+  lives on the mob until it leaves the level or the sector resets. Re-approaching
+  after a genuine absence still connects on contact — that time really elapsed.
+- **M6.1's Phase cooldown bump now actually applies.** 400 → 600 ms never took
+  effect, and M6.1's own line-of-sight gate made things worse: it routes a
+  wall-dipping Phase into exactly the branch that dropped the cooldown.
+- **The Hades Phase can be outrun.** Its pursuit advanced both axes in one move
+  tick, covering √2 tiles for the price of one — **4.53 tiles/s against your
+  4.0**, at a nominal `moveSpeed` of 0.8. A diagonal step now costs √2 move
+  delays, so it closes at its stated 3.2 tiles/s. The Hades boss moves the same
+  way and is fixed by the same change. Cardinal movers are untouched, and steps
+  that are not single grid moves — the moth's orbit and blink, the tracker's
+  pounce and stalk — keep the flat cost they have always had.
+- **Nothing attacks out of a wall.** Stated outright now rather than left to
+  line-of-sight geometry: a tile the player cannot attack into is a tile the mob
+  cannot attack out of.
+- **Surfacing is a tell, not a hit.** A phasing mob could emerge from a wall and
+  damage you on the same tick, so the first warning was the damage number. It now
+  holds for 300 ms after surfacing.
+
+### Still open
+- Playtest the 600 ms Phase cadence now that it is real, and sectors 5 / 10 / 20 /
+  30 against the M0 table. The emergence window is a starting value.
+
+---
+
 ## Milestone 6.3 — Opt-in Portals
 
 **Branch:** `claude/m6-3-opt-in-portals`
