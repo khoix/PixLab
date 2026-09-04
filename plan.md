@@ -435,12 +435,12 @@ unoutrunnable at its nominal 0.8 `moveSpeed`, which is why the M6.1 damage and
 aggro softening did not change how it feels to be chased.
 
 **Additional tasks:**
-- [ ] Preserve a mob's successful-attack timestamp across disengagement/re-engagement; clear attack state only in `releaseMobBookkeeping` (entity removal) and the sector reset
-- [ ] Add regression coverage: hit → disengage → immediate re-engage must still honour the remaining cooldown
-- [ ] Charge diagonal moves √2 move-ticks (new pure `ai/movementBudget.ts`) so no mover exceeds its `moveSpeed` budget; assert Phase closing speed ≤ player speed over a measured run
-- [ ] Explicitly prevent Phase/Hades damage while occupying a wall, independent of LOS geometry
-- [ ] Prevent a Phase from both emerging from a wall and damaging the player on the same AI tick
-- [ ] Add a ~300 ms post-emergence readability window (constant beside `PHASE_MAX_WALL_TILES` in `ai/phaseBudget.ts`); tune by playtest
+- [x] Preserve a mob's successful-attack timestamp across disengagement/re-engagement; clear attack state only in `releaseMobBookkeeping` (entity removal) and the sector reset
+- [x] Add regression coverage: hit → disengage → immediate re-engage must still honour the remaining cooldown (`e2e/m6-1-fu-cadence.spec.ts`; the live-sector guard measured 8 hits against an allowance of 3 before the fix)
+- [x] Charge diagonal moves √2 move-ticks (`ai/movementBudget.ts`) so no mover exceeds its `moveSpeed` budget — the Phase now closes at its nominal 3.2 tiles/s against the player's 4.0
+- [x] Explicitly prevent Phase/Hades damage while occupying a wall, independent of LOS geometry
+- [x] Prevent a Phase from both emerging from a wall and damaging the player on the same AI tick
+- [x] Add a ~300 ms post-emergence readability window (`PHASE_EMERGENCE_MS` in `ai/phaseBudget.ts`); still to tune by playtest
 - [ ] Retest the existing 600 ms Phase cadence only after the correctness fixes land — the current value has never been in effect
 - [ ] Complete the existing sectors 5 / 10 / 20 / 30 playtest task with Phase-specific pressure notes
 

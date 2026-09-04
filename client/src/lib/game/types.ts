@@ -62,6 +62,7 @@ export interface Entity {
   blinkCooldown?: number;    // For moth blinking (time of last blink)
   nextBlinkAt?: number;      // For moth blinking (absolute time of the next blink, rolled once)
   wallTilesTraversed?: number; // For phasing mobs: consecutive wall tiles occupied
+  phaseEmergedAt?: number;   // For phasing mobs: when it last surfaced from a wall (ms)
   isStalking?: boolean;      // For tracker stalking state
   pounceDirection?: { x: number; y: number } | null; // For tracker pounce
   afterimageTrail?: Position[]; // For tracker afterimage

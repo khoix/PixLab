@@ -54,6 +54,44 @@ phasing is capped at `PHASE_MAX_WALL_TILES = 3` consecutive wall tiles, and the
 mob's cadence and detection were softened (`attackCooldown` 400 → 600,
 `aggroRange` 5 → 4).
 
+**Two of those four went unfixed until the follow-up below.** The diagonal
+closing rate was described here but never changed, and the softened cadence never
+took effect — see §2b.
+
+### 2b. Follow-up: the cadence and the speed were both fictions
+
+Neither number above was what the engine ran.
+
+**`attackCooldown` was refunded on every loss of contact.** GameCanvas cleared a
+mob's cooldown entry in the `else` of the melee-contact test, which fires when
+the mob is out of range, off-cardinal, *or has no line of sight*. So the cadence
+was a floor only while contact stayed continuous, and any mob that oscillates —
+a Phase dipping into a wall, a charger bouncing off one, a moth orbiting through
+range 1, a tracker pouncing — reset its own clock and could swing again
+immediately.
+
+Measured on a guardian (800 ms cadence) with the player stepping in and out of
+range for 1.44 s: **8 hits where the cadence allows 3.** The 400 → 600 ms Phase
+bump above therefore did nothing, and §2's own line-of-sight gate — which routes
+a wall-dipping Phase into that `else` — made the refund fire *more* often than
+before the fix.
+
+**Fixed:** the cooldown now lives on the mob until it leaves the level
+(`releaseMobBookkeeping`) or the sector resets. The gate is
+`combat/meleeCadence.ts canLandMeleeHit`, which also refuses a hit from a mob
+standing in solid rock and holds a phasing mob for
+`PHASE_EMERGENCE_MS = 300` after it surfaces, so emergence reads as a tell
+rather than arriving as a damage number.
+
+**Diagonal steps were free.** `case 'phase'` advances both axes in one move tick,
+covering √2 tiles for the price of one — the 4.53 tiles/s above, against a player
+who moves at 4.0.
+
+**Fixed:** `ai/movementBudget.ts` charges a diagonal step √2 move delays
+(`nextMoveTimer`), so `effectiveTilesPerSecond` is `moveSpeed × 4` whatever the
+step shape. The Phase now closes at its nominal **3.2 tiles/s** and can be
+outrun. Cardinal movers carry 0 exactly as before, so nothing else changed.
+
 ### 3. Minion Swarm dominated the population
 
 Spawn weights are rolled per *selection*, but a swarm selection spawns 2–3
