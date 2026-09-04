@@ -2087,22 +2087,24 @@ export default function Game() {
                   const effectiveStats = getEffectiveStats(state.stats, state.loadout);
                   const totalDefense = getTotalDefense(state.loadout);
                   return (
-                    <div className="flex flex-row gap-4 justify-between">
-                      <div className="flex flex-col">
+                    // Four equal columns that can shrink; the row was the widest
+                    // block in the dialog and forced a horizontal scroll on phones.
+                    <div className="grid grid-cols-4 gap-2" data-testid="inventory-stats-row">
+                      <div className="flex flex-col min-w-0">
                         <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">DMG</span>
-                        <span className="text-4xl font-mono font-bold text-destructive leading-tight">{effectiveStats.damage}</span>
+                        <span className="text-3xl sm:text-4xl font-mono font-bold text-destructive leading-tight">{effectiveStats.damage}</span>
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">DEF</span>
-                        <span className="text-4xl font-mono font-bold text-purple-400 leading-tight">{totalDefense}</span>
+                        <span className="text-3xl sm:text-4xl font-mono font-bold text-purple-400 leading-tight">{totalDefense}</span>
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">SPD</span>
-                        <span className="text-4xl font-mono font-bold text-blue-400 leading-tight">{effectiveStats.speed.toFixed(1)}</span>
+                        <span className="text-3xl sm:text-4xl font-mono font-bold text-blue-400 leading-tight">{effectiveStats.speed.toFixed(1)}</span>
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <span className="text-[1.125rem] font-mono text-muted-foreground mb-0.5">VIS</span>
-                        <span className="text-4xl font-mono font-bold text-cyan-400 leading-tight">{effectiveStats.visionRadius.toFixed(1)}</span>
+                        <span className="text-3xl sm:text-4xl font-mono font-bold text-cyan-400 leading-tight">{effectiveStats.visionRadius.toFixed(1)}</span>
                       </div>
                     </div>
                   );
