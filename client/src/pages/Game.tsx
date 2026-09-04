@@ -34,7 +34,7 @@ import { audioManager } from '../lib/audio';
 import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
 import type { GameState, MobileControlType } from '../lib/game/types';
-import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog } from 'lucide-react';
+import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog, Menu as MenuIcon } from 'lucide-react';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { BroadcastGlitchScope } from '../components/BroadcastGlitch';
@@ -2117,10 +2117,16 @@ export default function Game() {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
+              size="icon"
               data-testid="game-menu-button"
-              className="absolute top-4 right-4 z-50 text-white hover:bg-primary/50 font-pixel text-xs bg-black/50"
+              aria-label="Menu"
+              title="Menu"
+              className="absolute top-4 right-4 z-50 text-white hover:bg-primary/50 bg-black/50"
             >
-              MENU
+              {/* Was the word MENU. The glyph reads the same at a glance and
+                  gives the thumb a square target instead of a wide one. The
+                  label moves to aria-label so the button stays announceable. */}
+              <MenuIcon className="h-5 w-5" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-card/95 border-primary/20 pixel-corners min-w-[150px]">
@@ -2442,8 +2448,8 @@ export default function Game() {
               )}
 
               {/* Consumables Panel - desktop only; mobile uses quick consumables menu.
-                  Anchored below the MENU button and above the panel's bottom edge so it
-                  can never cover MENU; scrolls internally when the list is long. */}
+                  Anchored below the menu button and above the panel's bottom edge so it
+                  can never cover it; scrolls internally when the list is long. */}
               {!gameOverState && !isMobile && consumables.length > 0 && (
           <div
             className="absolute right-4 top-16 bottom-4 z-30 md:z-40 flex flex-col pointer-events-auto consumables-panel w-52"
