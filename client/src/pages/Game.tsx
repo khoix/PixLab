@@ -40,6 +40,7 @@ import { useIsMobile } from '../hooks/use-mobile';
 import { QuickHealButton } from '../components/game/QuickHealButton';
 import { QuickConsumablesButton } from '../components/game/QuickConsumablesButton';
 import { ConsumableIcon } from '../components/game/ConsumableIcon';
+import { PauseIndicator } from '../components/game/PauseIndicator';
 import { getConsumableSummary } from '../lib/game/consumableKind';
 import { findSmallestHealingPotion } from '../lib/game/quickHeal';
 import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quickConsumables';
@@ -255,6 +256,15 @@ export default function Game() {
       delete window.__PIXLAB_TEST__;
     };
   }, [dispatch]);
+
+  // Lock document scrolling while the run is on screen (see .run-active in index.css).
+  useEffect(() => {
+    if (state.screen !== 'run') return;
+    document.documentElement.classList.add('run-active');
+    return () => {
+      document.documentElement.classList.remove('run-active');
+    };
+  }, [state.screen]);
 
   // Freeze the whole run while a dialog is open, not just the countdown: the
   // game clock stops too, so mobs stop moving and no cooldown or telegraph
@@ -1992,7 +2002,8 @@ export default function Game() {
     
     return (
       <div
-        className={`relative w-full h-screen overflow-hidden bg-black touch-none ${gameOverState ? 'pointer-events-none' : ''}`}
+        className={`run-screen relative w-full h-screen overflow-hidden bg-black touch-none ${gameOverState ? 'pointer-events-none' : ''}`}
+        data-testid="run-screen"
         style={isMobile ? mobileHudStyle : undefined}
       >
         {isMobile && (
@@ -2004,6 +2015,7 @@ export default function Game() {
           <ResizablePanel defaultSize={85} minSize={50}>
             <div className="relative w-full h-full">
               <HUD isShop={currentLevel.isShop} isBoss={currentLevel.isBoss} />
+              <PauseIndicator />
               <GameCanvas 
                 onGameOver={handleGameOver}
                 onLevelComplete={handleLevelComplete}
