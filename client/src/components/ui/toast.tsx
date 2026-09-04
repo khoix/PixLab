@@ -15,7 +15,10 @@ const ToastViewport = React.forwardRef<
     ref={ref}
     data-testid="toast-viewport"
     className={cn(
-      "fixed top-0 z-40 flex max-h-screen w-full flex-col-reverse px-4 pb-4 pt-[max(3rem,calc(env(safe-area-inset-top,0px)+1rem))] sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col sm:p-4 md:max-w-[420px]",
+      // Toasts sit above every in-run layer: the event log console (z-201), the
+      // game-over overlay (z-199) and dialogs (z-250) — toasts fire from inside
+      // the inventory dialog too. Only the debug perf overlay (z-300) is higher.
+      "fixed top-0 z-[260] flex max-h-screen w-full flex-col-reverse px-4 pb-4 pt-[max(3rem,calc(env(safe-area-inset-top,0px)+1rem))] sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col sm:p-4 md:max-w-[420px]",
       className
     )}
     {...props}

@@ -253,7 +253,7 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
   }, [events, truncateMessage]);
 
   return (
-    <div className="relative h-full w-full z-[201] pointer-events-auto">
+    <div className="relative h-full w-full z-[201] pointer-events-auto" data-testid="event-log-console">
       <Card className="h-full bg-black/95 border-t border-primary/50 max-md:bg-black/98">
         <CardContent className="p-2 h-full relative">
           <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
