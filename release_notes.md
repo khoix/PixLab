@@ -1,5 +1,46 @@
 # Release Notes
 
+## Milestone 5.5 — Floating Joystick Re-anchor
+
+**Branch:** `claude/m5-5-joystick-reanchor`
+
+Turning mid-stroke felt stuck. The recogniser fixed its origin at touch-down for
+the whole gesture, so an L-stroke — swipe left, then up without lifting — kept
+reading "left" until the finger had travelled a full slop width *net* upward from
+where it first landed.
+
+### Changed
+- **The origin now follows the direction of travel.** It is the point the current
+  heading began from, not where the finger landed. When the per-sample heading
+  deviates, a candidate origin is anchored at the turn point; once displacement
+  from it passes `0.75 × slop` the new direction commits and the origin moves
+  there. Turns are deliberately a touch snappier than the opening swipe, which is
+  what a physical stick feels like.
+- **A rest re-anchors too.** After 150ms of stillness the origin moves to where
+  the finger stopped, so the next push reads as a fresh swipe from that point.
+  The held direction survives the rest — only lifting stops movement, so pausing
+  mid-run no longer costs you a step.
+- **Wobble and noise cannot commit a turn.** A candidate is dropped the moment the
+  finger resumes the held axis, and per-sample movement under 1.5px is ignored, so
+  120Hz sensor jitter never opens one.
+- Reversing along the held axis now reads as the opposite direction rather than as
+  "return to centre" — the origin is the turn point, not the original touch.
+
+`FloatingTouchControl` is unchanged; it already forwarded the samples this needs.
+The D-pad scheme is untouched.
+
+### Verification
+- `e2e/m5-5-joystick-reanchor.spec.ts` (10 tests): L-stroke with and without a
+  300ms pause at the corner emits both directions and moves the origin to the
+  corner; reversal commits the opposite direction; cross-axis wobble and a
+  40-sample slow curve each commit at most one turn; a rest re-anchors without
+  clearing the held direction, and a fresh push then commits at the normal slop;
+  turn slop is 0.75× drag slop across the sensitivity range (20/6/3px → 15/4.5/2.25px)
+  and turns commit at both extremes; sub-1.5px jitter never opens a candidate.
+- Regression: `e2e/m5-floating-touch.spec.ts`, `e2e/m5-touch-sensitivity.spec.ts`.
+
+---
+
 ## Milestone 6.2 — Full Run Pause
 
 **Branch:** `claude/pixlab-mob-fixes`

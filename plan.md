@@ -297,6 +297,46 @@ Execution plan for performance optimization and gameplay improvements on web and
 
 ---
 
+## Milestone 5.5 — Floating Joystick Re-anchor
+
+**Goal:** Let the finger change direction mid-stroke without lifting or resetting.
+
+**Problem:** The recogniser fixed its origin at touch-down for the whole gesture,
+so direction was always measured from that one point. An L-stroke — swipe left,
+then up without lifting — kept reading "left" until the finger had travelled a
+full slop width *net* upward from the original touch. Turning mid-stroke felt
+stuck.
+
+**Model:** The origin is the point the *current* direction of travel began from,
+not where the finger landed. It moves forward when the heading changes, and when
+the finger rests. Only lifting stops movement.
+
+**Tasks:**
+- [x] Track a turn candidate: when the per-sample heading deviates from the held direction, anchor a candidate at the turn point; commit once displacement from it passes `TURN_SLOP_PX` (`0.75 × slop`, so turns are slightly snappier than the opening swipe)
+- [x] Drop the candidate if the finger resumes the held axis — wobble never commits
+- [x] Re-anchor the origin after `REST_MS` (150ms) of stillness, keeping the held direction so the character walks on
+- [x] Noise floor `TURN_MIN_INCREMENT_PX` (1.5px) so 120Hz sensor jitter cannot open a candidate
+- [x] Expose `TURN_SLOP_RATIO` / `TURN_MIN_INCREMENT_PX` / `REST_MS` and `getTurnSlopPx()` / `getTouchDown()` / `getHeldDirection()` for tests
+- [ ] Phone pass: L-strokes and reversals without pausing
+
+**Files:**
+- `client/src/lib/game/touch/floatingTouchRecogniser.ts`
+- `e2e/m5-5-joystick-reanchor.spec.ts`
+
+**Exit criteria:**
+- An L-stroke emits both directions with and without a pause at the corner
+- Reversing along the held axis reads as the opposite direction, not as "stop"
+- Cross-axis wobble and a slow curve each commit at most one turn
+- Turns commit at both slop extremes (20px and 3px)
+- No regression in `m5-floating-touch` / `m5-touch-sensitivity`
+
+**No kill switch** — the change is small enough to revert outright if it doesn't
+survive playtesting.
+
+**Depends on:** Milestone 5.1 (floating origin), Milestone 5.3 (configurable slop)
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -515,6 +555,7 @@ M0 Baseline
 | M5.2 | Viewport-locked lobby layout | P1 | Low | Done |
 | M5.3 | Floating touch sensitivity & control settings | P1 | Low | Done |
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
+| M5.5 | Floating joystick re-anchor | P1 | Medium — changes how every mobile turn reads | Done |
 | M6 | Balance & clarity | P2 | Medium | Done |
 | M6.1 | Mob balance pass | P1 | Medium — changes gameplay-visible mob behaviour (phasing budget, melee LOS gate, spawn mix, damage curve) | Done |
 | M6.2 | Full run pause | P1 | Low | Done |
