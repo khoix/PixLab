@@ -359,9 +359,9 @@ test.describe('M5 — Mobile UX & controls', () => {
 
   test('toast viewport stacks above dialogs and the event log, below the debug perf overlay', async ({ page }) => {
     // Toasts fire from inside the inventory dialog and while the desktop event
-    // log console is open, so they must clear both (z-250 / z-201). They sit
-    // above the CRT blinds like every other in-run layer; only the debug perf
-    // overlay (z-300) stays on top.
+    // log console is open, so they must clear both (z-250 / z-201). The CRT
+    // blinds (z-255) cover every game layer including dialogs; toasts are the
+    // one UI layer above them, with only the debug perf overlay (z-300) higher.
     await page.goto('/');
 
     const stacking = await page.evaluate(() => {
