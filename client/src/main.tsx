@@ -18,6 +18,7 @@ import { initEngineApi } from "./lib/game/engine";
 import { audioManager } from "./lib/audio";
 import { initPhaseBudgetApi } from "./lib/game/ai/phaseBudget";
 import { initMovementBudgetApi } from "./lib/game/ai/movementBudget";
+import { initCameraAnchorApi } from "./lib/game/renderer/cameraAnchor";
 import { initMeleeCadenceApi } from "./lib/game/combat/meleeCadence";
 import { initDamageModelApi } from "./lib/game/combat/damageModel";
 import { initMeleeLineOfSightApi } from "./lib/game/combat/meleeLineOfSight";
@@ -48,6 +49,7 @@ subscribeGamePause((paused) => {
 });
 initPhaseBudgetApi();
 initMovementBudgetApi();
+initCameraAnchorApi();
 initMeleeCadenceApi();
 initDamageModelApi();
 initMeleeLineOfSightApi();

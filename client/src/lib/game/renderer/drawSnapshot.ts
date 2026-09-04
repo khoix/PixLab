@@ -5,6 +5,7 @@ import {
   PLAYER_SCREEN_ANCHOR_Y_DESKTOP,
   PLAYER_SCREEN_ANCHOR_Y_MOBILE,
 } from '../constants';
+import { resolveAnchorY } from './cameraAnchor';
 import type { GameState, PlayerStats } from '../types';
 
 export type { ModifierSnapshot };
@@ -39,6 +40,12 @@ interface BuildDrawFrameSnapshotInput {
   logicalHeight: number;
   tileSize: number;
   isMobileViewport: boolean;
+  /**
+   * Tallest logical height seen at this viewport width. The anchor is measured
+   * against it so browser chrome sliding in and out does not move the world.
+   * Defaults to the live height, which is the old behaviour.
+   */
+  stableLogicalHeight?: number;
   now?: number;
 }
 
@@ -68,7 +75,11 @@ export function buildDrawFrameSnapshot(input: BuildDrawFrameSnapshotInput): Draw
   const visionRadiusPx = fogRadius;
   const playerScreenX = input.logicalWidth * PLAYER_SCREEN_ANCHOR_X;
   const anchorY = input.isMobileViewport ? PLAYER_SCREEN_ANCHOR_Y_MOBILE : PLAYER_SCREEN_ANCHOR_Y_DESKTOP;
-  const playerScreenY = input.logicalHeight * anchorY;
+  const playerScreenY = resolveAnchorY(
+    input.logicalHeight,
+    input.stableLogicalHeight ?? input.logicalHeight,
+    anchorY,
+  );
 
   return {
     modifiers,

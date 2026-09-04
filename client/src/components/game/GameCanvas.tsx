@@ -65,6 +65,10 @@ import {
 import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/renderer/canvasSizing';
 import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
 import { buildDrawFrameSnapshot, type DrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
+import {
+  trackStableViewport,
+  type StableViewport,
+} from '../../lib/game/renderer/cameraAnchor';
 import { buildModifiers } from '../../lib/game/modifiers';
 import {
   flushGameLoopBatch,
@@ -211,6 +215,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const levelRef = useRef<Level | null>(null);
   const playerPosRef = useRef<Position>({ x: 0, y: 0 });
   const visualPosRef = useRef<Position>({ x: 0, y: 0 }); // Smooth interpolated visual position
+  // Tallest canvas height seen at the current width. The camera anchor is
+  // measured against it so a phone's URL bar sliding in and out — which shrinks
+  // the `100dvh` run root — does not shift the world.
+  const stableViewportRef = useRef<StableViewport | null>(null);
   const moveStartPosRef = useRef<Position>({ x: 0, y: 0 }); // Position when movement started
   const moveProgressRef = useRef<number>(1); // 0 = start, 1 = complete
   const lastTimeRef = useRef<number>(0);
@@ -263,6 +271,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const canvas = canvasRef.current;
     const isMobileViewport =
       (canvas ? canvas.clientWidth < MOBILE_BREAKPOINT : false) || window.innerWidth < MOBILE_BREAKPOINT;
+    stableViewportRef.current = trackStableViewport(
+      stableViewportRef.current,
+      canvasSizeRef.current.logicalWidth,
+      canvasSizeRef.current.logicalHeight,
+    );
     const snapshot = buildDrawFrameSnapshot({
       stats: statsRef.current,
       loadout: loadoutRef.current,
@@ -274,6 +287,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       logicalHeight: canvasSizeRef.current.logicalHeight,
       tileSize: TILE_SIZE,
       isMobileViewport,
+      stableLogicalHeight: stableViewportRef.current.height,
       now,
     });
     frameSnapshotRef.current = { frame: frameCounterRef.current, snapshot };
