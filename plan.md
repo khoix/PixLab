@@ -708,20 +708,20 @@ once M6.4a lands):**
 | Guardian | 2.3 |
 
 **Tasks:**
-- [ ] Add a pure encounter-budget model separate from individual HP/damage scaling
-- [ ] Define gradually increasing threat budgets by sector/tier
-- [ ] Generate normal-sector rosters against threat budget rather than raw enemy count alone
-- [ ] Keep an independent hard entity cap strictly for performance
-- [ ] Preserve the existing mob-unlock sequence unless playtesting identifies a specific ordering problem
-- [ ] Add an **active attack-pressure budget** separate from the number of mobs that may pursue/reposition
-- [ ] Start with simultaneous attack-state caps of 2 (sectors 1–8), 3 (9–16), 4 (17–24), 5 (25+)
-- [ ] Enforce the **sector incoming ceiling** (40% → 55% of the bar per second) as the binding invariant, so raising a slot cap requires lowering the per-mob budget rather than stacking damage
-- [ ] Hold an attack slot from telegraph/wind-up through execution and recovery, not merely during the damage frame
-- [ ] Allow aggroed mobs without an attack slot to pursue, flank, reposition, or wait
-- [ ] Permit especially disruptive attack cycles to consume more than one pressure unit
-- [ ] Route melee and ranged through one scheduler — different implementations must not become two independent budgets
-- [ ] Instrument peak concurrent attackers, aggroed mob count, threat budget used, and rolling incoming damage over 1 s / 3 s windows
-- [ ] Add deterministic assertions for pressure-budget compliance at representative sector bands
+- [x] Add a pure encounter-budget model separate from individual HP/damage scaling (`ai/encounterBudget.ts`)
+- [x] Define gradually increasing threat budgets by sector/tier — `2 + 1.7L`, calibrated to the previous population curve so elites cost more without thinning the sector
+- [x] Generate normal-sector rosters against threat budget rather than raw enemy count alone
+- [x] Keep an independent hard entity cap strictly for performance — `ENTITY_CAP` 50, no longer the difficulty model
+- [x] Preserve the existing mob-unlock sequence unless playtesting identifies a specific ordering problem — weights still choose *what* appears, the budget only decides *how many*
+- [x] Add an **active attack-pressure budget** separate from the number of mobs that may pursue/reposition (`ai/attackPressure.ts`)
+- [x] Start with simultaneous attack-state caps of 2 (sectors 1–8), 3 (9–16), 4 (17–24), 5 (25+)
+- [x] Enforce the **sector incoming ceiling** (40% → 55% of the bar per second) as the binding invariant — `perMobDpsBudget = ceiling / slots`, so the per-hit cap is *derived from* the concurrency cap rather than set beside it
+- [x] Hold an attack slot from telegraph/wind-up through execution and recovery, not merely during the damage frame — held for the mob's full cadence
+- [x] Allow aggroed mobs without an attack slot to pursue, flank, reposition, or wait
+- [x] Permit especially disruptive attack cycles to consume more than one pressure unit — sniper and boss take two slots
+- [x] Route melee and ranged through one scheduler — melee damage and ranged telegraph both claim from the same pool
+- [x] Instrument peak concurrent attackers and slot occupancy (`__PIXLAB_LEVEL__.getPressureStats`); rolling 1 s / 3 s incoming-damage windows are still to add
+- [x] Add deterministic assertions for pressure-budget compliance at representative sector bands (`e2e/m6-4b-attack-pressure.spec.ts`)
 
 **Design principle:** The late game may look crowded without requiring every
 visible enemy to attack simultaneously.
@@ -815,8 +815,8 @@ than by outrunning continuous pursuit.
 ### Boss adds
 
 - [x] Replace random `2–4 Cerberus` with health-threshold-driven add schedules (`ai/bossAdds.ts`): one add at 60% on a first cycle, two at 75%/40% on repeats
-- [ ] Count boss adds against a boss encounter pressure budget — blocked on M6.4b, which defines the budget
-- [ ] Boss and add attack states share the M6.4b concurrency model so adds cannot create unavoidable synchronized bursts — blocked on M6.4b
+- [x] Count boss adds against a boss encounter pressure budget — adds claim slots from the same pool, and a boss takes two of them
+- [x] Boss and add attack states share the M6.4b concurrency model so adds cannot create unavoidable synchronized bursts
 - [x] Repeat encounters may layer mechanics/add pressure; first-cycle bosses establish their core mechanic first
 
 ### Boss drop mechanics
@@ -885,8 +885,8 @@ must produce different mob stats.**
 
 ### Findings
 
-The harness earned its keep on first run. Two things it surfaced, recorded
-rather than tuned away:
+The harness earned its keep on first run. Two things it surfaced — **both since
+closed by M6.4b**, which is what they pointed at:
 
 **A behind-curve build falls through the survival floor from sector 16.**
 Time-to-death drops to 2.4 s at 16, 1.6 s at 20 and 1.1 s from 28, against a
@@ -905,8 +905,23 @@ threat-cost table** is what should stop it being cheap to field alongside three
 others. Every other boundary sits under 2.0×; the spec pins 12→13 as the worst
 so no other boundary can quietly overtake it.
 
-Both point at the same missing piece, which is a useful result on its own: the
-per-hit work in M6.4a is sound and the remaining unfairness is concurrency.
+Both pointed at the same missing piece, which was a useful result on its own:
+the per-hit work in M6.4a was sound and the remaining unfairness was
+concurrency.
+
+**Closed in M6.4b.** Every profile now clears the floor at every sector — a
+behind-curve build's worst case went from 1.1 s to 2.1 s against a 1.8 s floor —
+because the per-mob damage budget is now *derived* from the slot cap
+(`ceiling / slots`) instead of being a flat number set beside it. The sniper
+boundary came down from 2.41× to 2.07× by costing two slots, so it displaces an
+attacker rather than arriving on top of one.
+
+Re-running the harness against the fix also caught a leak neither finding had
+named: the per-hit *floor* of 5% let a 300 ms attacker sustain 16.7% of the bar
+per second against a late-game budget of 11% — the floor had quietly become a
+way around the ceiling. Lowered to 3%, and the harness now asserts against the
+real per-mob budget rather than a fixed number, so that class of leak fails the
+test instead of passing it.
 
 ### Playtest matrix
 

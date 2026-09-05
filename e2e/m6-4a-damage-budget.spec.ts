@@ -26,13 +26,15 @@ const MOB_CADENCE: Record<string, number> = {
 test.describe('M6.4a — per-hit cap', () => {
   test('lethality rises with cadence, and the sniper tops the field', async ({ page }) => {
     await page.goto('/');
+    // At sector 1. M6.4b made the budget level-dependent — the ceiling divided
+    // by the slot cap — so a cadence alone no longer names a fraction.
     const caps = await page.evaluate((cadences) => {
       const api = window.__PIXLAB_DAMAGE_BUDGET__!;
       const out: Record<string, number> = {};
       for (const [name, ms] of Object.entries(cadences)) {
-        out[name] = api.perHitCapFraction(ms, false);
+        out[name] = api.perHitCapFraction(ms, false, 1);
       }
-      return { out, constants: api.constants };
+      return { out, constants: api.constants, budget: api.dpsBudgetForLevel(1) };
     }, MOB_CADENCE);
 
     // Strictly increasing in cadence, up to the ceiling.
@@ -45,9 +47,10 @@ test.describe('M6.4a — per-hit cap', () => {
     const others = Object.entries(caps.out).filter(([n]) => n !== 'sniper').map(([, v]) => v);
     expect(caps.out.sniper).toBeGreaterThan(Math.max(...others));
     expect(caps.out.sniper).toBeCloseTo(0.35, 5); // at the ceiling
-    expect(caps.out.swarm).toBeCloseTo(0.054, 5);
-    // A sniper hit is worth more than six swarm hits.
-    expect(caps.out.sniper / caps.out.swarm).toBeGreaterThan(6);
+    // Derived, not hardcoded: budget × cadence.
+    expect(caps.out.swarm).toBeCloseTo(caps.budget * 0.3, 5);
+    // A sniper hit is worth more than five swarm hits.
+    expect(caps.out.sniper / caps.out.swarm).toBeGreaterThan(5);
   });
 
   test('the floor and ceiling bound the fraction, and the boss share is flat', async ({ page }) => {
@@ -56,15 +59,15 @@ test.describe('M6.4a — per-hit cap', () => {
       const api = window.__PIXLAB_DAMAGE_BUDGET__!;
       return {
         constants: api.constants,
-        instant: api.perHitCapFraction(0),
-        veryFast: api.perHitCapFraction(50),
-        verySlow: api.perHitCapFraction(60_000),
-        boss: api.perHitCapFraction(1000, true),
-        bossVerySlow: api.perHitCapFraction(60_000, true),
+        instant: api.perHitCapFraction(0, false, 1),
+        veryFast: api.perHitCapFraction(50, false, 1),
+        verySlow: api.perHitCapFraction(60_000, false, 1),
+        boss: api.perHitCapFraction(1000, true, 1),
+        bossVerySlow: api.perHitCapFraction(60_000, true, 1),
         // In HP, against a starting 100 HP bar.
-        sniperHp: api.perHitCap({ maxHp: 100, cadenceMs: 2000 }),
-        bossHp: api.perHitCap({ maxHp: 100, cadenceMs: 1000, isBoss: true }),
-        tinyBar: api.perHitCap({ maxHp: 3, cadenceMs: 300 }),
+        sniperHp: api.perHitCap({ maxHp: 100, cadenceMs: 2000, level: 1 }),
+        bossHp: api.perHitCap({ maxHp: 100, cadenceMs: 1000, isBoss: true, level: 1 }),
+        tinyBar: api.perHitCap({ maxHp: 3, cadenceMs: 300, level: 1 }),
       };
     });
 
@@ -98,6 +101,7 @@ test.describe('M6.4a — per-hit cap', () => {
             maxHp: 100,
             cadenceMs: 1000,
             isBoss: true,
+            level: 8,
           });
           n++;
         }
@@ -117,33 +121,58 @@ test.describe('M6.4a — per-hit cap', () => {
     await page.goto('/');
     const result = await page.evaluate(() => {
       const damage = window.__PIXLAB_DAMAGE__!;
-      const at = (baseDamage: number, cadenceMs: number) =>
+      const budget = window.__PIXLAB_DAMAGE_BUDGET__!;
+      const at = (baseDamage: number, cadenceMs: number, level: number) =>
         damage.computeIncomingDamage({
           baseDamage,
           defense: 0,
           hpRatio: 1,
           maxHp: 100,
           cadenceMs,
+          level,
         });
       return {
-        // Sector 1 drone: 5 damage, well under its 9% cap.
-        earlyDrone: at(5, 500),
-        // Sector 20 drone: 57 raw, capped to 9 on a 100 HP bar.
-        lateDrone: at(57, 500),
-        // Sector 20 sniper: 156 raw, capped to 35.
-        lateSniper: at(156, 2000),
-        // Sector 20 swarm: 39 raw, capped to 5.
-        lateSwarm: at(39, 300),
+        // Sector 1 drone: 5 damage, well under its cap.
+        earlyDrone: at(5, 500, 1),
+        // Sector 20's budget is 12.5%/s, so a 500 ms drone caps at 6.25% of a
+        // 100 HP bar. It hits for 57 raw.
+        lateDrone: at(57, 500, 20),
+        // The sniper at the same sector. Its 2 s cadence earns 25% of the bar
+        // there; the 35% ceiling only binds in early sectors, where fewer
+        // attackers are allowed at once and each one's budget is larger.
+        lateSniper: at(156, 2000, 20),
+        earlySniper: at(60, 2000, 1),
+        lateSwarm: at(39, 300, 20),
+        // The same drone earlier, where the per-mob budget is more generous.
+        midDrone: at(30, 500, 8),
+        // Cap ratios, which is where the archetype claim actually lives: the
+        // damage figures above mix capped and uncapped hits, since a sector-1
+        // drone's 5 damage is under its cap and untouched.
+        capRatioEarly:
+          budget.perHitCapFraction(2000, false, 1) / budget.perHitCapFraction(500, false, 1),
+        capRatioLate:
+          budget.perHitCapFraction(2000, false, 20) / budget.perHitCapFraction(500, false, 20),
       };
     });
 
     expect(result.earlyDrone).toBe(5); // untouched
-    expect(result.lateDrone).toBe(9);
-    expect(result.lateSniper).toBe(35);
-    expect(result.lateSwarm).toBe(5);
-    // Ordering survives the cap: the sniper still hits hardest.
+    expect(result.lateDrone).toBe(6);
+    expect(result.lateSniper).toBe(25);
+    expect(result.lateSwarm).toBe(3);
+    // The ceiling binds early, where each attacker's budget is largest.
+    expect(result.earlySniper).toBe(35);
+    // A later sector gives each attacker a smaller share, because more of them
+    // are allowed to be swinging at once.
+    expect(result.midDrone).toBeGreaterThan(result.lateDrone);
     expect(result.lateSniper).toBeGreaterThan(result.lateDrone);
     expect(result.lateDrone).toBeGreaterThan(result.lateSwarm);
+    // The sniper's *relative* lethality does not slip as the budget shrinks —
+    // 4x a drone's cap at sector 20 against 3.5x at sector 1. Making the budget
+    // level-dependent must not quietly flatten the archetype the cadence-derived
+    // cap exists to preserve.
+    expect(result.capRatioEarly).toBeCloseTo(3.5, 5);
+    expect(result.capRatioLate).toBeCloseTo(4, 5);
+    expect(result.capRatioLate).toBeGreaterThanOrEqual(result.capRatioEarly);
   });
 
   test('sustained throughput is bounded and favours slow attackers', async ({ page }) => {
@@ -152,9 +181,10 @@ test.describe('M6.4a — per-hit cap', () => {
       const api = window.__PIXLAB_DAMAGE_BUDGET__!;
       const out: Record<string, number> = {};
       for (const [name, ms] of Object.entries(cadences)) {
-        out[name] = api.sustainedFractionPerSecond(ms, false);
+        out[name] = api.sustainedFractionPerSecond(ms, false, 1);
       }
-      return { out, budget: api.constants.dpsBudget };
+      // The real sector-1 budget, not the pre-M6.4b flat constant.
+      return { out, budget: api.dpsBudgetForLevel(1) };
     }, MOB_CADENCE);
 
     // Inside the derived band every mob sustains exactly the budget — that is
@@ -166,9 +196,8 @@ test.describe('M6.4a — per-hit cap', () => {
       expect(dps.out[name]).toBeCloseTo(dps.budget, 6);
     }
 
-    // The band runs from the floor to the ceiling: 278 ms to 1944 ms.
-    expect(dps.out.tracker).toBeLessThan(dps.budget); // 1600 ms is inside...
-    expect(dps.out.sniper).toBeLessThan(dps.budget); // ...2000 ms is past the ceiling
+    // Past the 35% ceiling, a slower cadence buys burst rather than throughput.
+    expect(dps.out.sniper).toBeLessThan(dps.budget);
 
     // Nothing exceeds the budget, at any cadence.
     for (const v of Object.values(dps.out)) expect(v).toBeLessThanOrEqual(dps.budget + 1e-9);

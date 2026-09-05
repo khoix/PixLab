@@ -5,6 +5,7 @@ import { generateItem } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
 import { recordItemOffer } from './itemEconomy';
 import { generateBossArena, type ArenaBoss } from './arena';
+import { ENTITY_CAP, selectionCost, threatBudget } from './ai/encounterBudget';
 
 export const generateLevel = (
   levelNum: number,
@@ -282,16 +283,37 @@ export const generateLevel = (
     // Number of enemies scales with level, with more variety at higher levels.
     // The cap counts *entities*: a swarm selection spawns 2-3 mobs, so counting
     // selections used to overshoot the cap by ~30% at high sectors.
-    const numEnemies = Math.min(Math.floor(levelNum * 1.5) + 3, 50);
+    // Population comes from a threat budget, not a headcount. Counting heads let
+    // a stronger archetype be added on top of the previous population at the
+    // same price — unlocking the sniper at 13 dropped a 35%-of-bar attacker into
+    // an already-full sector, which the M6.6 harness measured as a 2.4x jump in
+    // peak pressure across one boundary. Weights still choose *what* appears, so
+    // the unlock sequence and the character of each tier are unchanged; the
+    // budget decides *how many*.
+    const budget = threatBudget(levelNum);
+    let spentThreat = 0;
+    // The entity cap survives as what it always should have been: a performance
+    // limit, not the difficulty model.
+    const numEnemies = ENTITY_CAP;
     const maxAttempts = 1000; // Safety limit
     let attempts = 0;
     let enemyCounter = 0;
     let spawned = 0;
     
-    while (spawned < numEnemies && attempts < maxAttempts) {
+    while (spentThreat < budget && spawned < numEnemies && attempts < maxAttempts) {
       const mobType = selectMobType(levelNum, isBoss, isShop);
       if (!mobType) break; // No valid mob types available
-      
+
+      // Priced per selection, so a swarm pack costs what a pack costs. A
+      // selection that would overrun the budget is skipped rather than
+      // truncated: an expensive mob never appears at a discount.
+      const cost = selectionCost(mobType.subtype);
+      if (spentThreat + cost > budget) {
+        attempts++;
+        continue;
+      }
+      spentThreat += cost;
+
       // For swarm mobs, spawn a small pack at once
       const [swarmMin, swarmMax] = SWARM_SPAWN_COUNT;
       const spawnCount = mobType.subtype === 'swarm'

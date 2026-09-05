@@ -23,6 +23,12 @@ export interface IncomingDamageInput {
   /** The attacker's configured cadence in ms; drives its share of the bar. */
   cadenceMs: number;
   isBoss?: boolean;
+  /**
+   * Sector, which sets the per-mob share of the incoming ceiling. Required for
+   * the same reason as `maxHp` and `cadenceMs`: the opening band is the most
+   * generous budget, so a default would fail open.
+   */
+  level: number;
 }
 
 export function computeIncomingDamage(input: IncomingDamageInput): number {
@@ -33,7 +39,12 @@ export function computeIncomingDamage(input: IncomingDamageInput): number {
   // Every damage path in the game funnels through here, so the cap cannot be
   // bypassed by adding another one. `maxHp` and `cadenceMs` are required rather
   // than optional for the same reason: a new call site has to supply them.
-  const cap = perHitCap({ maxHp: input.maxHp, cadenceMs: input.cadenceMs, isBoss: input.isBoss });
+  const cap = perHitCap({
+    maxHp: input.maxHp,
+    cadenceMs: input.cadenceMs,
+    isBoss: input.isBoss,
+    level: input.level,
+  });
   return Math.min(dealt, cap);
 }
 

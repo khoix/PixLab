@@ -14,6 +14,8 @@ declare global {
   interface Window {
     __PIXLAB_LEVEL__?: {
       getPlayerPos: () => Position;
+      /** Live attack-pressure occupancy, for M6.4b assertions. */
+      getPressureStats: () => { used: number; cap: number; holders: number; peakUsed: number };
       getPlayerHp: () => number;
       isWall: (x: number, y: number) => boolean;
       getEntities: () => LevelDebugEntity[];

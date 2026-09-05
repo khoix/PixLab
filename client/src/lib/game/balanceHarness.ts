@@ -10,7 +10,9 @@ import {
 import { computeIncomingDamage } from './combat/damageModel';
 import { sustainedFractionPerSecond } from './combat/damageBudget';
 import { calculateScaling, multipliersAtRatio } from './scaling';
+import { ENTITY_CAP, selectionCost, threatBudget } from './ai/encounterBudget';
 import { PLAYER_ATTACKS_PER_SECOND } from './combat/playerAttack';
+import { slotCapForLevel, slotCostFor, timeToDeathAtCeiling } from './ai/attackPressure';
 
 // Deterministic answers to "is this sector fair?", so the question stops being
 // settled by memory of a playthrough.
@@ -63,26 +65,22 @@ export const PLAYER_PROFILES: PlayerProfile[] = [
 ];
 
 /**
- * Attackers assumed to be on the player at once.
+ * Attackers that may be on the player at once.
  *
- * These are M6.4b's planned caps. M6.4b is not built, so nothing enforces them
- * at runtime yet — they are the assumption this report is computed under, not a
- * measurement of the game. When the scheduler lands, this should read its caps
- * instead and the two will agree or the difference will be visible here.
+ * Read from the scheduler rather than assumed: M6.4b enforces these at runtime,
+ * so the report and the game now share one source. Until it landed this was a
+ * stated assumption, and the gap between the two was the whole finding.
  */
 export function assumedConcurrency(level: number): number {
-  if (level <= 8) return 2;
-  if (level <= 16) return 3;
-  if (level <= 24) return 4;
-  return 5;
+  return slotCapForLevel(level);
 }
 
 /** The invariant: seconds of reaction a full-HP player gets under that pressure. */
 export function survivalFloorSeconds(level: number): number {
   // 2.5 s early, easing to 1.8 s by the late game — crowded, but never a
-  // situation where dying is faster than noticing.
-  if (level <= 24) return 2.5;
-  return 1.8;
+  // situation where dying is faster than noticing. Derived from the sector's
+  // incoming ceiling, so the floor and the budget cannot drift apart.
+  return timeToDeathAtCeiling(level);
 }
 
 export interface MobReport {
@@ -134,6 +132,7 @@ export function incomingHit(profile: PlayerProfile, subtype: string, level: numb
     hpRatio: 1,
     maxHp: profile.maxHpAt(level),
     cadenceMs: scaledAttackCooldown(mob, level),
+    level,
   });
 }
 
@@ -158,11 +157,20 @@ export function reportSector(level: number, profile: PlayerProfile): SectorRepor
 
   // Worst case is the most dangerous attackers the roster offers, as many of
   // them at once as the concurrency assumption allows.
+  // Fill the slots with the most dangerous attackers the roster offers, paying
+  // each one's slot cost — a sniper takes two, so it displaces another attacker
+  // rather than arriving on top of one.
   const worst = [...mobs].sort((a, b) => b.sustainedBarFractionPerSec - a.sustainedBarFractionPerSec);
   const concurrency = assumedConcurrency(level);
-  const incoming = worst
-    .slice(0, concurrency)
-    .reduce((n, m) => n + m.sustainedBarFractionPerSec, 0);
+  let slotsLeft = concurrency;
+  let incoming = 0;
+  for (const m of worst) {
+    const cost = slotCostFor(m.subtype);
+    if (cost > slotsLeft) continue;
+    slotsLeft -= cost;
+    incoming += m.sustainedBarFractionPerSec;
+    if (slotsLeft <= 0) break;
+  }
 
   const scaling = scalingAt(level);
   const floor = survivalFloorSeconds(level);
@@ -183,6 +191,7 @@ export function reportSector(level: number, profile: PlayerProfile): SectorRepor
         maxHp,
         cadenceMs: 1000,
         isBoss: true,
+        level,
       }),
       cadenceMs: 1000,
       playerTtkSeconds: hp / dps,
@@ -205,9 +214,14 @@ export function reportSector(level: number, profile: PlayerProfile): SectorRepor
   };
 }
 
-/** Entities a normal sector spawns, counting a swarm selection as its pack. */
+/** Entities a normal sector spawns, at the average cost of its roster. */
 export function expectedPopulation(level: number): number {
-  return Math.min(Math.floor(level * 1.5) + 3, 50);
+  const roster = getAvailableMobs(level);
+  if (roster.length === 0) return 0;
+  const avgCostPerEntity =
+    roster.reduce((n, m) => n + selectionCost(m.subtype) / Math.max(1, averageSpawnCount(m.subtype)), 0) /
+    roster.length;
+  return Math.min(ENTITY_CAP, Math.round(threatBudget(level) / Math.max(0.1, avgCostPerEntity)));
 }
 
 export interface BoundaryReport {

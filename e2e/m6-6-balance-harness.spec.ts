@@ -84,29 +84,36 @@ test.describe('M6.6 — survival floor', () => {
     }
   });
 
-  test('a behind-curve build falls through the floor from sector 16 — M6.4b is what closes it', async ({ page }) => {
+  test('a behind-curve build clears the floor too, now that M6.4b bounds concurrency', async ({ page }) => {
     await page.goto('/');
     const rows = await report(page, 'behind');
-    const failing = rows.filter((r) => !r.meetsSurvivalFloor).map((r) => r.sector);
+    const failing = rows
+      .filter((r) => !r.meetsSurvivalFloor)
+      .map((r) => `${r.sector}: ${r.timeToDeathSeconds.toFixed(1)}s < ${r.survivalFloorSeconds.toFixed(1)}s`);
 
-    // This is a real, quantified gap, recorded rather than tuned away. Each
-    // individual mob is inside its per-hit budget; it is the *concurrency*
-    // assumption that breaks the floor — 4 attackers at ~15% of the bar per
-    // second is 1.6 s from full HP. The per-hit cap alone cannot fix that,
-    // which is precisely what M6.4b's attack-pressure scheduler is for.
-    //
-    // Pinned to where it starts today, so if a future change makes an
-    // under-equipped run fail *earlier*, this fails with it.
-    expect(failing[0]).toBe(16);
+    // This used to fail from sector 16 — 2.4 s at 16, 1.6 s at 20, 1.1 s from
+    // 28 — with every individual mob still inside its per-hit budget. The
+    // concurrency was what broke it, and M6.4b's slot cap is what closed it.
+    expect(failing).toEqual([]);
 
-    // Every mob is individually within budget even where the total is not —
-    // evidence that the fix belongs in concurrency, not in per-hit damage.
+    // No mob may out-sustain its sector's per-mob budget. Asserted against the
+    // real budget rather than a fixed number: a flat 0.185 here let the per-hit
+    // *floor* quietly become a way around the ceiling, since a 300 ms attacker
+    // at a 5% floor sustained 16.7%/s against a late-game budget of 11%.
+    const budgets = await page.evaluate(() =>
+      Object.fromEntries(
+        [1, 5, 8, 12, 16, 20, 24, 28, 32, 40, 48].map((l) => [
+          l,
+          window.__PIXLAB_PRESSURE__!.perMobDpsBudget(l),
+        ]),
+      ),
+    );
     for (const r of rows) {
       for (const m of r.mobs) {
         expect(
           m.sustainedBarFractionPerSec,
-          `${m.subtype} at sector ${r.sector}`,
-        ).toBeLessThanOrEqual(0.185);
+          `${m.subtype} at sector ${r.sector} vs budget ${budgets[r.sector]}`,
+        ).toBeLessThanOrEqual(budgets[r.sector] + 1e-9);
       }
     }
   });

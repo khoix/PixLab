@@ -82,7 +82,11 @@ export function effectiveHitDamage(subtype: string, levelNum: number, playerMaxH
     mobArchetype: subtype,
   });
   const raw = Math.floor((mob.baseDamage + levelNum * mob.damagePerLevel) * dmgMultiplier);
-  const cap = perHitCap({ maxHp: playerMaxHp, cadenceMs: scaledAttackCooldown(mob, levelNum) });
+  const cap = perHitCap({
+    maxHp: playerMaxHp,
+    cadenceMs: scaledAttackCooldown(mob, levelNum),
+    level: levelNum,
+  });
   return Math.max(1, Math.min(raw, cap));
 }
 
