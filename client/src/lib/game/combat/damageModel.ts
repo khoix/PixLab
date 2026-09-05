@@ -23,8 +23,12 @@ export interface IncomingDamageInput {
   /** The attacker's configured cadence in ms; drives its share of the bar. */
   cadenceMs: number;
   isBoss?: boolean;
-  /** Sector, which sets the per-mob share of the incoming ceiling. */
-  level?: number;
+  /**
+   * Sector, which sets the per-mob share of the incoming ceiling. Required for
+   * the same reason as `maxHp` and `cadenceMs`: the opening band is the most
+   * generous budget, so a default would fail open.
+   */
+  level: number;
 }
 
 export function computeIncomingDamage(input: IncomingDamageInput): number {

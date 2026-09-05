@@ -60,12 +60,19 @@ export interface PerHitCapInput {
   /** The attacking mob's configured cadence in ms. */
   cadenceMs: number;
   isBoss?: boolean;
-  /** Sector, which sets the per-mob budget. Defaults to the opening band. */
-  level?: number;
+  /**
+   * Sector, which sets the per-mob budget.
+   *
+   * Required, not defaulted. The opening band is the most generous budget
+   * (20% of the bar per second against 11% late), so a default would fail open:
+   * a call site that forgot it would let mobs hit harder than the late game
+   * allows. Same reason `maxHp` and `cadenceMs` are required.
+   */
+  level: number;
 }
 
 /** Share of max HP this attacker may remove in one hit. */
-export function perHitCapFraction(cadenceMs: number, isBoss = false, level = 1): number {
+export function perHitCapFraction(cadenceMs: number, isBoss: boolean, level: number): number {
   if (isBoss) return BOSS_HIT_FRACTION;
   const cadenceSeconds = Math.max(0, cadenceMs) / 1000;
   const budget = dpsBudgetForLevel(level);
@@ -74,7 +81,7 @@ export function perHitCapFraction(cadenceMs: number, isBoss = false, level = 1):
 
 /** Largest hit this attacker may land, in HP. Never below 1. */
 export function perHitCap(input: PerHitCapInput): number {
-  const fraction = perHitCapFraction(input.cadenceMs, input.isBoss === true, input.level ?? 1);
+  const fraction = perHitCapFraction(input.cadenceMs, input.isBoss === true, input.level);
   return Math.max(1, Math.floor(input.maxHp * fraction));
 }
 
@@ -84,7 +91,7 @@ export function perHitCap(input: PerHitCapInput): number {
  * away at the floor and ceiling — which is the intended shape: a swarm mob
  * hitting three times a second must not sustain a sniper's throughput.
  */
-export function sustainedFractionPerSecond(cadenceMs: number, isBoss = false, level = 1): number {
+export function sustainedFractionPerSecond(cadenceMs: number, isBoss: boolean, level: number): number {
   const cadenceSeconds = Math.max(0.001, cadenceMs) / 1000;
   return perHitCapFraction(cadenceMs, isBoss, level) / cadenceSeconds;
 }
