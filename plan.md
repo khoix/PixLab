@@ -767,9 +767,9 @@ have short internal gaps, but those gaps do not replace the cycle recovery. The
 
 Zeus is closest to the intended standard and is treated as the control.
 
-- [ ] Preserve the existing ranged telegraph and general cadence unless telemetry/playtesting identifies a problem
-- [ ] Give Zeus a preferred combat band rather than always advancing; begin around 4–6 tiles
-- [ ] Advance when too far away; retreat/reposition when crowded
+- [x] Preserve the existing ranged telegraph and general cadence unless telemetry/playtesting identifies a problem — untouched; only his positioning changed
+- [x] Give Zeus a preferred combat band rather than always advancing; 4–6 tiles
+- [x] Advance when too far away; retreat/reposition when crowded — sidesteps when cornered rather than standing still
 - [ ] Measure Zeus + Cerberus pressure before changing his add schedule
 
 **Intent:** Zeus teaches the boss language — readable tell, dodgeable threat,
@@ -779,16 +779,16 @@ recovery.
 
 The hardest boss in the game, met second. Highest-value single item in M6.5.
 
-- [ ] Replace normal maze topology for Hades encounters with a dedicated open-arena generator
-- [ ] Target roughly 70–80% traversable floor
-- [ ] Use separated wall/pillar islands instead of long maze corridors
-- [ ] Avoid one-tile choke corridors and player dead ends
-- [ ] Maintain at least two practical escape routes around major obstacles
-- [ ] Structure Hades as: pursue → phase through obstacle → emerge → telegraph → strike → recovery → reposition
-- [ ] Emergence must create a readable attack opportunity, never instant contact damage (shares the M6.1 follow-up emergence window)
-- [ ] Start the first Hades encounter without the random 2–4 Cerberus pack
-- [ ] Initial staged-add experiment: one Cerberus around 60% boss HP; consider a second phase only after playtest
-- [ ] Add deterministic arena tests for connectivity and escape-route availability
+- [x] Replace normal maze topology for Hades encounters with a dedicated open-arena generator (`lib/game/arena.ts`; applied to all three bosses)
+- [x] Target roughly 70–80% traversable floor — 74% Zeus, 78% Hades, 80% Ares
+- [x] Use separated wall/pillar islands instead of long maze corridors
+- [x] Avoid one-tile choke corridors and player dead ends — pillars stay `MIN_PILLAR_GAP` = 2 from each other and the border; dead ends asserted at zero
+- [x] Maintain at least two practical escape routes around major obstacles — every pillar is circumnavigable, asserted structurally
+- [x] Structure Hades as: pursue → phase through obstacle → emerge → telegraph → strike → recovery → reposition
+- [x] Emergence must create a readable attack opportunity, never instant contact damage (shares the M6.1 follow-up emergence window)
+- [x] Start the first Hades encounter without the random 2–4 Cerberus pack — no boss brings adds before sector 32
+- [x] Initial staged-add experiment: one Cerberus around 60% boss HP; consider a second phase only after playtest
+- [x] Add deterministic arena tests for connectivity and escape-route availability (`e2e/m6-5-boss-arena.spec.ts`, seeded, 30 arenas)
 
 **Intent:** Hades is dangerous because walls cannot be fully trusted, not because
 maze shortcuts make disengagement impossible.
@@ -797,31 +797,31 @@ maze shortcuts make disengagement impossible.
 
 Currently the weakest boss despite the highest raw numbers.
 
-- [ ] Use a more open arena with intentionally placed charge-blocking pillars/walls
-- [ ] Add a visible pre-charge telegraph; begin tuning around 500 ms
-- [ ] Guarantee that one charge creates at most one boss damage event
-- [ ] Add explicit post-charge recovery; begin tuning around 800–1200 ms
-- [ ] Make the recovery window a clear player damage opportunity
-- [ ] Do not allow an immediate new charge on the first decision tick after recovery ends
-- [ ] First-cycle Ares fights without Cerberus adds; add pressure only if demonstrably undertuned
+- [x] Use a more open arena with intentionally placed charge-blocking pillars/walls — Ares gets the fewest, largest blocks and the longest lanes
+- [x] Add a visible pre-charge telegraph; 500 ms, drawn as a growing lane line
+- [x] Guarantee that one charge creates at most one boss damage event
+- [x] Add explicit post-charge recovery; 1000 ms, rooted
+- [x] Make the recovery window a clear player damage opportunity
+- [x] Do not allow an immediate new charge on the first decision tick after recovery ends — a 250 ms `readyMs` rest gates it
+- [x] First-cycle Ares fights without Cerberus adds; add pressure only if demonstrably undertuned
 
 **Intent:** Ares is defeated by reading, baiting, and punishing charges rather
 than by outrunning continuous pursuit.
 
 ### Boss ordering
 
-- [ ] Real difficulty order is Hades ≫ Zeus > Ares against a sector order of Zeus → Hades → Ares. Once the arenas exist, decide whether the arena work closes the gap or the cycle order in `engine.ts` should change.
+- [x] **Decided: keep the sector order, re-measure by playtest.** Every input to the inversion was addressed rather than worked around. Hades was oppressive because the maze let him corner a player he also outran; he now closes at his stated 3.2 tiles/s against the player's 4.0 (M6.1 follow-up), fights in an open arena with no dead ends, and telegraphs before striking. Ares was weak because his charge was cancelled by maze walls and carried no cycle; he now has lanes to charge down, pillars to be baited into, a 500 ms tell and a 1000 ms recovery. Reordering the cycle on top of that would be tuning against numbers taken before the fix. Confirm at sectors 8 / 16 / 24 before touching the order.
 
 ### Boss adds
 
-- [ ] Replace random `2–4 Cerberus` with boss-specific and/or health-threshold-driven add schedules
-- [ ] Count boss adds against a boss encounter pressure budget
-- [ ] Boss and add attack states share the M6.4b concurrency model so adds cannot create unavoidable synchronized bursts
-- [ ] Repeat encounters may layer mechanics/add pressure; first-cycle bosses establish their core mechanic first
+- [x] Replace random `2–4 Cerberus` with health-threshold-driven add schedules (`ai/bossAdds.ts`): one add at 60% on a first cycle, two at 75%/40% on repeats
+- [ ] Count boss adds against a boss encounter pressure budget — blocked on M6.4b, which defines the budget
+- [ ] Boss and add attack states share the M6.4b concurrency model so adds cannot create unavoidable synchronized bursts — blocked on M6.4b
+- [x] Repeat encounters may layer mechanics/add pressure; first-cycle bosses establish their core mechanic first
 
 ### Boss drop mechanics
 
-- [ ] The five boss legendaries (Stormbreaker, Bloodthirster, Titan's Gauntlet, Void Reaver, Oblivion Blade) have no attack mechanics: `getItemBaseName` returns names matching no case in `getAttackablePositions`, so all five fall through to the plain 4-cardinal pattern despite 50–70 base damage. Beating a boss should change how the player fights.
+- [x] The five boss legendaries now have distinct attack shapes (`BOSS_WEAPON_PATTERNS` in `engine.ts`), each echoing the fight it came from, with reach traded against damage: Stormbreaker hits hardest over a 3-tile lane, Oblivion Blade covers the most ground and hits softest.
 
 **Exit criteria:**
 - Hades and Ares use purpose-built arenas rather than normal maze generation

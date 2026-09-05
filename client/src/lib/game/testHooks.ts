@@ -6,6 +6,8 @@ export interface LevelDebugEntity {
   mobSubtype: MobSubtype | null;
   pos: Position;
   hp: number;
+  /** Boss attack-cycle phase, for M6.5 assertions. Null for ordinary mobs. */
+  bossPhase: 'ready' | 'telegraph' | 'execute' | 'recover' | null;
 }
 
 declare global {
