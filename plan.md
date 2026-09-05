@@ -657,13 +657,13 @@ bar, and make adaptive scaling live again for the whole run.
 is felt today and do not need the engine extraction.
 
 **Tasks:**
-- [ ] New `combat/damageBudget.ts` exporting `perHitCap(maxHp, cadenceMs)` per the formula above, with `DPS_BUDGET` / `MIN_FRAC` / `MAX_FRAC` / `BOSS_FRAC` as named constants
-- [ ] Apply the cap inside `computeIncomingDamage` (`combat/damageModel.ts`) — the single call site, so no damage path can bypass it
-- [ ] Split `SCALING_CONFIG.maxScaling` into `maxHpScaling` and `maxDmgScaling`
-- [ ] Raise the HP cap well above 3.0 so endurance carries late-game difficulty; hold the damage cap at or near 3.0 so the per-hit cap is rarely the binding constraint
-- [ ] Reduce `quadraticCoeff` and fold the shop-tier bump into the base curve instead of multiplying by it, so the raw sector-32 value lands near the cap rather than 9× past it
-- [ ] Apply the raised HP cap to bosses too — boss HP is currently linear against compounding player damage
-- [ ] Extend `mobBalance.ts` so its DPS model reflects the caps and the clamp, not just `constants.ts`
+- [x] New `combat/damageBudget.ts` exporting `perHitCap(maxHp, cadenceMs)` per the formula above, with `DPS_BUDGET` / `MIN_FRAC` / `MAX_FRAC` / `BOSS_FRAC` as named constants
+- [x] Apply the cap inside `computeIncomingDamage` (`combat/damageModel.ts`) — required inputs, so a new call site cannot bypass it
+- [x] Split `SCALING_CONFIG.maxScaling` into `maxHpScaling` (14.0), `maxDmgScaling` (4.0) and `maxBossHpScaling` (3.5)
+- [x] Raise the HP cap well above 3.0 so endurance carries late-game difficulty; hold the damage cap at or near 3.0 so the per-hit cap is rarely the binding constraint
+- [x] Reduce `quadraticCoeff` and fold the shop-tier bump into the base curve instead of multiplying by it, so the raw sector-32 value lands near the cap rather than 9× past it
+- [ ] Apply the raised HP cap to bosses too — deferred to M6.5 on purpose: bosses keep `maxBossHpScaling` 3.5 so they stay near today's values until their mechanics are readable
+- [x] Extend `mobBalance.ts` so its DPS model reflects the caps and the clamp (`effectiveHitDamage`, `effectiveHp`, `scalingAt`), keeping `relativeDps` as the table-only model so a divergence stays visible
 
 **Files:** `lib/game/scaling.ts`, `lib/game/combat/damageModel.ts`,
 new `lib/game/combat/damageBudget.ts`, `lib/game/mobBalance.ts`,

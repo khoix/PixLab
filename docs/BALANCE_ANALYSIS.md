@@ -92,6 +92,63 @@ who moves at 4.0.
 step shape. The Phase now closes at its nominal **3.2 tiles/s** and can be
 outrun. Cardinal movers carry 0 exactly as before, so nothing else changed.
 
+### 2c. M6.4a: the clamp was the curve, and one hit could erase the bar
+
+Two problems, one cause.
+
+**Every multiplier pinned at 3.0 from sector 11.** Three growth terms multiplied
+before the safety clamp — a quadratic base, an exponential shop-tier bump
+(`1.15^(L/4)`, 8.1× on its own by sector 48), and each mob's linear per-level
+stats. The raw value ran about 9× past the clamp, so the clamp stopped being a
+safety net and became the curve. Adaptive scaling stopped adapting for two-thirds
+of a run: an ahead-of-curve and a behind-curve build met identical mobs from
+sector 11 to 48. The archetype constants, applied *before* the clamp, stopped
+separating anything past sector 12 — which quietly expired §1's ordering fix.
+
+**Fixed:** the tier bump is a term inside the base curve (`shopTierCoeff`) rather
+than a factor on it, the coefficients are fitted so the raw value lands near the
+cap at sector 48 instead of far beyond it, and `maxScaling` splits into
+`maxHpScaling` (14.0) and `maxDmgScaling` (4.0). HP carries late difficulty; the
+damage exponent is deliberately flat, so per-hit growth comes from each mob's
+`damagePerLevel`.
+
+As shipped, drone archetype, non-adaptive:
+
+| Sector | HP mult | DMG mult | Drone HP | Drone hit @100 HP | Drone hit @300 HP | Sniper hit @300 HP |
+|-------:|--------:|---------:|---------:|------------------:|------------------:|-------------------:|
+| 1  | 1.04 | 0.80 | 25   | 4 | 4  | 16  |
+| 8  | 1.51 | 0.84 | 90   | 8 | 8  | 35  |
+| 16 | 2.37 | 0.90 | 237  | 9 | 14 | 59  |
+| 20 | 2.89 | 0.92 | 347  | 9 | 17 | 71  |
+| 32 | 4.82 | 0.98 | 867  | 9 | 26 | 105 |
+| 48 | 8.29 | 1.05 | 2156 | 9 | 27 | 105 |
+
+Sector 20 lands where the old pinned 3.0 put it (347 vs 360 HP), so the sectors
+players know feel the same; growth continues past it instead of flatlining.
+
+**One hit could erase the bar.** At sector 20 per-hit damage ran 39–156 against a
+100–160 HP pool, and a sector-32 boss dealt 252 to a fresh 100 HP player — a
+one-shot.
+
+**Fixed:** `combat/damageBudget.ts` caps a single hit at
+`maxHp × clamp(0.18 × cadenceSeconds, 0.05, 0.35)`, applied inside
+`computeIncomingDamage` so no damage path can bypass it. Deriving lethality from
+cadence preserves each archetype by construction — the rarer a mob swings, the
+bigger its hit may be — so the Apollo Sniper lands the largest single blow in the
+game at every sector and the Minion Swarm the smallest, with no table to keep in
+sync. Bosses take a flat 40% share instead, which guarantees three connecting
+hits minimum whatever their cadence.
+
+The two halves are meant to work together: the curve keeps raw damage near the
+cap for a player whose HP has grown with the run, so the cap is a backstop rather
+than the normal case — and `hp_boost` keeps buying survivability. It binds hard
+for a player who never buys HP, which is what a cap is for.
+
+**Deliberately unfinished:** boss multipliers still pin — HP at `maxBossHpScaling`
+3.5 from sector 24, damage at 4.0 from sector 28. That holds bosses near their
+current values rather than letting the unpinned curve double them before M6.5
+makes their mechanics readable. The per-hit cap makes the damage pin moot.
+
 ### 3. Minion Swarm dominated the population
 
 Spawn weights are rolled per *selection*, but a swarm selection spawns 2–3

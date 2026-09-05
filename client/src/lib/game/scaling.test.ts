@@ -7,7 +7,7 @@
  * Usage: Import and call runScalingTests() in development mode.
  */
 
-import { calculateScaling, calculatePlayerPower, resetScalingState, SCALING_CONFIG } from './scaling';
+import { calculateScaling, calculatePlayerPower, resetScalingState, shopTiersAt, SCALING_CONFIG } from './scaling';
 import { PlayerStats, GameState } from './types';
 import { INITIAL_STATS } from './constants';
 
@@ -133,18 +133,19 @@ export function runScalingTests(): void {
     });
   });
   
-  // Test tier bumps
+  // Test tier bumps. The shop tier is a term inside the base curve now, not a
+  // multiplier on it — see the shopTierCoeff note in scaling.ts.
   console.log('\n\n--- Tier Bump Analysis ---');
-  console.log('Level | Shop Tier | Boss Tier | Tier Mult');
+  console.log('Level | Shop Tier | Boss Tier | Tier Term');
   console.log('------|-----------|-----------|-----------');
   
   testLevels.forEach(level => {
-    const shopTiers = Math.floor((level - 1) / 4);
+    const shopTiers = shopTiersAt(level);
     const bossTier = Math.floor(level / 8);
-    const tierMult = shopTiers > 0 ? Math.pow(SCALING_CONFIG.shopTierMultiplier, shopTiers) : 1.0;
+    const tierTerm = SCALING_CONFIG.shopTierCoeff * shopTiers;
     
     console.log(
-      `${level.toString().padStart(5)} | ${shopTiers.toString().padStart(9)} | ${bossTier.toString().padStart(9)} | ${tierMult.toFixed(3).padStart(9)}`
+      `${level.toString().padStart(5)} | ${shopTiers.toString().padStart(9)} | ${bossTier.toString().padStart(9)} | ${tierTerm.toFixed(3).padStart(9)}`
     );
   });
   
