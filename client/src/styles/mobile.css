@@ -176,6 +176,19 @@
     gap: 1rem;
   }
 
+  /* The safe-area insets, named once.
+     Body pads itself by them and the run root subtracts them, so the two can
+     never drift apart — and a test can set these to a real phone's values,
+     which `env()` alone makes impossible to emulate. */
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    /* Viewport left over once body has taken its padding out of it. */
+    --run-height: calc(100dvh - var(--safe-top) - var(--safe-bottom));
+  }
+
   /* Prevent horizontal scroll on mobile */
   body {
     overflow-x: hidden;
@@ -188,16 +201,22 @@
     min-height: 100vh;
     min-height: 100dvh;
     /* Safe area support for devices with notches */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
   }
   
-  /* Ensure root element uses full viewport (safe-area handled on body only) */
+  /* Body is border-box, so its safe-area padding comes out of its height. A
+     root sized to the full viewport therefore overflows body by exactly the
+     insets — invisible in Safari, where the insets are zero because the browser
+     chrome owns those strips, but real in a home-screen web app, where it left
+     content hanging off the bottom for iOS to scroll into view the moment
+     anything took focus. */
   #root {
     min-height: 100vh;
     min-height: 100dvh;
+    min-height: var(--run-height);
     width: 100%;
   }
   
