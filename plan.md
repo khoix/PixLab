@@ -856,12 +856,12 @@ The audit itself is done — its output is the **Combat Revamp — Measured
 Baseline** section above, and M6.4a acts on it. What remains here is regression
 coverage and the parts that need the harness.
 
-- [ ] Assert no HP or damage multiplier sits pinned at its ceiling across a full simulated run
-- [ ] Verify the split HP/damage caps behave as intended for weak, expected, and strong builds
-- [ ] Confirm HP/endurance progression, not per-hit damage growth, carries late-game difficulty
-- [ ] Keep adaptive scaling bounded so strong builds remain rewarding and weak builds are not punished twice
-- [ ] Ensure tier bumps do not coincide with uncontrolled increases in population, attack concurrency, and per-hit damage
-- [ ] Treat a newly unlocked enemy mechanic as part of the difficulty budget for that tier
+- [x] Assert no HP or damage multiplier sits pinned at its ceiling across a full simulated run
+- [x] Verify the split HP/damage caps behave as intended for weak, expected, and strong builds
+- [x] Confirm HP/endurance progression, not per-hit damage growth, carries late-game difficulty — HP multiplier grows 8×, damage 1.3× across a run
+- [x] Keep adaptive scaling bounded so strong builds remain rewarding and weak builds are not punished twice — spread asserted between 1.05× and 1.5× at every tier
+- [x] Ensure tier bumps do not coincide with uncontrolled increases in population, attack concurrency, and per-hit damage — one new mob and at most +2 entities per boundary
+- [x] Treat a newly unlocked enemy mechanic as part of the difficulty budget for that tier — surfaced 12→13 as a real 2.4× spike, see below
 
 ### Reference player profiles
 
@@ -876,12 +876,37 @@ must produce different mob stats.**
 
 ### Balance harness
 
-- [ ] Add deterministic calculations/reporting for mob HP, damage per hit, attack cadence, sustained exposure DPS, encounter threat budget, maximum simultaneous attackers, player TTK against a target, enemy TTK against the player under continuous exposure, and boss HP/damage/cadence
-- [ ] Report time-to-death from full HP under maximum legitimate pressure, and assert it against the ≥ 2.5 s (easing to ~1.8 s) invariant
-- [ ] Flag abrupt changes across adjacent sector/tier boundaries
-- [ ] Explicitly inspect 4→5, 8→9, 12→13, 16→17, 20→21, 24→25, and 28→29 where roster/tier changes occur
-- [ ] Validate first-cycle bosses at sectors 8 / 16 / 24
-- [ ] Validate repeated bosses at 32 / 40 / 48 so repetition scales without degenerating into pure stat inflation
+- [x] Add deterministic calculations/reporting for mob HP, damage per hit, attack cadence, sustained exposure DPS, player TTK, enemy TTK and boss HP/damage/cadence (`lib/game/balanceHarness.ts`). Encounter threat budget and max simultaneous attackers are *assumed* from M6.4b's planned caps and labelled as such, since nothing enforces them at runtime yet
+- [x] Report time-to-death from full HP under maximum legitimate pressure, and assert it against the ≥ 2.5 s (easing to ~1.8 s) invariant — holds for expected and ahead; a behind-curve build falls through it from sector 16, see below
+- [x] Flag abrupt changes across adjacent sector/tier boundaries
+- [x] Explicitly inspect 4→5, 8→9, 12→13, 16→17, 20→21, 24→25, and 28→29 where roster/tier changes occur
+- [x] Validate first-cycle bosses at sectors 8 / 16 / 24 — TTK 12 / 15 / 15 s for an expected build
+- [x] Validate repeated bosses at 32 / 40 / 48 so repetition scales without degenerating into pure stat inflation — TTK drift under 1.6× of the sector-24 baseline
+
+### Findings
+
+The harness earned its keep on first run. Two things it surfaced, recorded
+rather than tuned away:
+
+**A behind-curve build falls through the survival floor from sector 16.**
+Time-to-death drops to 2.4 s at 16, 1.6 s at 20 and 1.1 s from 28, against a
+floor of 2.5 s easing to 1.8 s. Every individual mob is *inside* its per-hit
+budget (≤ 18% of the bar per second) — it is the concurrency assumption that
+breaks it: four attackers at ~15%/s each is 1.6 s from full HP. The per-hit cap
+cannot fix this on its own, which is exactly what **M6.4b's attack-pressure
+scheduler** is for. Pinned at sector 16 in the spec, so a change that makes an
+under-equipped run fail *earlier* fails the test.
+
+**12→13 is a genuine 2.4× jump in peak pressure**, where the Apollo Sniper
+unlocks. Its 2 s cadence earns it the 35% per-hit ceiling by design — it is
+meant to be the most lethal single blow in the game — but that also makes it
+one of the worst-case concurrent attackers the moment it arrives. **M6.4b's
+threat-cost table** is what should stop it being cheap to field alongside three
+others. Every other boundary sits under 2.0×; the spec pins 12→13 as the worst
+so no other boundary can quietly overtake it.
+
+Both point at the same missing piece, which is a useful result on its own: the
+per-hit work in M6.4a is sound and the remaining unfairness is concurrency.
 
 ### Playtest matrix
 

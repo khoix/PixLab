@@ -1,5 +1,53 @@
 # Release Notes
 
+## Milestone 6.6 — Calibration Harness
+
+**Branch:** `claude/m6`
+
+The audit behind M6.4a lived in a throwaway script, so every number in it had
+to be recomputed by hand to check anything. That is how both the sector-11
+clamp pin and the M6.1 cadence bug survived as long as they did — nothing was
+watching. `lib/game/balanceHarness.ts` keeps the same arithmetic, judged
+against three deterministic player builds, so a regression in the difficulty
+curve is now a failing assertion.
+
+### Added
+- **Three stated player profiles** — behind, expected, ahead — so "harder at
+  sector 24" means the same thing every time it is asked.
+- **Per-sector reports**: mob HP, per-hit damage after defense and cap, cadence,
+  sustained bar-fraction per second, player time-to-kill, time-to-death under
+  worst-case pressure, and boss HP/damage/cadence.
+- **Boundary reports** at 4→5, 8→9, 12→13, 16→17, 20→21, 24→25, 28→29 — where
+  roster and tier changes land, and so where a spike would hide.
+- Nine assertions covering the curve, the survival floor, the boundaries and
+  boss scaling.
+
+### Found on the first run
+Two real problems, recorded rather than tuned away — both pointing at the same
+missing piece.
+
+**A behind-curve build falls through the survival floor from sector 16.**
+Time-to-death drops to 2.4 s at 16, 1.6 s at 20, 1.1 s from 28, against a floor
+of 2.5 s easing to 1.8 s. Every individual mob is inside its per-hit budget; it
+is the *concurrency* that breaks it — four attackers at ~15% of the bar per
+second is 1.6 s from full HP.
+
+**12→13 jumps peak pressure 2.4×** as the Apollo Sniper unlocks. Its 2 s
+cadence earns it the 35% per-hit ceiling by design, but that also makes it one
+of the worst-case concurrent attackers the moment it arrives. Every other
+boundary sits under 2.0×.
+
+Both are M6.4b's to close: the attack-pressure scheduler and its threat-cost
+table. The useful result is that M6.4a's per-hit work is sound and the
+remaining unfairness is concurrency, not damage.
+
+### Known limitation
+Encounter threat budget and maximum simultaneous attackers are *assumed* from
+M6.4b's planned caps (2/3/4/5 by band) and labelled as such in the code —
+nothing enforces them at runtime yet. When the scheduler lands, the harness
+should read its caps instead, and the two will either agree or the difference
+will be visible here.
+
 ## Milestone 6.5 — Boss Encounters & Arenas
 
 **Branch:** `claude/m6`
