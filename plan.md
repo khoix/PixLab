@@ -779,16 +779,16 @@ recovery.
 
 The hardest boss in the game, met second. Highest-value single item in M6.5.
 
-- [ ] Replace normal maze topology for Hades encounters with a dedicated open-arena generator
-- [ ] Target roughly 70–80% traversable floor
-- [ ] Use separated wall/pillar islands instead of long maze corridors
-- [ ] Avoid one-tile choke corridors and player dead ends
-- [ ] Maintain at least two practical escape routes around major obstacles
+- [x] Replace normal maze topology for Hades encounters with a dedicated open-arena generator (`lib/game/arena.ts`; applied to all three bosses)
+- [x] Target roughly 70–80% traversable floor — 74% Zeus, 78% Hades, 80% Ares
+- [x] Use separated wall/pillar islands instead of long maze corridors
+- [x] Avoid one-tile choke corridors and player dead ends — pillars stay `MIN_PILLAR_GAP` = 2 from each other and the border; dead ends asserted at zero
+- [x] Maintain at least two practical escape routes around major obstacles — every pillar is circumnavigable, asserted structurally
 - [ ] Structure Hades as: pursue → phase through obstacle → emerge → telegraph → strike → recovery → reposition
 - [ ] Emergence must create a readable attack opportunity, never instant contact damage (shares the M6.1 follow-up emergence window)
-- [ ] Start the first Hades encounter without the random 2–4 Cerberus pack
+- [x] Start the first Hades encounter without the random 2–4 Cerberus pack — no boss brings adds before sector 32
 - [ ] Initial staged-add experiment: one Cerberus around 60% boss HP; consider a second phase only after playtest
-- [ ] Add deterministic arena tests for connectivity and escape-route availability
+- [x] Add deterministic arena tests for connectivity and escape-route availability (`e2e/m6-5-boss-arena.spec.ts`, seeded, 30 arenas)
 
 **Intent:** Hades is dangerous because walls cannot be fully trusted, not because
 maze shortcuts make disengagement impossible.
@@ -797,13 +797,13 @@ maze shortcuts make disengagement impossible.
 
 Currently the weakest boss despite the highest raw numbers.
 
-- [ ] Use a more open arena with intentionally placed charge-blocking pillars/walls
+- [x] Use a more open arena with intentionally placed charge-blocking pillars/walls — Ares gets the fewest, largest blocks and the longest lanes
 - [ ] Add a visible pre-charge telegraph; begin tuning around 500 ms
 - [ ] Guarantee that one charge creates at most one boss damage event
 - [ ] Add explicit post-charge recovery; begin tuning around 800–1200 ms
 - [ ] Make the recovery window a clear player damage opportunity
 - [ ] Do not allow an immediate new charge on the first decision tick after recovery ends
-- [ ] First-cycle Ares fights without Cerberus adds; add pressure only if demonstrably undertuned
+- [x] First-cycle Ares fights without Cerberus adds; add pressure only if demonstrably undertuned
 
 **Intent:** Ares is defeated by reading, baiting, and punishing charges rather
 than by outrunning continuous pursuit.

@@ -1,5 +1,46 @@
 # Release Notes
 
+## Milestone 6.5 (part 1) — Boss Arenas
+
+**Branch:** `claude/m6`
+
+Boss sectors never had arena generation. `generateLevel` ran the same
+recursive-backtracker maze for them as for every other sector and only skipped
+placing the exit tile, so every boss was fought in corridors.
+
+That was worst for Hades, who phases through walls: the player obeys the maze
+and Hades does not, so the topology that should be cover was a one-way
+advantage. It was nearly as bad for Ares, whose charge is cancelled by any wall
+— in a maze it barely resolves, which is why the boss with the highest raw
+numbers is the easiest fight in the game.
+
+### Added
+- **A purpose-built arena for every boss** (`lib/game/arena.ts`): open floor
+  inside a solid border, with separated rectangular pillar islands. Pillars are
+  kept two tiles clear of each other and the border, which is what makes every
+  gap at least two tiles wide, every pillar walkable all the way around, and
+  leaves nowhere to be cornered.
+- **Cover shaped to each boss's mechanic.** Hades gets many small islands —
+  enough to break line of sight behind, nothing long enough to run as a
+  corridor. Ares gets fewer, larger blocks with long clear lanes, so a charge
+  has room to resolve and something to be baited into. Zeus, the control, sits
+  between them. Floor share: 74% Zeus, 78% Hades, 80% Ares.
+
+### Changed
+- **First-cycle bosses fight alone.** Every boss used to arrive with a random
+  2–4 Cerberus, which made the difficulty of a first encounter an RNG roll and
+  buried the boss's own mechanic under add pressure. Adds now start at sector
+  32, where the mechanic is already known.
+- Only the topology changed. Items, portals, lightswitches, the boss entity and
+  the exit-on-death behaviour all run through the same code as before.
+
+### Still to come in M6.5
+The shared telegraph → execution → recovery → reposition model, Zeus' 4–6 tile
+preferred band, Ares' pre-charge telegraph and recovery window, Hades'
+pursue-phase-emerge loop, threshold-driven add schedules, the inverted
+difficulty order (Hades ≫ Zeus > Ares against a Zeus → Hades → Ares sector
+order), and boss-drop weapon mechanics.
+
 ## Camera anchor & home-screen safe areas
 
 **Branch:** `cursor/m7-ai-perf-aa59`

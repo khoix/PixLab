@@ -4,6 +4,7 @@ import { getAvailableMobs, scaledAttackCooldown, scaledMoveSpeed } from './mobBa
 import { generateItem } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
 import { recordItemOffer } from './itemEconomy';
+import { generateBossArena, type ArenaBoss } from './arena';
 
 export const generateLevel = (
   levelNum: number,
@@ -16,15 +17,31 @@ export const generateLevel = (
   const isBoss = levelNum % BOSS_INTERVAL === 0 && levelNum > 0;
   const isShop = levelNum % SHOP_INTERVAL === 0 && !isBoss;
 
+  // Which boss this sector holds. Needed up front now: the arena is shaped for
+  // the boss, so the choice cannot wait until entities are placed.
+  const BOSS_CYCLE: MobSubtype[] = ['boss_zeus', 'boss_hades', 'boss_ares'];
+  const bossType = isBoss
+    ? (BOSS_CYCLE[(Math.floor(levelNum / BOSS_INTERVAL) - 1 + BOSS_CYCLE.length) % BOSS_CYCLE.length] as ArenaBoss)
+    : null;
+
+  // Boss sectors get a purpose-built arena instead of the maze. A maze is a
+  // one-way advantage for a boss that phases through it, and it cancels the
+  // charge of one that cannot. Only the topology changes — items, portals,
+  // lightswitches, the boss itself and the exit-on-death behaviour all run
+  // through the same code below as before.
+  const arena = isBoss && bossType ? generateBossArena(width, height, bossType) : null;
+
   // Initialize grid with walls
-  const tiles: TileType[][] = Array(height).fill(null).map(() => Array(width).fill('wall'));
+  const tiles: TileType[][] = arena
+    ? arena.tiles
+    : Array(height).fill(null).map(() => Array(width).fill('wall'));
   
   // Simple Recursive Backtracker for Maze Generation
   const visited: boolean[][] = Array(height).fill(false).map(() => Array(width).fill(false));
   const stack: Position[] = [];
   
-  const startPos = { x: 1, y: 1 };
-  stack.push(startPos);
+  let startPos: Position = arena ? arena.startPos : { x: 1, y: 1 };
+  stack.push(arena ? { x: 1, y: 1 } : startPos);
   visited[startPos.y][startPos.x] = true;
   tiles[startPos.y][startPos.x] = 'floor';
   
@@ -35,7 +52,7 @@ export const generateLevel = (
     { x: 2, y: 0 }
   ];
   
-  while (stack.length > 0) {
+  while (!arena && stack.length > 0) {
     const current = stack[stack.length - 1];
     const neighbors = [];
     
@@ -130,8 +147,10 @@ export const generateLevel = (
     }
   }
 
-  // Add random loops
-  for (let i = 0; i < width * height * 0.05; i++) {
+  // Add random loops. Skipped in an arena: carving at random would punch holes
+  // through the pillars and break the two-tile separation that keeps every gap
+  // walkable and every pillar circumnavigable.
+  for (let i = 0; !arena && i < width * height * 0.05; i++) {
     const rx = Math.floor(Math.random() * (width - 2)) + 1;
     const ry = Math.floor(Math.random() * (height - 2)) + 1;
     if (tiles[ry][rx] === 'wall') {
@@ -253,8 +272,13 @@ export const generateLevel = (
       });
     }
     
-    // Spawn Cerberus alongside boss (2-4 entities) at levels 8+
-    if (levelNum >= 8) {
+    // Every boss used to arrive with a random 2–4 Cerberus, which made the
+    // difficulty of a first encounter an RNG roll and buried the boss's own
+    // mechanic under add pressure. A first-cycle boss now fights alone so its
+    // mechanic is what the player learns; threshold-driven adds are the next
+    // step in M6.5, and repeat cycles are where extra pressure belongs.
+    const REPEAT_CYCLE_ADDS_FROM = 32;
+    if (levelNum >= REPEAT_CYCLE_ADDS_FROM) {
       const cerberusMob = MOB_TYPES.find(m => m.subtype === 'cerberus');
       if (cerberusMob) {
         const numCerberus = Math.floor(Math.random() * 3) + 2; // 2-4 Cerberus
@@ -629,13 +653,14 @@ export const rollPortalDestination = (ctx: PortalDestinationContext): Position =
 
 export function initEngineApi(): void {
   if (typeof window === 'undefined') return;
-  window.__PIXLAB_ENGINE__ = { rollPortalDestination };
+  window.__PIXLAB_ENGINE__ = { rollPortalDestination, generateLevel };
 }
 
 declare global {
   interface Window {
     __PIXLAB_ENGINE__?: {
       rollPortalDestination: typeof rollPortalDestination;
+      generateLevel: typeof generateLevel;
     };
   }
 }
