@@ -122,8 +122,19 @@
    the page to it — the whole screen "jumped up" on pause. Size the root to the
    dynamic viewport and lock document scrolling while a run is on screen. */
 .run-screen {
+  /* The viewport minus the safe-area padding body carries — see --run-height in
+     mobile.css. Sized to the full viewport, the run screen hung past the bottom
+     by the insets, and iOS scrolled that overhang away when the in-game menu
+     took focus, carrying the whole HUD up with it. That is the "screen jumps on
+     pause" report: it only reproduced installed to the home screen, because
+     that is the only place the insets are non-zero.
+
+     A definite length, not a percentage: `height: 100%` needs a definite parent
+     height and #root only sets `min-height`, so the run screen would collapse
+     and the absolutely-positioned canvas would have no box at all. */
   height: 100vh;
   height: 100dvh;
+  height: var(--run-height, 100dvh);
 }
 
 html.run-active,

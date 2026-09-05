@@ -1,5 +1,34 @@
 # Release Notes
 
+## Camera anchor & home-screen safe areas
+
+**Branch:** `cursor/m7-ai-perf-aa59`
+
+Two separate causes behind one report — "the screen jumps up a little when the
+game pauses".
+
+### Fixed
+- **In Safari: the camera anchor followed the browser chrome.** The anchor was a
+  fraction of the live canvas height, and the run root is `100dvh`, which tracks
+  the URL bar. Revealing it cost ~75 px of height and moved the world 64 device
+  px up. The anchor is now measured against the tallest height seen at the
+  current viewport width. (Shipped earlier; `renderer/cameraAnchor.ts`.)
+- **Installed to the home screen: content hung off the bottom of the screen.**
+  Body carries the safe-area padding and is border-box, so that padding comes out
+  of its height — but `#root` and `.run-screen` were sized to the *full*
+  viewport, so they overflowed body by exactly the insets. iOS scrolls that
+  overhang away the moment anything takes focus, and opening the menu focuses
+  the dropdown, so the whole HUD rode up with it. Measured at **59 px** with an
+  iPhone 14 Pro's insets, which matches the shift in the report.
+
+  In Safari the insets are zero, because the browser chrome owns those strips —
+  which is exactly why it only reproduced as an installed web app.
+
+  The insets are now named once (`--safe-top` / `--safe-bottom`, defaulting to
+  `env(...)`), and both body's padding and the run height read them, so the two
+  cannot drift apart. It also makes the behaviour testable: `env()` cannot be
+  emulated, but a custom property can be set to a real phone's values.
+
 ## Milestone 6.1 follow-up — Cadence & Movement Correctness
 
 **Branch:** `cursor/m7-ai-perf-aa59`
