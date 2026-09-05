@@ -16,20 +16,34 @@ export const SCALING_CONFIG = {
   growthRate: 0.05,        // g - expected power growth per level
   initialPower: 0,         // P0 - will be calculated from INITIAL_STATS
   
-  // Adaptive scaling: S(L) = (1 + a*L + b*L^2) * (ratio^p)
-  linearCoeff: 0.06,       // a - linear scaling coefficient
-  quadraticCoeff: 0.007,   // b - quadratic scaling coefficient (increased for better exponential scaling)
+  // Adaptive scaling: S(L) = (1 + a*L + b*L^2 + c*shopTiers) * (ratio^p)
+  //
+  // The shop-tier bump used to multiply the curve as 1.15^(L/4) — an exponential
+  // on top of a quadratic, 8.1x on its own by sector 48. Three growth terms
+  // multiplying meant the raw value ran ~9x past the safety clamp, so the clamp
+  // stopped being a safety net and became the curve: every multiplier pinned at
+  // 3.0 from sector 11 and never moved again. Adaptive scaling stopped adapting
+  // for two-thirds of a run, and the archetype constants — applied before the
+  // clamp — stopped separating anything past sector 12.
+  //
+  // The bump is now a term inside the base curve rather than a factor on it, and
+  // the coefficients are chosen so the raw value lands near the cap at sector 48
+  // instead of far beyond it. See docs/BALANCE_ANALYSIS.md for the fitted table.
+  linearCoeff: 0.03,       // a - linear scaling coefficient
+  quadraticCoeff: 0.0011,  // b - quadratic scaling coefficient
+  shopTierCoeff: 0.12,     // c - added per shop tier (every 4 levels)
   powerExponent: 0.35,      // p - power exponent for ratio adjustment
   ratioClamp: [0.8, 1.25] as [number, number], // Clamp for player power ratio
   
-  // Sector modifiers
-  normalHpExponent: 0.95,  // HP multiplier exponent for normal sectors
-  normalDmgExponent: 1.00, // DMG multiplier exponent for normal sectors
-  bossHpExponent: 1.15,    // HP multiplier exponent for boss sectors
+  // Sector modifiers. HP carries late-game difficulty; the damage exponent is
+  // deliberately flat, so per-hit growth comes from each mob's `damagePerLevel`
+  // and stays near the M6.4a per-hit cap rather than far above it.
+  normalHpExponent: 1.15,  // HP multiplier exponent for normal sectors
+  normalDmgExponent: 0.15, // DMG multiplier exponent for normal sectors
+  bossHpExponent: 0.75,    // HP multiplier exponent for boss sectors
   bossDmgExponent: 0.90,   // DMG multiplier exponent for boss sectors
   
   // Tier bumps
-  shopTierMultiplier: 1.15, // Multiplier applied after each shop tier (every 4 levels)
   bossHpMultiplier: [1.6, 2.2] as [number, number],  // Boss HP multiplier range
   bossDmgMultiplier: [1.25, 1.6] as [number, number], // Boss DMG multiplier range
   
@@ -37,9 +51,17 @@ export const SCALING_CONFIG = {
   smoothingAlpha: 0.3,     // EMA smoothing factor (0-1, higher = more responsive)
   smoothingWindow: 5,      // Number of levels to track for smoothing
   
-  // Safety clamps
+  // Safety clamps. Split, because one shared ceiling forced HP and damage to
+  // stop growing at the same sector — and they should not grow alike at all.
+  // These are genuine safety valves now: normal HP peaks near 10 and damage near
+  // 1.6 under the fitted curve, so neither should reach its cap in normal play.
   minScaling: 0.5,         // Minimum scaling multiplier (never make easier than 50%)
-  maxScaling: 3.0,         // Maximum scaling multiplier (prevent extreme spikes)
+  maxHpScaling: 14.0,      // Ceiling for normal-sector HP
+  maxDmgScaling: 4.0,      // Ceiling for damage, normal and boss
+  // Bosses keep a tighter HP ceiling until M6.5 reworks their encounters:
+  // it holds them near their current values rather than letting the unpinned
+  // curve double them before their mechanics are readable.
+  maxBossHpScaling: 3.5,
   
   // Player power calculation
   baseAttackRate: 2.0,     // Base attacks per second (decoupled from movement speed in M6)
@@ -196,6 +218,11 @@ function calculateExpectedPower(level: number): number {
   return P0 * Math.pow(1 + g, level);
 }
 
+/** Shop tiers cleared by this level — one every 4 levels, from level 5. */
+export function shopTiersAt(level: number): number {
+  return Math.max(0, Math.floor((level - 1) / 4));
+}
+
 /**
  * Calculate base scaling multiplier for a level.
  * Uses adaptive scaling if player power is provided, otherwise fallback.
@@ -227,17 +254,23 @@ function calculateBaseScaling(
       Math.min(SCALING_CONFIG.ratioClamp[1], ratio)
     );
     
-    // Base scaling: (1 + a*L + b*L^2)
-    const baseScaling = 1 + a * level + b * level * level;
+    // Base scaling: (1 + a*L + b*L^2 + c*shopTiers)
+    const baseScaling =
+      1 + a * level + b * level * level + SCALING_CONFIG.shopTierCoeff * shopTiersAt(level);
     
     // Apply ratio adjustment: (ratio^p)
     const ratioAdjustment = Math.pow(clampedRatio, p);
     
     return baseScaling * ratioAdjustment;
   } else {
-    // Fallback non-adaptive scaling: HP(L) = (1 + 0.10*L)^1.25
-    // This provides consistent progression without player power assessment
-    return Math.pow(1 + 0.10 * level, 1.25);
+    // Fallback non-adaptive scaling: the same curve without the ratio term, so
+    // turning adaptive off changes how difficulty *responds*, not its shape.
+    return (
+      1 +
+      SCALING_CONFIG.linearCoeff * level +
+      SCALING_CONFIG.quadraticCoeff * level * level +
+      SCALING_CONFIG.shopTierCoeff * shopTiersAt(level)
+    );
   }
 }
 
@@ -250,18 +283,11 @@ function calculateBaseScaling(
  * @returns Tier multiplier
  */
 function calculateTierMultiplier(level: number, sectorType: 'normal' | 'boss' | 'shop'): number {
-  let multiplier = 1.0;
-  
-  // Shop tier bumps (every 4 levels, starting after level 4)
-  const shopTiers = Math.floor((level - 1) / 4);
-  if (shopTiers > 0) {
-    multiplier *= Math.pow(SCALING_CONFIG.shopTierMultiplier, shopTiers);
-  }
-  
-  // Note: Boss multipliers are applied separately in calculateScaling() for boss mobs
-  // to avoid double application. Only shop tier bumps are applied here.
-  
-  return multiplier;
+  // Shop tiers now enter through `shopTierCoeff` inside the base curve, so there
+  // is no separate exponential factor here. Kept as a seam: boss multipliers are
+  // still applied in calculateScaling(), and a future per-sector-type bump has an
+  // obvious home.
+  return 1.0;
 }
 
 /**
@@ -370,17 +396,79 @@ export function calculateScaling(params: ScalingParams): ScalingResult {
     }
   }
   
-  // Apply safety clamps
-  hpMultiplier = Math.max(
-    SCALING_CONFIG.minScaling,
-    Math.min(SCALING_CONFIG.maxScaling, hpMultiplier)
-  );
+  // Apply safety clamps. HP and damage no longer share a ceiling, and bosses
+  // keep a tighter HP ceiling of their own until M6.5.
+  const hpCeiling =
+    sectorType === 'boss' ? SCALING_CONFIG.maxBossHpScaling : SCALING_CONFIG.maxHpScaling;
+  hpMultiplier = Math.max(SCALING_CONFIG.minScaling, Math.min(hpCeiling, hpMultiplier));
   dmgMultiplier = Math.max(
     SCALING_CONFIG.minScaling,
-    Math.min(SCALING_CONFIG.maxScaling, dmgMultiplier)
+    Math.min(SCALING_CONFIG.maxDmgScaling, dmgMultiplier)
   );
   
   return { hpMultiplier, dmgMultiplier };
+}
+
+/**
+ * Multipliers for an explicit player-power ratio, skipping the EMA smoothing.
+ *
+ * `calculateScaling` derives the ratio from a smoothed power history, which is
+ * right in a run and useless for asking "does a strong build actually face
+ * different mobs than a weak one at sector 32?". This answers that directly.
+ */
+export function multipliersAtRatio(
+  level: number,
+  ratio: number,
+  sectorType: 'normal' | 'boss' | 'shop' = 'normal',
+  mobArchetype = 'drone',
+): ScalingResult {
+  const clampedRatio = Math.max(
+    SCALING_CONFIG.ratioClamp[0],
+    Math.min(SCALING_CONFIG.ratioClamp[1], ratio),
+  );
+  const baseScaling =
+    (1 +
+      SCALING_CONFIG.linearCoeff * level +
+      SCALING_CONFIG.quadraticCoeff * level * level +
+      SCALING_CONFIG.shopTierCoeff * shopTiersAt(level)) *
+    Math.pow(clampedRatio, SCALING_CONFIG.powerExponent);
+
+  const archetype = getArchetypeConstants(mobArchetype);
+  const isBossSector = sectorType === 'boss';
+  const hpExponent = isBossSector ? SCALING_CONFIG.bossHpExponent : SCALING_CONFIG.normalHpExponent;
+  const dmgExponent = isBossSector ? SCALING_CONFIG.bossDmgExponent : SCALING_CONFIG.normalDmgExponent;
+
+  let hpMultiplier = Math.pow(baseScaling, hpExponent) * archetype.hp;
+  let dmgMultiplier = Math.pow(baseScaling, dmgExponent) * archetype.dmg;
+
+  const hpCeiling = isBossSector ? SCALING_CONFIG.maxBossHpScaling : SCALING_CONFIG.maxHpScaling;
+  hpMultiplier = Math.max(SCALING_CONFIG.minScaling, Math.min(hpCeiling, hpMultiplier));
+  dmgMultiplier = Math.max(
+    SCALING_CONFIG.minScaling,
+    Math.min(SCALING_CONFIG.maxDmgScaling, dmgMultiplier),
+  );
+
+  return { hpMultiplier, dmgMultiplier };
+}
+
+export function initScalingApi(): void {
+  if (typeof window === 'undefined') return;
+
+  window.__PIXLAB_SCALING__ = {
+    multipliersAtRatio,
+    shopTiersAt,
+    config: SCALING_CONFIG,
+  };
+}
+
+declare global {
+  interface Window {
+    __PIXLAB_SCALING__?: {
+      multipliersAtRatio: typeof multipliersAtRatio;
+      shopTiersAt: typeof shopTiersAt;
+      config: typeof SCALING_CONFIG;
+    };
+  }
 }
 
 /**

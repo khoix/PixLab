@@ -174,3 +174,109 @@ test.describe('M6.4a — per-hit cap', () => {
     for (const v of Object.values(dps.out)) expect(v).toBeLessThanOrEqual(dps.budget + 1e-9);
   });
 });
+
+test.describe('M6.4a — scaling curve', () => {
+  test('no multiplier pins at its ceiling across a full run', async ({ page }) => {
+    await page.goto('/');
+    const run = await page.evaluate(() => {
+      const api = window.__PIXLAB_MOB_BALANCE__!;
+      const sectors = [1, 4, 8, 12, 16, 20, 24, 28, 32, 40, 48];
+      return {
+        normal: sectors.map((l) => ({ l, ...api.scalingAt(l, 'normal', 'drone') })),
+        boss: sectors.map((l) => ({ l, ...api.scalingAt(l, 'boss', 'boss') })),
+      };
+    });
+
+    // Both multipliers grow at every step. Before M6.4a they pinned at 3.0 from
+    // sector 11 and were flat for the rest of the run.
+    for (let i = 1; i < run.normal.length; i++) {
+      expect(run.normal[i].hpMultiplier).toBeGreaterThan(run.normal[i - 1].hpMultiplier);
+      expect(run.normal[i].dmgMultiplier).toBeGreaterThan(run.normal[i - 1].dmgMultiplier);
+    }
+    // And nothing is sitting on a ceiling at the end of a run.
+    const last = run.normal[run.normal.length - 1];
+    expect(last.hpMultiplier).toBeLessThan(14);
+    expect(last.dmgMultiplier).toBeLessThan(4);
+
+    // Bosses are the deliberate exception: they keep a tight HP ceiling of 3.5
+    // until M6.5 reworks their encounters, so they stay near where they are
+    // today rather than doubling before their mechanics are readable. Their
+    // damage pins too, which the flat 40%-of-bar per-hit cap makes moot.
+    const boss24 = run.boss.find((r) => r.l === 24)!;
+    const boss48 = run.boss.find((r) => r.l === 48)!;
+    expect(boss24.hpMultiplier).toBeCloseTo(3.5, 5);
+    expect(boss48.hpMultiplier).toBeCloseTo(3.5, 5);
+    // Still rising where players actually meet the first cycle of bosses.
+    const boss8 = run.boss.find((r) => r.l === 8)!;
+    const boss16 = run.boss.find((r) => r.l === 16)!;
+    expect(boss16.hpMultiplier).toBeGreaterThan(boss8.hpMultiplier);
+  });
+
+  test('sector 20 lands where it does today, and keeps growing after', async ({ page }) => {
+    await page.goto('/');
+    const hp = await page.evaluate(() => {
+      const api = window.__PIXLAB_MOB_BALANCE__!;
+      return {
+        drone20: api.effectiveHp('drone', 20),
+        drone32: api.effectiveHp('drone', 32),
+        drone48: api.effectiveHp('drone', 48),
+        mult20: api.scalingAt(20).hpMultiplier,
+      };
+    });
+
+    // Today's pinned 3.0 put a sector-20 drone at 360 HP. Hold that.
+    expect(hp.drone20).toBeGreaterThan(300);
+    expect(hp.drone20).toBeLessThan(420);
+    expect(hp.mult20).toBeGreaterThan(2.6);
+    expect(hp.mult20).toBeLessThan(3.4);
+    // Growth continues instead of flatlining.
+    expect(hp.drone32).toBeGreaterThan(hp.drone20 * 1.5);
+    expect(hp.drone48).toBeGreaterThan(hp.drone32 * 1.5);
+  });
+
+  test('archetypes stay separated late, and the sniper still hits hardest', async ({ page }) => {
+    await page.goto('/');
+    const dmg = await page.evaluate(() => {
+      const api = window.__PIXLAB_MOB_BALANCE__!;
+      // A bar that has grown with the run, so the cap is not flattening things.
+      const at = (l: number, maxHp: number) =>
+        Object.fromEntries(
+          ['swarm', 'drone', 'phase', 'guardian', 'charger', 'moth', 'turret', 'tracker', 'sniper']
+            .filter((s) => api.getAvailableSubtypes(l).includes(s))
+            .map((s) => [s, api.effectiveHitDamage(s, l, maxHp)]),
+        );
+      return { s20: at(20, 300), s32: at(32, 460), s48: at(48, 640) };
+    });
+
+    for (const [sector, row] of Object.entries(dmg)) {
+      const values = Object.values(row) as number[];
+      // The archetype constants used to stop separating anything past sector 12,
+      // because they were applied before a clamp everything hit. A flat field
+      // would mean that regression is back.
+      expect(new Set(values).size, `${sector} should not be flat`).toBeGreaterThan(4);
+      expect((row as Record<string, number>).sniper).toBe(Math.max(...values));
+    }
+  });
+
+  test('a stronger build and a weaker one face different mobs late', async ({ page }) => {
+    await page.goto('/');
+    const spread = await page.evaluate(() => {
+      const s = window.__PIXLAB_SCALING__!;
+      const at = (level: number, ratio: number) => s.multipliersAtRatio(level, ratio);
+      return {
+        s20: { weak: at(20, 0.8), strong: at(20, 1.25) },
+        s32: { weak: at(32, 0.8), strong: at(32, 1.25) },
+      };
+    });
+
+    // Adaptive scaling was inert past sector 11: both builds got identical mobs.
+    for (const [sector, pair] of Object.entries(spread)) {
+      expect(pair.strong.hpMultiplier, `${sector} hp should differ`).toBeGreaterThan(
+        pair.weak.hpMultiplier * 1.05,
+      );
+      expect(pair.strong.dmgMultiplier, `${sector} dmg should differ`).toBeGreaterThan(
+        pair.weak.dmgMultiplier,
+      );
+    }
+  });
+});
