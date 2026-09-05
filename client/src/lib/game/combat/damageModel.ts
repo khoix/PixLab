@@ -1,3 +1,5 @@
+import { perHitCap } from './damageBudget';
+
 // How much damage a mob's hit actually takes off the player.
 //
 // Flat defense is subtracted first, then a mercy term scales the remainder by
@@ -16,13 +18,23 @@ export interface IncomingDamageInput {
   defense: number;
   /** Player HP as a fraction of max (0–1). */
   hpRatio: number;
+  /** Player's max HP — the bar the per-hit cap is a fraction of. */
+  maxHp: number;
+  /** The attacker's configured cadence in ms; drives its share of the bar. */
+  cadenceMs: number;
+  isBoss?: boolean;
 }
 
 export function computeIncomingDamage(input: IncomingDamageInput): number {
   const afterDefense = Math.max(1, input.baseDamage - input.defense);
   const clampedRatio = Math.max(0, Math.min(1, input.hpRatio));
   const mercy = MERCY_FLOOR + clampedRatio * (1 - MERCY_FLOOR);
-  return Math.max(1, Math.floor(afterDefense * mercy));
+  const dealt = Math.max(1, Math.floor(afterDefense * mercy));
+  // Every damage path in the game funnels through here, so the cap cannot be
+  // bypassed by adding another one. `maxHp` and `cadenceMs` are required rather
+  // than optional for the same reason: a new call site has to supply them.
+  const cap = perHitCap({ maxHp: input.maxHp, cadenceMs: input.cadenceMs, isBoss: input.isBoss });
+  return Math.min(dealt, cap);
 }
 
 export function initDamageModelApi(): void {

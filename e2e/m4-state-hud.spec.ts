@@ -21,6 +21,27 @@ test.describe('M4 — State updates & HUD consistency', () => {
     expect(modifiers.autoReveal).toBe(true);
   });
 
+  test('the menu button is an icon that still announces itself', async ({ page }) => {
+    await startSectorRun(page);
+    await page.waitForTimeout(300);
+
+    const btn = page.getByTestId('game-menu-button');
+    // The word MENU became a hamburger glyph, so the accessible name has to
+    // come from the label rather than the text content.
+    await expect(btn).toHaveAttribute('aria-label', 'Menu');
+    await expect(btn).toHaveAccessibleName('Menu');
+    expect((await btn.innerText()).trim()).toBe('');
+    await expect(btn.locator('svg')).toBeVisible();
+
+    // Square target, not a wide word.
+    const box = (await btn.boundingBox())!;
+    expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(8);
+
+    // And it still opens the menu.
+    await btn.click();
+    await expect(page.getByText('INVENTORY')).toBeVisible();
+  });
+
   test('sector timer pauses while menu is open', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await startSectorRun(page);
