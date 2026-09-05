@@ -272,66 +272,11 @@ export const generateLevel = (
       });
     }
     
-    // Every boss used to arrive with a random 2–4 Cerberus, which made the
-    // difficulty of a first encounter an RNG roll and buried the boss's own
-    // mechanic under add pressure. A first-cycle boss now fights alone so its
-    // mechanic is what the player learns; threshold-driven adds are the next
-    // step in M6.5, and repeat cycles are where extra pressure belongs.
-    const REPEAT_CYCLE_ADDS_FROM = 32;
-    if (levelNum >= REPEAT_CYCLE_ADDS_FROM) {
-      const cerberusMob = MOB_TYPES.find(m => m.subtype === 'cerberus');
-      if (cerberusMob) {
-        const numCerberus = Math.floor(Math.random() * 3) + 2; // 2-4 Cerberus
-        let cerberusCounter = 0;
-        
-        for (let i = 0; i < numCerberus; i++) {
-          // Find position near boss but not too close
-          const cerberusPos = findValidFloorTile(width / 2, height / 2, 8);
-          if (cerberusPos) {
-            // Calculate Cerberus scaling (boss sector, cerberus archetype)
-            const cerberusScaling = calculateScaling({
-              level: levelNum,
-              sectorType: 'boss',
-              mobArchetype: 'cerberus',
-              playerPower: playerStats && loadout ? calculatePlayerPower(playerStats, loadout) : undefined,
-              useAdaptive: !!(playerStats && loadout),
-              loadout: loadout,
-              useEconomyIndex: !!(playerStats && loadout)
-            });
-            
-            const modifiers = { enemyHp: 1 }; // Will be applied by mods in game loop
-            const baseHp = cerberusMob.baseHp + levelNum * cerberusMob.hpPerLevel;
-            const baseDamage = cerberusMob.baseDamage + levelNum * cerberusMob.damagePerLevel;
-            const hp = Math.floor(baseHp * cerberusScaling.hpMultiplier * modifiers.enemyHp);
-            const damage = Math.floor(baseDamage * cerberusScaling.dmgMultiplier);
-            
-            const moveSpeed = scaledMoveSpeed(cerberusMob, levelNum);
-            const attackCooldown = scaledAttackCooldown(cerberusMob, levelNum);
-            
-            const cerberusEntity: Entity = {
-              id: `cerberus-${cerberusCounter++}`,
-              type: 'enemy',
-              pos: cerberusPos,
-              hp: hp,
-              maxHp: hp,
-              damage: damage,
-              mobSubtype: 'cerberus',
-              moveSpeed: moveSpeed,
-              attackCooldown: attackCooldown,
-              lastAttackTime: 0,
-              canPhase: false,
-              isRanged: false,
-              range: 1,
-              isStationary: false,
-              biteComboCount: 0,
-              lastBiteTime: 0,
-            };
-            
-            entities.push(cerberusEntity);
-          }
-        }
-      }
-    }
+    // No adds at generation time. Every boss used to arrive with a random 2–4
+    // Cerberus, which made a first encounter's difficulty an RNG roll and
+    // buried the boss's own mechanic under add pressure. Adds are now driven by
+    // the boss's remaining HP at runtime — see ai/bossAdds.ts — so they arrive
+    // as an escalation the player causes rather than a hand they were dealt.
   } else if (!isShop) {
     // Normal enemies - prevent infinite loop with max attempts
     // Number of enemies scales with level, with more variety at higher levels.
@@ -653,7 +598,7 @@ export const rollPortalDestination = (ctx: PortalDestinationContext): Position =
 
 export function initEngineApi(): void {
   if (typeof window === 'undefined') return;
-  window.__PIXLAB_ENGINE__ = { rollPortalDestination, generateLevel };
+  window.__PIXLAB_ENGINE__ = { rollPortalDestination, generateLevel, getAttackablePositions };
 }
 
 declare global {
@@ -661,6 +606,7 @@ declare global {
     __PIXLAB_ENGINE__?: {
       rollPortalDestination: typeof rollPortalDestination;
       generateLevel: typeof generateLevel;
+      getAttackablePositions: typeof getAttackablePositions;
     };
   }
 }
@@ -727,6 +673,56 @@ export const hasLineOfSight = (from: Position, to: Position, level: Level): bool
   }
 };
 
+type Offset = readonly [number, number];
+
+const cardinalReach = (n: number): Offset[] => {
+  const out: Offset[] = [];
+  for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+    for (let i = 1; i <= n; i++) out.push([dx * i, dy * i]);
+  }
+  return out;
+};
+
+const ring = (radius: number): Offset[] => {
+  const out: Offset[] = [];
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      out.push([dx, dy]);
+    }
+  }
+  return out;
+};
+
+const star = (n: number): Offset[] => {
+  const out: Offset[] = [];
+  for (const [dx, dy] of [
+    [0, -1], [0, 1], [-1, 0], [1, 0],
+    [-1, -1], [1, -1], [-1, 1], [1, 1],
+  ] as const) {
+    for (let i = 1; i <= n; i++) out.push([dx * i, dy * i]);
+  }
+  return out;
+};
+
+/**
+ * Attack shapes for the five boss drops, each echoing the fight it came from.
+ * Reach is traded against base damage: Oblivion Blade covers the most ground
+ * and hits softest of the five, Stormbreaker the reverse.
+ */
+export const BOSS_WEAPON_PATTERNS: Record<string, Offset[]> = {
+  // Zeus: a bolt down a lane. Long and thin, three tiles each way.
+  stormbreaker: cardinalReach(3),
+  // Hades: reaches around cover, two tiles in all eight directions.
+  'void reaver': star(2),
+  // A heavy close sweep: everything adjacent, plus a second tile each cardinal.
+  bloodthirster: [...ring(1), ...cardinalReach(2)],
+  // Ares: a slam. The full block around the player, nothing beyond it.
+  "titan's gauntlet": ring(1),
+  // The widest arc in the game, and the softest of the five at 50 base.
+  'oblivion blade': ring(2),
+};
+
 export const getAttackablePositions = (pos: Position, weaponBaseName: string | null, level: Level): Position[] => {
   const positions: Position[] = [];
   const baseX = Math.floor(pos.x);
@@ -750,7 +746,27 @@ export const getAttackablePositions = (pos: Position, weaponBaseName: string | n
   }
   
   const weaponName = weaponBaseName.toLowerCase();
-  
+
+  // The five boss legendaries had no attack mechanics: none of their names
+  // matched a case below, so all five fell through to the plain four-cardinal
+  // pattern despite 50–70 base damage against a common weapon's 4–9. Beating a
+  // boss should change how the player fights, not just how hard they hit.
+  //
+  // Each drop keeps the shape of the fight it came from, and the widest
+  // patterns sit on the lowest base damage, so reach is a trade rather than a
+  // strict upgrade.
+  const bossPattern = BOSS_WEAPON_PATTERNS[weaponName];
+  if (bossPattern) {
+    for (const [ox, oy] of bossPattern) {
+      const x = baseX + ox;
+      const y = baseY + oy;
+      if (x >= 0 && x < level.width && y >= 0 && y < level.height) {
+        positions.push({ x, y });
+      }
+    }
+    return positions;
+  }
+
   if (weaponName === 'spear') {
     // Spear: 2 tiles in each cardinal direction
     const directions = [

@@ -1,5 +1,55 @@
 # Release Notes
 
+## Milestone 6.5 — Boss Encounters & Arenas
+
+**Branch:** `claude/m6`
+
+### The shared attack cycle
+Bosses had no cycle. Zeus wound up and fired, but the wind-up was the whole
+tell and nothing followed it. Ares had neither: his charge started the instant
+he was three tiles away and ended when he hit a wall, so the fight was
+regulated by accidental collision geometry rather than anything the player
+could read or punish — which is why the boss with the highest raw numbers was
+the easiest fight in the game.
+
+Every boss now runs **telegraph → execute → recover → ready**. Nothing lands
+outside an execution, and only once per cycle: one charge is one hit, which is
+what makes baiting it a decision rather than a gamble. The recovery is rooted
+and open — the player's turn.
+
+- **Ares** (500 ms tell, 1000 ms recovery): commits to a lane, holds still
+  while showing it, charges once, and is wide open afterwards. A 250 ms rest
+  stops him re-charging on the tick recovery ends.
+- **Hades** (350 ms / 800 ms): pursues through cover, then telegraphs before
+  striking. With the M6.1 emergence window he can no longer surface and hit in
+  the same instant.
+- **Zeus** (400 ms / 600 ms) keeps his cadence but holds a **4–6 tile band**
+  instead of walking into melee — a shot fired from an adjacent tile cannot be
+  dodged, which made his own tell meaningless. Cornered, he sidesteps.
+
+### Adds on a schedule, not a dice roll
+Every boss used to arrive with a random 2–4 Cerberus placed at generation time.
+A two-add Hades and a four-add Hades are different fights, and the pack buried
+the boss's own mechanic before the player had seen it once. Adds are now driven
+by the boss's remaining HP: **one at 60%** on a first cycle, **two at 75% and
+40%** on repeats. They spawn on the far side of the boss, never on top of you.
+
+### Boss drops that change how you fight
+The five legendaries had no attack mechanics — none of their names matched a
+case in `getAttackablePositions`, so all five used the plain four-cardinal
+pattern despite 50–70 base damage against a common weapon's 4–9. Each now has
+a shape echoing its fight, with reach traded against damage: Stormbreaker hits
+hardest down a 3-tile lane, Void Reaver reaches around cover in all eight
+directions, Titan's Gauntlet slams the block around you, Oblivion Blade covers
+the most ground and hits softest.
+
+### On the inverted difficulty order
+Hades ≫ Zeus > Ares, against a sector order of Zeus → Hades → Ares. **Kept the
+order.** Every input to the inversion was addressed rather than worked around:
+Hades no longer outruns the player or corners them, and Ares finally has lanes,
+bait, a tell and a recovery. Reordering on top of that would be tuning against
+numbers taken before the fix. Confirm by playtest at sectors 8 / 16 / 24.
+
 ## Milestone 6.5 (part 1) — Boss Arenas
 
 **Branch:** `claude/m6`

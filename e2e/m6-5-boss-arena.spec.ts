@@ -188,7 +188,7 @@ test.describe('M6.5 — boss arena generation', () => {
         bossEntities: boss.entities.length,
         bossSubtype: boss.entities[0]?.mobSubtype ?? null,
         items: boss.items.length,
-        repeatCycleAdds: engine.generateLevel(32, 31, 31).entities.length,
+        repeatCycleEntities: engine.generateLevel(32, 31, 31).entities.length,
         normalFloorRatio: arena.countFloor(normal.tiles) / (31 * 31),
         normalDeadEnds: arena.findDeadEnds(normal.tiles).length,
       };
@@ -200,9 +200,11 @@ test.describe('M6.5 — boss arena generation', () => {
     // difficulty an RNG roll and buried the boss's own mechanic.
     expect(level.bossSubtype).toBe('boss_zeus');
     expect(level.bossEntities).toBe(1);
-    // Repeat cycles are where extra pressure belongs, once the mechanic is
-    // known: sector 32 is Zeus a second time and does bring adds.
-    expect(level.repeatCycleAdds).toBeGreaterThan(1);
+    // No boss brings adds at generation time any more, repeat cycles included:
+    // they are summoned from the boss's own HP thresholds at runtime, so a
+    // fight's difficulty is an escalation the player causes rather than a hand
+    // they were dealt. The schedule itself is covered in m6-5-boss-cycle.
+    expect(level.repeatCycleEntities).toBe(1);
     expect(level.items).toBe(0);
     expect(level.bossConnected).toBe(true);
     expect(level.bossDeadEnds).toBe(0);

@@ -71,6 +71,10 @@ export interface Entity {
   lastDamageComboCount?: number; // For cerberus - tracks which combo count has already dealt damage
   roamDirection?: { x: number; y: number } | null; // For phase mob roaming
   lastRoamChange?: number; // Timestamp of last roam direction change
+  bossPhase?: 'ready' | 'telegraph' | 'execute' | 'recover'; // Boss attack cycle
+  bossPhaseSince?: number;   // When the current boss phase began (ms)
+  bossPhaseHits?: number;    // Damage events this execution has produced
+  attackTelegraphMs?: number; // Wind-up length, so the tell draws at its real rate
   attackTelegraphUntil?: number; // Ranged wind-up end time (ms)
   attackTelegraphVelocity?: { x: number; y: number }; // Aim direction during wind-up
   hitFlashUntil?: number; // Brief damage flash end time (ms)

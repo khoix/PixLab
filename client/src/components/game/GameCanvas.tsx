@@ -22,6 +22,17 @@ import {
   nextWallTilesTraversed,
 } from '../../lib/game/ai/phaseBudget';
 import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
+import {
+  BOSS_CYCLES,
+  canBeginCycle,
+  canDealDamage as cycleCanDealDamage,
+  enterPhase,
+  initialCycle,
+  isRooted,
+  phaseExpired,
+  type BossCycleState,
+} from '../../lib/game/ai/bossCycle';
+import { addsDueAt } from '../../lib/game/ai/bossAdds';
 import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
@@ -301,6 +312,61 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     triggerHaptic(pattern, { enabled: settingsRef.current.hapticsEnabled !== false });
   };
 
+  /** Tiles Ares wants between himself and the player before committing a charge. */
+  const ARES_MIN_CHARGE_TILES = 3;
+
+  /** Zeus' preferred engagement band, in tiles. Close enough to threaten, far
+   *  enough that his wind-up is a warning rather than a formality. */
+  const ZEUS_BAND_MIN = 4;
+  const ZEUS_BAND_MAX = 6;
+
+  /** How close Hades must be before he commits to a strike. */
+  const HADES_STRIKE_TILES = 1.6;
+
+  /** Adds already summoned this boss fight, so a threshold cannot re-fire. */
+  const bossAddsSpawnedRef = useRef(0);
+
+  /**
+   * Somewhere to put a summoned add: on the far side of the boss from the
+   * player, so one never materialises on top of them or behind their back.
+   */
+  const findAddSpawn = (bossPos: Position): Position => {
+    const level = levelRef.current;
+    if (!level) return bossPos;
+    const away = {
+      x: Math.sign(bossPos.x - playerPosRef.current.x) || 1,
+      y: Math.sign(bossPos.y - playerPosRef.current.y) || 1,
+    };
+    for (let step = 2; step <= 5; step++) {
+      for (const candidate of [
+        { x: Math.round(bossPos.x + away.x * step), y: Math.round(bossPos.y) },
+        { x: Math.round(bossPos.x), y: Math.round(bossPos.y + away.y * step) },
+        { x: Math.round(bossPos.x + away.x * step), y: Math.round(bossPos.y + away.y * step) },
+      ]) {
+        if (checkCollision(candidate, level)) continue;
+        const distToPlayer = Math.hypot(
+          candidate.x - playerPosRef.current.x,
+          candidate.y - playerPosRef.current.y,
+        );
+        if (distToPlayer >= 3) return candidate;
+      }
+    }
+    return bossPos;
+  };
+
+  // The boss attack cycle lives on the entity so it survives the AI scheduler
+  // skipping a frame; these two just move it in and out.
+  const readCycle = (entity: Entity, now: number): BossCycleState =>
+    entity.bossPhase
+      ? { phase: entity.bossPhase, since: entity.bossPhaseSince ?? now, hits: entity.bossPhaseHits ?? 0 }
+      : initialCycle(now);
+
+  const writeCycle = (entity: Entity, cycle: BossCycleState): void => {
+    entity.bossPhase = cycle.phase;
+    entity.bossPhaseSince = cycle.since;
+    entity.bossPhaseHits = cycle.hits;
+  };
+
   // Drop every per-mob record when a mob leaves the level, so a future mob that
   // reuses the id (waves, summons) starts with a clean clock and cooldowns.
   const releaseMobBookkeeping = (id: string) => {
@@ -497,6 +563,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // Reset damage cooldowns when level changes
     enemyDamageCooldownRef.current.clear();
     enemyMoveTimersRef.current.clear();
+    bossAddsSpawnedRef.current = 0;
     aiScheduler.reset();
     if (wasStandingOnPortalRef.current) {
       wasStandingOnPortalRef.current = false;
@@ -590,6 +657,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           mobSubtype: e.mobSubtype ?? null,
           pos: { ...e.pos },
           hp: e.hp,
+          bossPhase: e.bossPhase ?? null,
         })),
       getExitPos: () => (levelRef.current ? { ...levelRef.current.exitPos } : null),
       isFloor: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'floor',
@@ -2296,74 +2364,149 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
               }
               
-              // Move towards player (restricted to cardinal)
+              // Zeus holds a preferred band instead of always closing. He is a
+              // ranged control boss; walking into melee made his own tell
+              // useless, since a shot fired from an adjacent tile cannot be
+              // dodged. Too far and he advances, too close and he backs off,
+              // otherwise he strafes and keeps firing.
               const dir = restrictToCardinal(dx, dy);
-              nextPos = {
-                x: entity.pos.x + dir.x,
-                y: entity.pos.y + dir.y,
-              };
-              shouldMove = true;
+              if (distToPlayer > ZEUS_BAND_MAX) {
+                nextPos = { x: entity.pos.x + dir.x, y: entity.pos.y + dir.y };
+                shouldMove = true;
+              } else if (distToPlayer < ZEUS_BAND_MIN) {
+                const away = { x: -dir.x, y: -dir.y };
+                const retreat = { x: entity.pos.x + away.x, y: entity.pos.y + away.y };
+                if (levelRef.current && !checkCollision(retreat, levelRef.current)) {
+                  nextPos = retreat;
+                  shouldMove = true;
+                } else {
+                  // Cornered: sidestep along the other axis rather than stand still.
+                  const strafe = dir.x !== 0 ? { x: 0, y: 1 } : { x: 1, y: 0 };
+                  const side = { x: entity.pos.x + strafe.x, y: entity.pos.y + strafe.y };
+                  if (levelRef.current && !checkCollision(side, levelRef.current)) {
+                    nextPos = side;
+                    shouldMove = true;
+                  }
+                }
+              }
               break;
             }
             
             case 'boss_hades': {
-              // Hades Boss: Can phase through walls (can move diagonally)
-              nextPos = {
-                x: entity.pos.x + Math.sign(dx),
-                y: entity.pos.y + Math.sign(dy),
-              };
-              shouldMove = true;
+              // Hades: pursue → phase through cover → emerge → telegraph →
+              // strike → recover → reposition.
+              //
+              // He is meant to be dangerous because walls cannot be fully
+              // trusted, not because there is no moment to react. Phasing gets
+              // him to you; the cycle is what makes the arrival readable. The
+              // emergence window from the M6.1 follow-up already stops him
+              // surfacing and hitting on the same tick — this adds the tell and
+              // the opening after it.
+              const timings = BOSS_CYCLES.boss_hades;
+              const cycle = readCycle(entity, now);
+              let next = cycle;
+
+              switch (cycle.phase) {
+                case 'ready': {
+                  if (canBeginCycle(cycle, now, timings) && distToPlayer <= HADES_STRIKE_TILES) {
+                    const aim = restrictToCardinal(dx, dy);
+                    updatedEntity.attackTelegraphVelocity = { x: aim.x, y: aim.y };
+                    updatedEntity.attackTelegraphUntil = now + timings.telegraphMs;
+                    updatedEntity.attackTelegraphMs = timings.telegraphMs;
+                    next = enterPhase('telegraph', now);
+                  } else {
+                    // Pursuit, still cutting through cover. The movement budget
+                    // charges the diagonal properly, so he closes at his stated
+                    // speed rather than 41% faster than it.
+                    nextPos = {
+                      x: entity.pos.x + Math.sign(dx),
+                      y: entity.pos.y + Math.sign(dy),
+                    };
+                    shouldMove = true;
+                  }
+                  break;
+                }
+                case 'telegraph': {
+                  if (phaseExpired(cycle, now, timings)) next = enterPhase('execute', now);
+                  break;
+                }
+                case 'execute': {
+                  // The strike itself is the contact damage the gate allows
+                  // once; the phase just bounds how long that window is open.
+                  if (phaseExpired(cycle, now, timings)) next = enterPhase('recover', now);
+                  break;
+                }
+                case 'recover': {
+                  if (phaseExpired(cycle, now, timings)) next = enterPhase('ready', now);
+                  break;
+                }
+              }
+
+              writeCycle(updatedEntity, next);
               break;
             }
             
             case 'boss_ares': {
-              // Ares Boss: Powerful charge attacks
-              if (entity.chargeDirection) {
-                // Continue charging - boss charges faster and further
-                // Check if charge direction is diagonal and restrict if needed
-                const chargeDir = entity.chargeDirection;
-                if (chargeDir.x !== 0 && chargeDir.y !== 0) {
-                  const restrictedDir = restrictToCardinal(chargeDir.x, chargeDir.y);
-                  updatedEntity.chargeDirection = restrictedDir;
-                  nextPos = {
-                    x: entity.pos.x + restrictedDir.x,
-                    y: entity.pos.y + restrictedDir.y,
-                  };
-                } else {
-                  nextPos = {
-                    x: entity.pos.x + chargeDir.x,
-                    y: entity.pos.y + chargeDir.y,
-                  };
-                }
-                shouldMove = true;
-                
-                // Stop charging if hit wall (Ares can't phase) or reached player
-                if (levelRef.current && checkCollision(nextPos, levelRef.current)) {
-                  updatedEntity.chargeDirection = null;
-                  shouldMove = false;
-                } else if (distToPlayer < 1.5) {
-                  updatedEntity.chargeDirection = null;
-                }
-              } else {
-                // Start new charge - Ares charges from further away and more frequently (restricted to cardinal)
-                if (distToPlayer > 3) {
+              // Ares: charge and punish. The charge used to start the moment he
+              // was three tiles away and end when he hit a wall, so the fight
+              // was regulated by collision geometry rather than anything the
+              // player could read. It now runs the shared cycle — a visible
+              // wind-up, one committed charge, then a recovery that is the
+              // player's turn.
+              const timings = BOSS_CYCLES.boss_ares;
+              const cycle = readCycle(entity, now);
+              let next = cycle;
+
+              switch (cycle.phase) {
+                case 'ready': {
+                  // Close the distance until there is room to charge.
                   const dir = restrictToCardinal(dx, dy);
-                  updatedEntity.chargeDirection = { x: dir.x, y: dir.y };
-                  nextPos = {
-                    x: entity.pos.x + dir.x,
-                    y: entity.pos.y + dir.y,
-                  };
+                  if (canBeginCycle(cycle, now, timings) && distToPlayer >= ARES_MIN_CHARGE_TILES) {
+                    // Lock the lane now; the tell shows where it goes.
+                    updatedEntity.chargeDirection = { x: dir.x, y: dir.y };
+                    updatedEntity.attackTelegraphVelocity = { x: dir.x, y: dir.y };
+                    updatedEntity.attackTelegraphUntil = now + timings.telegraphMs;
+                    updatedEntity.attackTelegraphMs = timings.telegraphMs;
+                    next = enterPhase('telegraph', now);
+                  } else {
+                    nextPos = { x: entity.pos.x + dir.x, y: entity.pos.y + dir.y };
+                    shouldMove = true;
+                  }
+                  break;
+                }
+                case 'telegraph': {
+                  // Rooted, showing the lane. Committed once it expires — the
+                  // player has the whole wind-up to leave it.
+                  if (phaseExpired(cycle, now, timings)) next = enterPhase('execute', now);
+                  break;
+                }
+                case 'execute': {
+                  const chargeDir = entity.chargeDirection;
+                  if (!chargeDir || (chargeDir.x === 0 && chargeDir.y === 0)) {
+                    next = enterPhase('recover', now);
+                    break;
+                  }
+                  nextPos = { x: entity.pos.x + chargeDir.x, y: entity.pos.y + chargeDir.y };
                   shouldMove = true;
-                } else {
-                  // Close enough, normal movement (restricted to cardinal)
-                  const dir = restrictToCardinal(dx, dy);
-                  nextPos = {
-                    x: entity.pos.x + dir.x,
-                    y: entity.pos.y + dir.y,
-                  };
-                  shouldMove = true;
+                  const intoWall = !!levelRef.current && checkCollision(nextPos, levelRef.current);
+                  // Slamming into a wall ends the charge — that is the bait the
+                  // arena's pillars exist for — as does connecting, or running
+                  // out of committed distance.
+                  if (intoWall || distToPlayer < 1.5 || phaseExpired(cycle, now, timings)) {
+                    shouldMove = !intoWall;
+                    updatedEntity.chargeDirection = null;
+                    next = enterPhase('recover', now);
+                  }
+                  break;
+                }
+                case 'recover': {
+                  // Rooted and open. This is the damage window.
+                  if (phaseExpired(cycle, now, timings)) next = enterPhase('ready', now);
+                  break;
                 }
               }
+
+              writeCycle(updatedEntity, next);
               break;
             }
             
@@ -2536,13 +2679,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
               const DAMAGE_COOLDOWN_MS = entity.attackCooldown || 500;
 
-              if (canLandMeleeHit({
+              // A boss running the attack cycle can only hurt during an
+              // execution, and only once per cycle: one charge is one hit, which
+              // is what makes baiting it a decision rather than a gamble.
+              const cycleAllows =
+                updatedEntity.bossPhase === undefined ||
+                cycleCanDealDamage(readCycle(updatedEntity, now));
+
+              if (cycleAllows && canLandMeleeHit({
                 now,
                 lastDamageTime,
                 cooldownMs: DAMAGE_COOLDOWN_MS,
                 attackerInWall,
                 emergedAt: updatedEntity.phaseEmergedAt,
               })) {
+                updatedEntity.bossPhaseHits = (updatedEntity.bossPhaseHits ?? 0) + 1;
                 const damage = computeIncomingDamage({
                   baseDamage: entity.damage,
                   defense: getTotalDefense(loadoutRef.current),
@@ -2589,6 +2740,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       return entity;
     });
     
+    // A boss calls for help as it loses ground, rather than arriving with a
+    // random pack. `addsDueAt` is a running total, so crossing two thresholds
+    // in one tick spawns two and nothing can double-fire.
+    if (levelRef.current.isBoss) {
+      const boss = updatedEntities.find((e) => e.type === 'boss_enemy');
+      if (boss && boss.maxHp > 0) {
+        const due = addsDueAt(boss.hp / boss.maxHp, state.currentLevel);
+        while (bossAddsSpawnedRef.current < due) {
+          const add = spawnMobEntity(
+            levelRef.current,
+            'cerberus',
+            findAddSpawn(boss.pos),
+            state.currentLevel,
+            statsRef.current,
+            loadoutRef.current,
+          );
+          bossAddsSpawnedRef.current += 1;
+          if (!add) break;
+          add.id = `boss-add-${bossAddsSpawnedRef.current}`;
+          updatedEntities.push(add);
+          audioManager.playSound('attack');
+        }
+      }
+    }
+
     // Update entities array with new array (no mutation)
     levelRef.current.entities = updatedEntities;
     
@@ -3554,9 +3730,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       if (entity.attackTelegraphUntil && drawNow < entity.attackTelegraphUntil && entity.attackTelegraphVelocity) {
         const telegraphDuration =
-          entity.isBoss || entity.mobSubtype === 'boss_zeus'
+          entity.attackTelegraphMs ??
+          (entity.isBoss || entity.mobSubtype === 'boss_zeus'
             ? BOSS_RANGED_TELEGRAPH_MS
-            : RANGED_TELEGRAPH_MS;
+            : RANGED_TELEGRAPH_MS);
         const progress = Math.min(1, 1 - (entity.attackTelegraphUntil - drawNow) / telegraphDuration);
         const lineLen = TILE_SIZE * (1.1 + progress * 2.2);
         ctx.save();

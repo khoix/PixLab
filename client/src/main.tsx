@@ -16,6 +16,8 @@ import { initAiSchedulerHooks } from "./lib/game/ai/aiScheduler";
 import { initGameClockApi, subscribeGamePause } from "./lib/game/gameClock";
 import { initEngineApi } from "./lib/game/engine";
 import { initArenaApi } from "./lib/game/arena";
+import { initBossCycleApi } from "./lib/game/ai/bossCycle";
+import { initBossAddsApi } from "./lib/game/ai/bossAdds";
 import { audioManager } from "./lib/audio";
 import { initPhaseBudgetApi } from "./lib/game/ai/phaseBudget";
 import { initMovementBudgetApi } from "./lib/game/ai/movementBudget";
@@ -45,6 +47,8 @@ initAiSchedulerHooks();
 initGameClockApi();
 initEngineApi();
 initArenaApi();
+initBossCycleApi();
+initBossAddsApi();
 // The run's music is scored to end as the sector timer expires, so it has to
 // freeze with the run — otherwise a spell in the menu desyncs it permanently.
 subscribeGamePause((paused) => {
