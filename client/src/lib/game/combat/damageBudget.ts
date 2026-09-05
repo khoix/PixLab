@@ -15,11 +15,36 @@
 // This only ever reduces a hit. A mob whose raw damage is under its cap is
 // untouched, which at present is most of them below sector ~10.
 
-/** Share of the player's max HP one mob may take per second of exposure. */
-export const DPS_BUDGET = 0.18;
+import { perMobDpsBudget } from '../ai/attackPressure';
 
-/** Floor and ceiling on a single hit, as a share of max HP. */
-export const MIN_HIT_FRACTION = 0.05;
+/**
+ * Share of the player's max HP one mob may take per second of exposure.
+ *
+ * Was a flat 0.18 at M6.4a. It is now derived from the sector's incoming
+ * ceiling divided by its slot cap (see ai/attackPressure.ts), which is what
+ * makes the two systems one budget rather than two: adding a slot lowers what
+ * each attacker may sustain instead of stacking more damage on the same bar.
+ *
+ * The M6.6 harness measured the cost of them being separate — five attackers at
+ * a flat 18% each is 90% of the bar per second against a 55% ceiling, and a
+ * behind-curve player dead in 1.6 s at sector 20.
+ */
+export const LEGACY_FLAT_DPS_BUDGET = 0.18;
+
+export function dpsBudgetForLevel(level: number): number {
+  return perMobDpsBudget(level);
+}
+
+/**
+ * Floor and ceiling on a single hit, as a share of max HP.
+ *
+ * The floor exists so a hit is never rounded to nothing, but it must not let a
+ * very fast mob out-sustain its budget: at 0.05 a 300 ms swarm member sustained
+ * 16.7% of the bar per second against a late-game per-mob budget of 11%, so the
+ * floor quietly became a way around the ceiling. 0.03 is below the
+ * budget-derived fraction at every cadence the game actually uses.
+ */
+export const MIN_HIT_FRACTION = 0.03;
 export const MAX_HIT_FRACTION = 0.35;
 
 /**
@@ -35,18 +60,21 @@ export interface PerHitCapInput {
   /** The attacking mob's configured cadence in ms. */
   cadenceMs: number;
   isBoss?: boolean;
+  /** Sector, which sets the per-mob budget. Defaults to the opening band. */
+  level?: number;
 }
 
 /** Share of max HP this attacker may remove in one hit. */
-export function perHitCapFraction(cadenceMs: number, isBoss = false): number {
+export function perHitCapFraction(cadenceMs: number, isBoss = false, level = 1): number {
   if (isBoss) return BOSS_HIT_FRACTION;
   const cadenceSeconds = Math.max(0, cadenceMs) / 1000;
-  return Math.max(MIN_HIT_FRACTION, Math.min(MAX_HIT_FRACTION, DPS_BUDGET * cadenceSeconds));
+  const budget = dpsBudgetForLevel(level);
+  return Math.max(MIN_HIT_FRACTION, Math.min(MAX_HIT_FRACTION, budget * cadenceSeconds));
 }
 
 /** Largest hit this attacker may land, in HP. Never below 1. */
 export function perHitCap(input: PerHitCapInput): number {
-  const fraction = perHitCapFraction(input.cadenceMs, input.isBoss === true);
+  const fraction = perHitCapFraction(input.cadenceMs, input.isBoss === true, input.level ?? 1);
   return Math.max(1, Math.floor(input.maxHp * fraction));
 }
 
@@ -56,9 +84,9 @@ export function perHitCap(input: PerHitCapInput): number {
  * away at the floor and ceiling — which is the intended shape: a swarm mob
  * hitting three times a second must not sustain a sniper's throughput.
  */
-export function sustainedFractionPerSecond(cadenceMs: number, isBoss = false): number {
+export function sustainedFractionPerSecond(cadenceMs: number, isBoss = false, level = 1): number {
   const cadenceSeconds = Math.max(0.001, cadenceMs) / 1000;
-  return perHitCapFraction(cadenceMs, isBoss) / cadenceSeconds;
+  return perHitCapFraction(cadenceMs, isBoss, level) / cadenceSeconds;
 }
 
 export function initDamageBudgetApi(): void {
@@ -68,8 +96,9 @@ export function initDamageBudgetApi(): void {
     perHitCap,
     perHitCapFraction,
     sustainedFractionPerSecond,
+    dpsBudgetForLevel,
     constants: {
-      dpsBudget: DPS_BUDGET,
+      dpsBudget: LEGACY_FLAT_DPS_BUDGET,
       minHitFraction: MIN_HIT_FRACTION,
       maxHitFraction: MAX_HIT_FRACTION,
       bossHitFraction: BOSS_HIT_FRACTION,
@@ -83,6 +112,7 @@ declare global {
       perHitCap: typeof perHitCap;
       perHitCapFraction: typeof perHitCapFraction;
       sustainedFractionPerSecond: typeof sustainedFractionPerSecond;
+      dpsBudgetForLevel: typeof dpsBudgetForLevel;
       constants: {
         dpsBudget: number;
         minHitFraction: number;

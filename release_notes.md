@@ -1,5 +1,53 @@
 # Release Notes
 
+## Milestone 6.4b — Encounter Pressure
+
+**Branch:** `claude/m6`
+
+M6.4a capped what a single hit can take. The M6.6 harness then measured what
+that left open: every mob individually inside its budget, and a behind-curve
+player still dead in 1.6 s at sector 20, because four of them were on the bar at
+once. **Per-hit fairness does not compose.**
+
+### Two budgets, derived from one number
+- **`ai/attackPressure.ts`** — a mob must hold a slot to deal damage, and it
+  holds one for a whole attack cycle rather than the damage frame. Caps are
+  2 / 3 / 4 / 5 by sector band. Mobs without a slot still pursue, flank and
+  wait, so the late game looks crowded without every visible enemy swinging.
+- The per-mob damage budget is now **derived** from that cap —
+  `ceiling / slots` — instead of being a flat 18% set beside it. Adding a slot
+  lowers what each attacker may sustain rather than stacking more damage on the
+  same bar. That is what closes the survival floor.
+- **`ai/encounterBudget.ts`** — a sector is filled against a threat budget, not
+  a headcount. An elite costs what it is worth instead of being added on top of
+  the previous population at the same price. Weights still choose *what*
+  appears, so the unlock sequence and the character of each tier are unchanged;
+  the entity cap survives as a pure performance limit.
+- Melee and ranged claim from the same pool. Two implementations must not
+  become two budgets on one health bar.
+
+### Both M6.6 findings closed
+- **Survival floor:** every build now clears it at every sector. A
+  behind-curve run's worst case went from 1.1 s to 2.1 s against a 1.8 s floor.
+- **The sniper boundary:** 12→13 came down from 2.41× to 2.07×. It is still the
+  sharpest boundary — the sniper is meant to be felt — but costing two slots
+  means it displaces an attacker rather than arriving on top of one.
+
+### And a leak neither finding had named
+Re-running the harness against the fix caught it: the per-hit **floor** of 5%
+let a 300 ms attacker sustain 16.7% of the bar per second against a late-game
+budget of 11%. The floor had quietly become a way around the ceiling. Lowered
+to 3%, and the harness now asserts against the real per-mob budget rather than
+a fixed number, so that class of leak fails the test instead of passing it.
+
+The harness also stopped *assuming* the concurrency caps and now reads them from
+the scheduler, so the report and the game share one source.
+
+### Still open in M6
+Rolling 1 s / 3 s incoming-damage instrumentation, the playtest matrix, and the
+deliberate `maxBossHpScaling` deferral until the reworked boss encounters are
+proven in play.
+
 ## Milestone 6.6 — Calibration Harness
 
 **Branch:** `claude/m6`

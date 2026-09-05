@@ -33,6 +33,15 @@ import {
   type BossCycleState,
 } from '../../lib/game/ai/bossCycle';
 import { addsDueAt } from '../../lib/game/ai/bossAdds';
+import {
+  createPressureState,
+  expireHolds,
+  releaseSlot,
+  slotCapForLevel,
+  slotCostFor,
+  tryClaimSlot,
+  usedSlots,
+} from '../../lib/game/ai/attackPressure';
 import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
@@ -326,6 +335,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   /** Adds already summoned this boss fight, so a threshold cannot re-fire. */
   const bossAddsSpawnedRef = useRef(0);
 
+  // Who is allowed to be attacking right now. A mob holds its slot for a whole
+  // attack cycle, not just the damage frame, so the crowd around the player can
+  // be large while the number of things actually swinging stays bounded.
+  const attackPressureRef = useRef(createPressureState());
+  const peakPressureRef = useRef(0);
+
+  /**
+   * True when this mob may deal damage this tick, taking or renewing a slot if
+   * one is free. A mob that cannot get one still pursues and repositions — it
+   * simply does not get to swing.
+   */
+  const claimAttackSlot = (entity: Entity, now: number, cadenceMs: number): boolean => {
+    const cap = slotCapForLevel(state.currentLevel);
+    const cost = slotCostFor(entity.mobSubtype, entity.isBoss === true);
+    // Held for the full cadence: telegraph, execution and recovery alike.
+    const granted = tryClaimSlot(attackPressureRef.current, entity.id, cost, cap, now, cadenceMs);
+    if (granted) {
+      peakPressureRef.current = Math.max(peakPressureRef.current, usedSlots(attackPressureRef.current));
+    }
+    return granted;
+  };
+
   /**
    * Somewhere to put a summoned add: on the far side of the boss from the
    * player, so one never materialises on top of them or behind their back.
@@ -373,6 +404,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     aiScheduler.forget(id);
     enemyMoveTimersRef.current.delete(id);
     enemyDamageCooldownRef.current.delete(id);
+    releaseSlot(attackPressureRef.current, id);
   };
 
   // Apply vision debuff (stacks up to complete blindness)
@@ -564,6 +596,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     enemyDamageCooldownRef.current.clear();
     enemyMoveTimersRef.current.clear();
     bossAddsSpawnedRef.current = 0;
+    attackPressureRef.current.clear();
+    peakPressureRef.current = 0;
     aiScheduler.reset();
     if (wasStandingOnPortalRef.current) {
       wasStandingOnPortalRef.current = false;
@@ -650,6 +684,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       getPlayerPos: () => ({ ...playerPosRef.current }),
       getPlayerHp: () => statsRef.current.hp,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
+      getPressureStats: () => ({
+        used: usedSlots(attackPressureRef.current),
+        cap: slotCapForLevel(state.currentLevel),
+        holders: attackPressureRef.current.size,
+        peakUsed: peakPressureRef.current,
+      }),
       getEntities: () =>
         (levelRef.current?.entities ?? []).map((e) => ({
           id: e.id,
@@ -1409,6 +1449,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               // one — the shooter may already be dead.
               cadenceMs: projectile.cadenceMs,
               isBoss: projectile.isBoss,
+              level: state.currentLevel,
             });
             const newHp = Math.max(0, baseStats.hp - damage);
             
@@ -1705,6 +1746,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       return mobOccupancy;
     };
 
+    // Free the slots of anything whose cycle has run out, so a mob that died or
+    // fled is not still occupying pressure.
+    expireHolds(attackPressureRef.current, now);
+
     const updatedEntities = levelRef.current.entities.map(entity => {
       if (entity.type === 'enemy' || entity.type === 'boss_enemy') {
         const mobSubtype = entity.mobSubtype || 'drone';
@@ -1776,7 +1821,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               });
               Object.assign(updatedEntity, telegraphComplete);
 
-              if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+              // Ranged winds up through the same scheduler as melee: two
+              // implementations must not become two budgets on one health bar.
+              if (
+                !isAttackTelegraphActive(updatedEntity, now) &&
+                now - lastAttack >= cooldown &&
+                claimAttackSlot(updatedEntity, now, cooldown)
+              ) {
                 Object.assign(
                   updatedEntity,
                   beginAttackTelegraph(updatedEntity, now, playerPosRef.current, RANGED_TELEGRAPH_MS),
@@ -1920,7 +1971,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 });
                 Object.assign(updatedEntity, telegraphComplete);
 
-                if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+                if (
+                  !isAttackTelegraphActive(updatedEntity, now) &&
+                  now - lastAttack >= cooldown &&
+                  claimAttackSlot(updatedEntity, now, cooldown)
+                ) {
                   Object.assign(
                     updatedEntity,
                     beginAttackTelegraph(updatedEntity, now, playerPosRef.current, RANGED_TELEGRAPH_MS),
@@ -2356,7 +2411,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 });
                 Object.assign(updatedEntity, telegraphComplete);
 
-                if (!isAttackTelegraphActive(updatedEntity, now) && now - lastAttack >= cooldown) {
+                if (
+                  !isAttackTelegraphActive(updatedEntity, now) &&
+                  now - lastAttack >= cooldown &&
+                  claimAttackSlot(updatedEntity, now, cooldown)
+                ) {
                   Object.assign(
                     updatedEntity,
                     beginAttackTelegraph(updatedEntity, now, playerPosRef.current, BOSS_RANGED_TELEGRAPH_MS),
@@ -2644,6 +2703,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     // guard between individual bites.
                     cadenceMs: entity.attackCooldown ?? 500,
                     isBoss: entity.isBoss === true,
+                    level: state.currentLevel,
                   });
                   const newHp = Math.max(0, baseStats.hp - damage);
                   
@@ -2686,7 +2746,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 updatedEntity.bossPhase === undefined ||
                 cycleCanDealDamage(readCycle(updatedEntity, now));
 
-              if (cycleAllows && canLandMeleeHit({
+              // And it has to hold one of the sector's attack slots. Without
+              // one it keeps pursuing and repositioning but does not swing —
+              // per-hit fairness does not compose, so the crowd is bounded here
+              // rather than by making every individual hit weaker.
+              const hasSlot = claimAttackSlot(updatedEntity, now, DAMAGE_COOLDOWN_MS);
+
+              if (cycleAllows && hasSlot && canLandMeleeHit({
                 now,
                 lastDamageTime,
                 cooldownMs: DAMAGE_COOLDOWN_MS,
@@ -2701,6 +2767,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   maxHp: baseStats.maxHp,
                   cadenceMs: DAMAGE_COOLDOWN_MS,
                   isBoss: entity.isBoss === true,
+                  level: state.currentLevel,
                 });
                 const newHp = Math.max(0, baseStats.hp - damage);
                 
