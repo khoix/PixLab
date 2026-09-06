@@ -994,6 +994,17 @@ For each, record:
   - `SPRITE_PAD = 40` around the 32px tile: the widest overhang is the Phase's
     tail (an ellipse `size/3` below centre with a `size/2` radius) plus up to
     20px of `shadowBlur`. An e2e test asserts zero ink on the sprite's edge.
+  - **Blit the inked rect, not the padding.** CI caught what local measurement
+    did not: blitting the whole 112×112 canvas per mob was a 10–14% *loss* on
+    the desktop runner (three consecutive attempts) while the same test on a
+    mobile viewport saved 14% in the same job. A 32px mob's art occupies a
+    fraction of its canvas, so the full blit composites ~12× the pixels needed,
+    and where the renderer is fill-rate limited that costs more than rebuilding
+    the paths did. Each sprite now carries the bounds of its non-transparent
+    pixels, snapped outward to whole logical pixels so the mapping stays 1:1:
+    5% of the canvas for a sniper or charger, 13–15% for the common mobs, 31%
+    for a Phase or Zeus, 42% for a charging Ares. Mean across a live sector is
+    15% at high quality and 4% at low.
   - The sprite needed a shadow gate of its own. `installShadowQualityGate`
     writes module-level `activeQuality`/`tierRef` that the *live* pass reads, so
     using it mid-frame to render an offscreen sprite would quietly change what
@@ -1030,10 +1041,15 @@ Before the cull, every one of them was drawn in full and then painted over.
 
 The sprite cache pays off in the case the cull cannot help with: a pack
 converging on the player, inside the lit disc. A/B in one session at sector 30
-with 27–29 mobs drawn per frame, toggling `__PIXLAB_MOB_SPRITES__.setEnabled`
+with 26–31 mobs drawn per frame, toggling `__PIXLAB_MOB_SPRITES__.setEnabled`
 so the entity loop takes its direct-draw fallback (the pre-M7.1 path exactly):
-**1.37 ms cached vs 1.57 ms direct, 6–14% saved** across runs. Modest, and the
-right size to claim — it is not the headline number.
+**6.6–13.7% saved** across runs and both viewports. Modest, and the right size
+to claim — it is not the headline number.
+
+The A/B is a regression guard rather than a win claim: which side wins by a few
+percent depends on whether the machine is fill-rate or CPU limited, so the spec
+holds the mechanism (every look blits under 45% of the padded canvas) and keeps
+the stopwatch to within 1.1×.
 
 **On the exit criterion itself:** a sector's draw is ~0.9 ms and mostly fixed
 cost (the cached tile blit, the fog layer, the HUD), so 15% of it is 0.13 ms —

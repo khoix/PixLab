@@ -29,8 +29,44 @@ rendered once per distinct look onto a 112×112 offscreen canvas and blitted
 thereafter. Hit flash, attack telegraph and the health bar stayed in the entity
 loop as live overlays, since none of them is a pure function of that key.
 
-At sector 30 with 27–29 mobs drawn per frame: **1.37 ms cached vs 1.57 ms
-direct — 6–14% saved** across runs. Modest, and the right size to claim.
+At sector 30 with 26–31 mobs drawn per frame: **6.6–13.7% saved** across runs
+and both viewports. Modest, and the right size to claim.
+
+### What CI caught that local measurement did not
+
+The first version blitted the whole padded 112×112 canvas per mob. Locally that
+looked like a win (1.37 ms cached vs 1.57 ms direct). On CI's desktop runner it
+was a **10–14% loss**, three consecutive attempts, while the same test on a
+mobile viewport saved 14% in the same job.
+
+The cause is fill rate, not logic. A 32px mob's art occupies a fraction of the
+canvas it is rendered into, so blitting all of it composites ~12× the pixels it
+needs to. Where the renderer is fill-rate limited rather than CPU limited, that
+costs more than rebuilding the paths did.
+
+Each sprite now carries the bounds of its non-transparent pixels, found once at
+build time and snapped outward to whole logical pixels so the source-to-
+destination mapping stays 1:1 and the blit is still pixel-identical. Measured
+per look:
+
+| Look | blit area | of the 12544 px² canvas |
+|------|----------:|------------------------:|
+| sniper, charger | 576–624 | 5% |
+| guardian (low quality) | 420 | 3% |
+| drone, swarm, moth, tracker, turret, guardian | 1296–1936 | 10–15% |
+| cerberus, Ares | 3000–3024 | 24% |
+| phase, Zeus, Hades | 3844–3864 | 31% |
+| charging Ares (widest) | 5328 | 42% |
+
+Mean across a live sector: **15%** at high quality, **4%** at low.
+
+**The A/B assertion changed with it.** Which side wins by a few percent depends
+on whether the machine is fill-rate or CPU limited — that is a property of the
+runner, not of this code, and gating on it was asserting the wrong thing. It is
+now a regression guard (cached within 1.1× of direct) plus an assertion on the
+mechanism that actually failed: every look must blit under 45% of the padded
+canvas. The pixel-identity test blits through the shipping `draw` too, rather
+than the untrimmed canvas.
 
 ### Added
 - **`lib/game/renderer/mobArt.ts`** — the 535-line art block, lifted verbatim out
