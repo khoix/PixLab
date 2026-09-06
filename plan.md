@@ -982,10 +982,67 @@ For each, record:
 
 **Goal:** Own the remaining entity-scaled cost: `draw()` grows 2.7 → 3.5 ms from 8 to 62 mobs (6× throttle) while `update()` stays ~0.3 ms. No milestone currently covers entity *render* cost.
 
+**Status: complete.**
+
 **Tasks:**
-- [ ] **Sprite-cache the mob draw pass.** Pre-render each `mobSubtype` (+ boss variants, + size) to a small offscreen canvas once per theme and `drawImage` per entity, instead of per-entity path/fill/`shadowBlur` work in the entity `forEach`. Follow `renderer/tileLayer.ts` + `cacheInstances.ts`. Keep hit-flash / telegraph overlays as thin post-passes.
-- [ ] **Cull to the fog radius, not just the camera.** The fog gradient hits alpha 1.0 at `fogRadius`; mobs beyond `fogRadius + 1 tile` are drawn and painted over. When threat-sense is off and no reveal is active, skip them.
-- [ ] Measure before/after with the standard: `avgDrawMs` at sectors 1 / 25 / 30, plus `maxDrawMs`.
+- [x] **Sprite-cache the mob draw pass.** The 535-line art block moved out of the
+  entity `forEach` into `renderer/mobArt.ts`, and `renderer/mobSpriteCache.ts`
+  renders it once per distinct look — `subtype | boss | colour | size | quality |
+  charging` — onto a 112×112 offscreen canvas, then `drawImage`s it per entity.
+  Hit flash, attack telegraph and the health bar stayed in the loop as live
+  overlays, since none of them is a pure function of the key.
+  - `SPRITE_PAD = 40` around the 32px tile: the widest overhang is the Phase's
+    tail (an ellipse `size/3` below centre with a `size/2` radius) plus up to
+    20px of `shadowBlur`. An e2e test asserts zero ink on the sprite's edge.
+  - The sprite needed a shadow gate of its own. `installShadowQualityGate`
+    writes module-level `activeQuality`/`tierRef` that the *live* pass reads, so
+    using it mid-frame to render an offscreen sprite would quietly change what
+    the main context was allowed to draw for the rest of that frame.
+    `installStaticShadowGate` and `makeStrokeGlowCircle` apply the same policy
+    pinned to one quality, touching nothing but the canvas they are given.
+- [x] **Cull to the fog radius, not just the camera.** Mobs past
+  `fogRadius + 1 tile` are skipped, gated on threat-sense, lightswitch reveal
+  and vision boost all being inactive — in any of those the fog is not opaque
+  and the camera bound is the only one that holds.
+- [x] Measure before/after with the standard: `avgDrawMs` at sectors 1 / 25 / 30,
+  plus `maxDrawMs`. `e2e/m7-1-draw-scaling.spec.ts`.
+
+**Measured (desktop, `?perf=1`, min of 3 windows × 2 interleaved passes):**
+
+| Sector | entities | drawn/frame | `avgDrawMs` | `maxDrawMs` | vs sector 1 |
+|-------:|---------:|------------:|------------:|------------:|------------:|
+| 1  | 5  | 0.0 | 0.856 | 1.4 | — |
+| 25 | 36 | 1.0 | 0.881 | 1.4 | 1.03× |
+| 30 | 38 | 0.0 | 0.869 | 1.4 | **1.02×** |
+
+**What actually carries it — worth being precise about, because the two changes
+are not equal partners.** The fog cull does nearly all of the work in ordinary
+play: at sector 30 a standing player has **0–1** of ~38 mobs inside the lit
+disc, so the entity loop has almost nothing left to draw. Adding 24 mobs beyond
+the fog moved the painted count 10.0 → 9.7 per frame — they cost nothing.
+Before the cull, every one of them was drawn in full and then painted over.
+
+The sprite cache pays off in the case the cull cannot help with: a pack
+converging on the player, inside the lit disc. A/B in one session at sector 30
+with 27–29 mobs drawn per frame, toggling `__PIXLAB_MOB_SPRITES__.setEnabled`
+so the entity loop takes its direct-draw fallback (the pre-M7.1 path exactly):
+**1.37 ms cached vs 1.57 ms direct, 6–14% saved** across runs. Modest, and the
+right size to claim — it is not the headline number.
+
+**On the exit criterion itself:** a sector's draw is ~0.9 ms and mostly fixed
+cost (the cached tile blit, the fog layer, the HUD), so 15% of it is 0.13 ms —
+inside what a shared runner varies by between page loads. Measured on this
+machine, sector 1 came in both above *and* below sector 30 depending on load
+order. The spec therefore visits each sector twice in an interleaved order and
+takes the minimum, and carries a 0.2 ms absolute floor beneath the ratio. A real
+regression here is the entity loop going back to scaling with population —
+2.7 → 3.5 ms across a run, nowhere near 0.2 ms.
+
+**Also added:** `perfMonitor.recordDrawnEntities` / `avgDrawnEntities` /
+`maxDrawnEntities`. `entityCount` is the sector's population; this is what
+survived the culls. Without the gap between the two, a draw measurement cannot
+say whether a frame got cheaper or simply had less to do — which is exactly the
+distinction the first reading of this milestone got wrong.
 
 **Later (M8+ once the engine is split):**
 - Persistent spatial hash (serves occupancy, moth scan, projectile-vs-mob)
@@ -993,7 +1050,7 @@ For each, record:
 - Flow-field pathfinding: one BFS from the player per player-tile-change makes every mob move O(1) and stops wall-sticking (`exitPathHint.ts` has the BFS)
 - Behaviour-cost tiering (moth/cerberus/bosses vs swarm/guardian), adaptive stagger from rolling frame time, clone entity objects only on change
 
-**Exit criteria:** `avgDrawMs(sector 30) ≤ 1.15 × avgDrawMs(sector 1)` under the measurement standard; no visual regressions in the smoke checklist.
+**Exit criteria:** `avgDrawMs(sector 30) ≤ 1.15 × avgDrawMs(sector 1)` under the measurement standard; no visual regressions in the smoke checklist. **Met** — 1.02× measured, and every mob's cached blit is asserted pixel-identical to a direct draw across all ten subtypes (`e2e/m7-1-mob-sprites.spec.ts`).
 
 **Depends on:** Milestone 7. Independent of M8, but cheaper after it.
 
@@ -1103,7 +1160,7 @@ M9 Progression & Variety
 | M6.5 | Boss encounters & arenas | **P1** | High — changes boss layouts/behavior/add pressure | Planned |
 | M6.6 | Tier scaling calibration | **P1** | Medium — changes global difficulty curves after mechanics stabilize | Planned |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
-| M7.1 | Entity draw scaling | P2 | Low | Next / parallel |
+| M7.1 | Entity draw scaling | P2 | Low | ✅ Complete |
 | M8 | Architecture split | **P1** | High | **After M6.1 follow-up + M6.4a** |
 | M9 | Content/variety | P3 | Low | — |
 

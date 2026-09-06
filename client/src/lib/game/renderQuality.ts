@@ -80,6 +80,70 @@ export function installShadowQualityGate(
   };
 }
 
+/**
+ * The same shadow policy, pinned to one quality and tier, with no module-level
+ * side effects.
+ *
+ * `installShadowQualityGate` writes `activeQuality` and `tierRef`, which the
+ * live pass's own gate reads — so using it to render into an offscreen sprite
+ * mid-frame would quietly change what the main context is allowed to draw for
+ * the rest of that frame. The sprite cache needs a gate that touches nothing
+ * but the canvas it is given.
+ */
+export function installStaticShadowGate(
+  ctx: CanvasRenderingContext2D,
+  quality: EffectiveRenderQuality,
+  tier: ShadowTier,
+): () => void {
+  if (quality === 'high') return () => {};
+
+  const blurDescriptor = Object.getOwnPropertyDescriptor(
+    CanvasRenderingContext2D.prototype,
+    'shadowBlur',
+  );
+  if (!blurDescriptor?.set || !blurDescriptor.get) return () => {};
+
+  Object.defineProperty(ctx, 'shadowBlur', {
+    configurable: true,
+    get() {
+      return blurDescriptor.get!.call(this);
+    },
+    set(value: number) {
+      blurDescriptor.set!.call(this, shadowAllowed(quality, tier, value) ? value : 0);
+    },
+  });
+
+  return () => {
+    Object.defineProperty(ctx, 'shadowBlur', blurDescriptor);
+  };
+}
+
+/**
+ * A `strokeGlowCircle` bound to a given quality rather than the live one, for
+ * the same reason: a sprite is rendered once and must not depend on whatever
+ * the module happened to be set to at the time.
+ */
+export function makeStrokeGlowCircle(quality: EffectiveRenderQuality) {
+  return (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    radius: number,
+    color: string,
+    lineWidth = 2,
+  ): void => {
+    if (quality !== 'low') return;
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  };
+}
+
 /** Low-quality glow substitute: bright outline stroke. */
 export function strokeGlowRect(
   ctx: CanvasRenderingContext2D,

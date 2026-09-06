@@ -10,6 +10,9 @@ export interface PerfSnapshot {
   maxDrawMs: number;
   maxUpdateMs: number;
   entityCount: number;
+  /** Entities that survived culling and were actually painted, per frame. */
+  avgDrawnEntities: number;
+  maxDrawnEntities: number;
   loopRestarts: number;
   inputDirectionUpdates: number;
   sampleCount: number;
@@ -28,6 +31,8 @@ class PerfMonitor {
   private frameSamples: number[] = [];
   private drawSamples: number[] = [];
   private updateSamples: number[] = [];
+  private drawnEntitySamples: number[] = [];
+  private maxDrawnEntities = 0;
   private maxDrawMs = 0;
   private maxUpdateMs = 0;
   private entityCount = 0;
@@ -62,6 +67,20 @@ class PerfMonitor {
   setEntityCount(count: number): void {
     if (!this.active) return;
     this.entityCount = count;
+  }
+
+  /**
+   * How many entities a frame actually painted.
+   *
+   * `entityCount` is the sector's population; this is what survived the camera
+   * and fog culls. The gap between the two is the whole point of culling, and
+   * without it a draw measurement cannot say whether a frame got cheaper or
+   * simply had less to do.
+   */
+  recordDrawnEntities(count: number): void {
+    if (!this.active) return;
+    this.pushSample(this.drawnEntitySamples, count);
+    this.maxDrawnEntities = Math.max(this.maxDrawnEntities, count);
   }
 
   setSectorLevel(level: number): void {
@@ -103,6 +122,8 @@ class PerfMonitor {
       maxDrawMs: this.maxDrawMs,
       maxUpdateMs: this.maxUpdateMs,
       entityCount: this.entityCount,
+      avgDrawnEntities: this.average(this.drawnEntitySamples),
+      maxDrawnEntities: this.maxDrawnEntities,
       loopRestarts: this.loopRestarts,
       inputDirectionUpdates: this.inputDirectionUpdates,
       sampleCount: this.frameSamples.length,
@@ -119,8 +140,10 @@ class PerfMonitor {
     this.frameSamples = [];
     this.drawSamples = [];
     this.updateSamples = [];
+    this.drawnEntitySamples = [];
     this.maxDrawMs = 0;
     this.maxUpdateMs = 0;
+    this.maxDrawnEntities = 0;
     this.loopRestarts = 0;
     this.inputDirectionUpdates = 0;
   }
