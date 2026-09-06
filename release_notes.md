@@ -1,5 +1,130 @@
 # Release Notes
 
+## Milestone 7.1 — Entity Draw Scaling
+
+**Branch:** `claude/m7`
+
+M7 flattened `update()` to ~0.3 ms whatever the mob count. That left `draw()` as
+the only thing still scaling with population — 2.7 → 3.5 ms from 8 to 62 mobs,
+most of it per-entity path building and `shadowBlur`, which forces a blur filter
+on every call.
+
+### Two changes, and they are not equal partners
+
+**The fog cull does nearly all of the work.** The fog gradient reaches full
+opacity a few tiles out, so mobs past `fogRadius + 1 tile` were being drawn in
+full and then painted over. They are now skipped — but only when the fog is
+actually opaque: threat-sense draws every enemy regardless, and a lightswitch
+reveal or a vision boost lifts the fog entirely, so in those cases the camera
+bound is the only one that holds.
+
+Measured at sector 30: a standing player has **0–1** of ~38 mobs inside the lit
+disc. Adding 24 more beyond the fog moved the painted count 10.0 → 9.7 per
+frame. They cost nothing.
+
+**The sprite cache pays for the case the cull cannot help with** — a pack
+converging on the player, inside the lit disc. A mob's appearance is a pure
+function of `subtype | boss | colour | size | quality | charging`, so it is
+rendered once per distinct look onto a 112×112 offscreen canvas and blitted
+thereafter. Hit flash, attack telegraph and the health bar stayed in the entity
+loop as live overlays, since none of them is a pure function of that key.
+
+At sector 30 with 26–31 mobs drawn per frame: **6.6–13.7% saved** across runs
+and both viewports. Modest, and the right size to claim.
+
+### What CI caught that local measurement did not
+
+The first version blitted the whole padded 112×112 canvas per mob. Locally that
+looked like a win (1.37 ms cached vs 1.57 ms direct). On CI's desktop runner it
+was a **10–14% loss**, three consecutive attempts, while the same test on a
+mobile viewport saved 14% in the same job.
+
+The cause is fill rate, not logic. A 32px mob's art occupies a fraction of the
+canvas it is rendered into, so blitting all of it composites ~12× the pixels it
+needs to. Where the renderer is fill-rate limited rather than CPU limited, that
+costs more than rebuilding the paths did.
+
+Each sprite now carries the bounds of its non-transparent pixels, found once at
+build time and snapped outward to whole logical pixels so the source-to-
+destination mapping stays 1:1 and the blit is still pixel-identical. Measured
+per look:
+
+| Look | blit area | of the 12544 px² canvas |
+|------|----------:|------------------------:|
+| sniper, charger | 576–624 | 5% |
+| guardian (low quality) | 420 | 3% |
+| drone, swarm, moth, tracker, turret, guardian | 1296–1936 | 10–15% |
+| cerberus, Ares | 3000–3024 | 24% |
+| phase, Zeus, Hades | 3844–3864 | 31% |
+| charging Ares (widest) | 5328 | 42% |
+
+Mean across a live sector: **15%** at high quality, **4%** at low.
+
+**The A/B assertion changed with it.** Which side wins by a few percent depends
+on whether the machine is fill-rate or CPU limited — that is a property of the
+runner, not of this code, and gating on it was asserting the wrong thing. It is
+now a regression guard (cached within 1.1× of direct) plus an assertion on the
+mechanism that actually failed: every look must blit under 45% of the padded
+canvas. The pixel-identity test blits through the shipping `draw` too, rather
+than the untrimmed canvas.
+
+### Added
+- **`lib/game/renderer/mobArt.ts`** — the 535-line art block, lifted verbatim out
+  of the entity `forEach` into one pure function.
+- **`lib/game/renderer/mobSpriteCache.ts`** — the cache. `SPRITE_PAD = 40` around
+  the 32px tile: the widest overhang is the Phase's tail (an ellipse `size/3`
+  below centre with a `size/2` radius) plus up to 20 px of `shadowBlur`. DPR
+  changes invalidate it alongside `tileLayerCache` and `fogLayerCache`.
+  `window.__PIXLAB_MOB_SPRITES__.setEnabled(false)` makes every `get` report
+  failure so the loop takes its direct-draw fallback — an A/B in one session,
+  and a kill switch if a sprite ever renders wrong on a real device.
+- **`renderQuality.ts`: `installStaticShadowGate` and `makeStrokeGlowCircle`.**
+  The existing `installShadowQualityGate` writes module-level state that the
+  *live* pass reads, so using it mid-frame to render an offscreen sprite would
+  quietly change what the main context was allowed to draw for the rest of that
+  frame. These apply the same policy pinned to one quality, touching nothing but
+  the canvas they are given.
+- **`perfMonitor`: `avgDrawnEntities` / `maxDrawnEntities`.** `entityCount` is
+  the sector's population; this is what survived the culls. Without the gap
+  between the two, a draw measurement cannot say whether a frame got cheaper or
+  simply had less to do.
+
+### Measured
+
+Desktop, `?perf=1`, minimum of 3 windows across 2 interleaved passes:
+
+| Sector | entities | drawn/frame | `avgDrawMs` | `maxDrawMs` | vs sector 1 |
+|-------:|---------:|------------:|------------:|------------:|------------:|
+| 1  | 5  | 0.0 | 0.856 | 1.4 | — |
+| 25 | 36 | 1.0 | 0.881 | 1.4 | 1.03× |
+| 30 | 38 | 0.0 | 0.869 | 1.4 | **1.02×** |
+
+Exit criterion `avgDrawMs(sector 30) ≤ 1.15 × avgDrawMs(sector 1)`: met. Across
+seven runs sector 30 landed at 0.89–1.14× (mean ~1.0). Sector 25 is noisier —
+1.01–1.26×, mean ~1.12 — so the spec reports it rather than gating on it; with
+0–1 mobs painted in either, that spread is the runner and the sector's own
+layout, not entity draw.
+
+A note on how that is asserted. A sector's draw is ~0.9 ms and mostly fixed cost
+(the cached tile blit, the fog layer, the HUD), so 15% of it is 0.13 ms — inside
+what a shared runner varies by between page loads; sector 1 came in both above
+*and* below sector 30 depending on load order. The spec visits each sector twice
+in an interleaved order and takes the minimum, and carries a 0.2 ms absolute
+floor beneath the ratio. A real regression here is the entity loop going back to
+scaling with population — 2.7 → 3.5 ms across a run, nowhere near 0.2 ms.
+
+### Verification
+- **`e2e/m7-1-mob-sprites.spec.ts`** — a cached blit is pixel-identical (zero
+  differing pixels, all four channels) to a direct draw across all ten subtypes;
+  no ink on the sprite's outer ring for the phase, cerberus and Hades art; one
+  sprite per distinct look, three copies of ten subtypes producing ten entries
+  and zero misses in a steady-state window.
+- **`e2e/m7-1-draw-scaling.spec.ts`** — the exit criterion at sectors 1 / 25 / 30;
+  mobs spawned beyond the fog do not change the painted count; the cache A/B
+  under a hand-built crowd.
+
+---
+
 ## Milestone 6.4b — Encounter Pressure
 
 **Branch:** `claude/m6`
