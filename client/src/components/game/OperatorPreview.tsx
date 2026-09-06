@@ -9,9 +9,32 @@ export const OperatorPreview: React.FC = () => {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    renderOperatorWithGear(canvasRef.current, state.loadout).catch((err) => {
-      console.error('Failed to render operator:', err);
-    });
+
+    const hasLegendary = [state.loadout.weapon, state.loadout.armor, state.loadout.utility]
+      .some((item) => item?.rarity === 'legendary');
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const render = async () => {
+      if (!canvasRef.current || cancelled) return;
+      try {
+        await renderOperatorWithGear(canvasRef.current, state.loadout, performance.now());
+      } catch (err) {
+        console.error('Failed to render operator:', err);
+      }
+
+      // The aura is static; this low-frequency refresh only drives the tiny
+      // occasional legendary glimmer, avoiding a full 60 FPS redraw loop.
+      if (hasLegendary && !cancelled) {
+        timer = window.setTimeout(render, 250);
+      }
+    };
+
+    void render();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
   }, [state.loadout]);
 
   return (
