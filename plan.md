@@ -1015,6 +1015,12 @@ For each, record:
 | 25 | 36 | 1.0 | 0.881 | 1.4 | 1.03× |
 | 30 | 38 | 0.0 | 0.869 | 1.4 | **1.02×** |
 
+Across seven runs sector 30 landed at 0.89–1.14× (mean ~1.0). Sector 25 is
+noisier — 1.01–1.26×, mean ~1.12 — so the spec reports it rather than gating on
+it. With 0–1 mobs painted in either, that spread is the runner and the sector's
+own layout, not entity draw; asserting on it would fail on noise.
+
+
 **What actually carries it — worth being precise about, because the two changes
 are not equal partners.** The fog cull does nearly all of the work in ordinary
 play: at sector 30 a standing player has **0–1** of ~38 mobs inside the lit
