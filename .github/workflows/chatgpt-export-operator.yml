@@ -1,0 +1,22 @@
+name: ChatGPT export operator source
+
+on:
+  push:
+    branches:
+      - chatgpt/operator-utility-rendering
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect source sprites
+        run: |
+          mkdir -p export
+          cp client/public/imgs/compendium/ops/operator.png export/operator.png
+          cp client/public/imgs/compendium/ops/operator-hand.png export/operator-hand.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operator-source-sprites
+          path: export/
+          retention-days: 1
