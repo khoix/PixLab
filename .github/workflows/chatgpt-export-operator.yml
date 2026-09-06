@@ -18,7 +18,8 @@ jobs:
           cp client/src/lib/game/compendium.ts export/src/game/compendium.ts
           cp client/src/lib/game/compendium-image-map.ts export/src/game/compendium-image-map.ts
           cp client/src/lib/game/types.ts export/src/game/types.ts
-          cp client/package.json export/package.json
+          cp package.json export/package.json
+          cp tsconfig.json export/tsconfig.json
       - uses: actions/upload-artifact@v4
         with:
           name: operator-source-sprites
