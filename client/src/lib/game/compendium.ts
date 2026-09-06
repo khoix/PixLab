@@ -1,5 +1,6 @@
 import { MobSubtype, Item } from './types';
 import { COLORS } from './constants';
+import { drawItemWithRarity } from './rarity-rendering';
 import {
   getOperatorBasePath,
   getOperatorHandPath,
@@ -59,7 +60,8 @@ function loadImage(path: string, silent: boolean = false): Promise<HTMLImageElem
 // Render operator with gear using image composition
 export async function renderOperatorWithGear(
   canvas: HTMLCanvasElement,
-  loadout: { weapon: Item | null; armor: Item | null; utility: Item | null }
+  loadout: { weapon: Item | null; armor: Item | null; utility: Item | null },
+  timeMs: number = Date.now()
 ): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -132,7 +134,7 @@ export async function renderOperatorWithGear(
   // Layer 2: Armor (above operator base, below gauntlets sleeve)
   // Only draw if not gauntlets (gauntlets have separate handling)
   if (armorImg && !hasGauntlets) {
-    ctx.drawImage(armorImg, 0, 0, COMPENDIUM_SIZE, COMPENDIUM_SIZE);
+    drawItemWithRarity(ctx, armorImg, loadout.armor, COMPENDIUM_SIZE, COMPENDIUM_SIZE, timeMs);
   }
 
   // Layer 3: Gauntlets sleeve (above armor, below weapon)
@@ -145,7 +147,7 @@ export async function renderOperatorWithGear(
   // Weapon image should only cover the weapon area, not the entire character body
   // Only draw weapon if one is actually equipped
   if (weaponImg && loadout.weapon) {
-    ctx.drawImage(weaponImg, 0, 0, COMPENDIUM_SIZE, COMPENDIUM_SIZE);
+    drawItemWithRarity(ctx, weaponImg, loadout.weapon, COMPENDIUM_SIZE, COMPENDIUM_SIZE, timeMs);
   }
 
   // Layer 5: Hand (overlays weapon grip, only if weapon is equipped)
@@ -157,12 +159,12 @@ export async function renderOperatorWithGear(
   // Layer 6: Gauntlets (above hand)
   // This goes over operator-hand.png
   if (gauntletsImg && hasGauntlets) {
-    ctx.drawImage(gauntletsImg, 0, 0, COMPENDIUM_SIZE, COMPENDIUM_SIZE);
+    drawItemWithRarity(ctx, gauntletsImg, loadout.armor, COMPENDIUM_SIZE, COMPENDIUM_SIZE, timeMs);
   }
 
   // Layer 7: Utility (top layer)
   if (utilityImg) {
-    ctx.drawImage(utilityImg, 0, 0, COMPENDIUM_SIZE, COMPENDIUM_SIZE);
+    drawItemWithRarity(ctx, utilityImg, loadout.utility, COMPENDIUM_SIZE, COMPENDIUM_SIZE, timeMs);
   }
 }
 
