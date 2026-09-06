@@ -10,10 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Collect source sprites
+      - name: Collect source sprites and renderer files
         run: |
-          mkdir -p export
-          cp -R client/public/imgs/compendium/ops/. export/
+          mkdir -p export/ops export/src/components export/src/game
+          cp -R client/public/imgs/compendium/ops/. export/ops/
+          cp client/src/components/game/OperatorPreview.tsx export/src/components/OperatorPreview.tsx
+          cp client/src/lib/game/compendium.ts export/src/game/compendium.ts
+          cp client/src/lib/game/compendium-image-map.ts export/src/game/compendium-image-map.ts
+          cp client/src/lib/game/types.ts export/src/game/types.ts
+          cp client/package.json export/package.json
       - uses: actions/upload-artifact@v4
         with:
           name: operator-source-sprites
