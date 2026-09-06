@@ -1,5 +1,51 @@
 # Release Notes
 
+## Operator preview — the four missing utility layers
+
+**Branch:** `claude/operator-utility-art`
+
+The lobby **INVENTORY** tab renders an operator paper-doll: seven 256×256
+transparent PNG layers composited over `operator.png`, each pre-registered to the
+operator's body and drawn full-canvas at 320×320.
+
+**Layer 7 — the utility — had never rendered.** The code was complete:
+`getUtilitySubtype` mapped all nine utility names onto four art subtypes,
+`getUtilityImagePath` built `imgs/compendium/ops/utility/<subtype>.png`, and
+`compendium.ts` drew it on top. But that directory did not exist and never had.
+Gear layers load with `loadImage(path, silent = true)`, so the 404 was swallowed
+and the operator rendered with weapon + armor only, whatever utility was equipped.
+Nothing failed; nothing was ever drawn.
+
+### Added
+- **`client/public/imgs/compendium/ops/utility/`** — `scope.png`, `thruster.png`,
+  `scanner.png`, `amplifier.png`. 256×256 RGBA, positioned in the operator frame:
+  the scope as an eyepiece at head centre, the thrusters as a matched pair on both
+  shoulders, the scanner and amplifier beside the right hand.
+
+  Each covers more than one item. `scope` serves Scope, All-Seeing Eye and
+  Omniscient Lens; `thruster` serves Thruster, Chronos Watch and Quantum
+  Accelerator; `amplifier` serves Amplifier and Reality Shard; `scanner` serves
+  Scanner.
+
+**No code changed.** The renderer already asked for exactly these four filenames.
+
+### Verification
+- **`e2e/operator-utility-art.spec.ts`** (new) — the utility layer had no coverage
+  at all, which is why its total absence went unnoticed:
+  - Every URL the code builds returns 200 and decodes to 256×256 — the assertion
+    that would have caught the missing directory.
+  - All nine utility names map to the expected subtype, including decorated forms
+    (`Scope of Sight Lv7`, `Enhanced Amplifier of Precise Strike`), so the
+    permissive `|| 'scope'` fallback cannot quietly dress a future unmapped
+    utility in the wrong art.
+  - Each subtype composites, and lands inside the box its art was drawn for — a
+    layer that drew in the wrong place would pass a bare "something changed"
+    check and still look broken. The four footprints must also differ, so three
+    of them cannot silently be the Scope.
+  - An empty slot draws nothing.
+
+---
+
 ## Milestone 7.1 — Entity Draw Scaling
 
 **Branch:** `claude/m7`
