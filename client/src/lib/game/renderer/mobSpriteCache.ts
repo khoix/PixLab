@@ -56,10 +56,84 @@ export interface MobSpriteStats {
   builds: number;
   hits: number;
   misses: number;
+  /** Mean blit area in logical px², across the sprites currently held. */
+  avgBlitArea: number;
+}
+
+/**
+ * A rendered sprite plus the sub-rect of it that actually holds ink.
+ *
+ * The padded canvas is 112x112 for a 32px mob, and blitting all of it means
+ * compositing 12x the pixels the art occupies. On a fill-rate-limited renderer
+ * that costs more than rebuilding the paths did — measured on CI, where the
+ * full-canvas blit was 10-14% *slower* than drawing direct at high quality
+ * while the same test on a low-quality mobile viewport saved 14%.
+ *
+ * So each sprite carries the bounds of its non-transparent pixels, found once
+ * at build time, and only that rect is blitted. The bounds are snapped outward
+ * to whole logical pixels so the source-to-destination mapping stays 1:1 and
+ * the blit is still pixel-identical to a direct draw.
+ */
+export interface MobSprite {
+  canvas: HTMLCanvasElement;
+  /** Source rect in backing-store (device) pixels. */
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+  /** Offset of that rect from the sprite's top-left, in logical pixels. */
+  offsetX: number;
+  offsetY: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The bounding box of non-transparent pixels, in device pixels, snapped
+ * outward to whole logical pixels. Null when the sprite drew nothing.
+ */
+function inkBounds(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  dpr: number,
+): { sx: number; sy: number; sw: number; sh: number } | null {
+  let data: Uint8ClampedArray;
+  try {
+    data = ctx.getImageData(0, 0, width, height).data;
+  } catch {
+    // A tainted or zero-sized canvas: fall back to the whole thing.
+    return { sx: 0, sy: 0, sw: width, sh: height };
+  }
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      if (data[row + x * 4 + 3] === 0) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+
+  // Outward to whole logical pixels, so the destination offset is an integer
+  // and the source rect maps 1:1 onto it.
+  const step = Math.max(1, Math.round(dpr));
+  const sx = Math.floor(minX / step) * step;
+  const sy = Math.floor(minY / step) * step;
+  const sw = Math.min(width, Math.ceil((maxX + 1) / step) * step) - sx;
+  const sh = Math.min(height, Math.ceil((maxY + 1) / step) * step) - sy;
+  return { sx, sy, sw, sh };
 }
 
 export class MobSpriteCache {
-  private sprites = new Map<string, HTMLCanvasElement>();
+  private sprites = new Map<string, MobSprite>();
   private dpr = 1;
   private builds = 0;
   private hits = 0;
@@ -95,11 +169,16 @@ export class MobSpriteCache {
   }
 
   getStats(): MobSpriteStats {
+    let area = 0;
+    this.sprites.forEach((sprite) => {
+      area += sprite.width * sprite.height;
+    });
     return {
       entries: this.sprites.size,
       builds: this.builds,
       hits: this.hits,
       misses: this.misses,
+      avgBlitArea: this.sprites.size === 0 ? 0 : area / this.sprites.size,
     };
   }
 
@@ -115,7 +194,7 @@ export class MobSpriteCache {
    * Returns null when the canvas cannot be built, so the caller can fall back
    * to drawing directly rather than showing nothing.
    */
-  get(key: MobSpriteKey, tier: ShadowTier): HTMLCanvasElement | null {
+  get(key: MobSpriteKey, tier: ShadowTier): MobSprite | null {
     if (!this.enabled) return null;
 
     const id = spriteKeyOf(key);
@@ -154,19 +233,40 @@ export class MobSpriteCache {
       restore();
     }
 
+    const bounds = inkBounds(ctx, canvas.width, canvas.height, this.dpr);
+    // A look that drew nothing is a bug, not a blank mob: fall back to the
+    // direct draw rather than silently blitting emptiness.
+    if (!bounds) return null;
+
+    const sprite: MobSprite = {
+      canvas,
+      sx: bounds.sx,
+      sy: bounds.sy,
+      sw: bounds.sw,
+      sh: bounds.sh,
+      offsetX: bounds.sx / this.dpr,
+      offsetY: bounds.sy / this.dpr,
+      width: bounds.sw / this.dpr,
+      height: bounds.sh / this.dpr,
+    };
+
     this.builds++;
-    this.sprites.set(id, canvas);
-    return canvas;
+    this.sprites.set(id, sprite);
+    return sprite;
   }
 
-  /** Blit a sprite so its tile lands on the mob's tile. */
-  draw(ctx: CanvasRenderingContext2D, sprite: HTMLCanvasElement, tileX: number, tileY: number): void {
+  /** Blit a sprite's inked rect so its tile lands on the mob's tile. */
+  draw(ctx: CanvasRenderingContext2D, sprite: MobSprite, tileX: number, tileY: number): void {
     ctx.drawImage(
-      sprite,
-      tileX * TILE_SIZE - SPRITE_PAD,
-      tileY * TILE_SIZE - SPRITE_PAD,
-      SPRITE_SIZE,
-      SPRITE_SIZE,
+      sprite.canvas,
+      sprite.sx,
+      sprite.sy,
+      sprite.sw,
+      sprite.sh,
+      tileX * TILE_SIZE - SPRITE_PAD + sprite.offsetX,
+      tileY * TILE_SIZE - SPRITE_PAD + sprite.offsetY,
+      sprite.width,
+      sprite.height,
     );
   }
 }

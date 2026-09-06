@@ -51,7 +51,7 @@ test.describe('M7.1 — the sprite is the same picture', () => {
       const { MobSpriteCache, SPRITE_PAD, SPRITE_SIZE } = cacheMod;
       const TILE = 32;
 
-      const out: Array<{ label: string; differing: number; total: number; ink: number }> = [];
+      const out: Array<{ label: string; differing: number; total: number; ink: number; blit: number }> = [];
       for (const look of looks) {
         const { subtype, isBoss, quality, charging } = look;
         const tier = isBoss ? 'boss' : 'generic';
@@ -84,15 +84,20 @@ test.describe('M7.1 — the sprite is the same picture', () => {
         );
         restore();
 
-        // Cached: blit the sprite so its tile lands on tile (0,0), which puts
-        // the same centre in the same place.
+        // Cached: blit through the same `draw` the entity loop uses — the one
+        // that trims to the sprite's inked rect — so this compares what ships,
+        // not the untrimmed canvas. Translating by the pad puts tile (0,0) at
+        // the sprite canvas's origin, so the two centres land in the same place.
         const blitted = document.createElement('canvas');
         blitted.width = SPRITE_SIZE;
         blitted.height = SPRITE_SIZE;
         const bctx = blitted.getContext('2d')!;
         bctx.imageSmoothingEnabled = false;
         const sprite = cache.get({ subtype, isBoss, color, size, quality, charging }, tier)!;
-        bctx.drawImage(sprite, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+        bctx.save();
+        bctx.translate(SPRITE_PAD, SPRITE_PAD);
+        cache.draw(bctx, sprite, 0, 0);
+        bctx.restore();
 
         const a = dctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
         const b = bctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
@@ -114,12 +119,18 @@ test.describe('M7.1 — the sprite is the same picture', () => {
           differing,
           total: a.length / 4,
           ink,
+          blit: Math.round(sprite.width * sprite.height),
         });
       }
       return out;
     }, LOOKS);
 
     expect(results.length).toBe(LOOKS.length);
+    const full = 112 * 112;
+    console.log(
+      `[m7.1] blit area vs the padded ${full}px² canvas: ` +
+        results.map((r) => `${r.label} ${r.blit} (${((100 * r.blit) / full).toFixed(0)}%)`).join(', '),
+    );
     for (const r of results) {
       // The blit offset and the sprite's padding have to line up exactly, or a
       // mob would sit a pixel or two off its tile — or be clipped, which would
@@ -128,6 +139,15 @@ test.describe('M7.1 — the sprite is the same picture', () => {
       // And a look that draws nothing at all would pass the comparison above
       // for the wrong reason.
       expect(r.ink, `${r.label} drew nothing`).toBeGreaterThan(50);
+      // And it must blit the art, not the padding it was rendered into. The
+      // full canvas is 12x the pixels a 32px mob occupies, and compositing all
+      // of it per mob is what made the cache slower than drawing direct on a
+      // fill-rate-limited renderer. Even the widest look (a charging Ares)
+      // comes in under half.
+      expect(r.blit, `${r.label} blits ${r.blit} of ${full} px²`).toBeLessThan(full * 0.45);
+      // The trim must not cut into the art either: every inked pixel is inside
+      // the rect, which the pixel comparison above already proves.
+      expect(r.blit).toBeGreaterThanOrEqual(r.ink);
     }
   });
 
@@ -145,7 +165,7 @@ test.describe('M7.1 — the sprite is the same picture', () => {
           { subtype, isBoss, color: '#ff3366', size: isBoss ? 28 : 26, quality: 'high', charging: false },
           isBoss ? 'boss' : 'generic',
         )!;
-        const ctx = sprite.getContext('2d')!;
+        const ctx = sprite.canvas.getContext('2d')!;
         const d = ctx.getImageData(0, 0, SPRITE_SIZE, SPRITE_SIZE).data;
         // Any ink on the outermost ring means the art is being clipped.
         let edgeInk = 0;
