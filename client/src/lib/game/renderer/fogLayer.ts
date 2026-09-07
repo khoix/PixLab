@@ -1,3 +1,5 @@
+import { FOG_STOPS, FOG_INNER_FRACTION } from './fogGradient';
+
 export interface FogLayerParams {
   logicalWidth: number;
   logicalHeight: number;
@@ -74,17 +76,16 @@ export class FogLayerCache {
     const gradient = fogCtx.createRadialGradient(
       params.centerX,
       params.centerY,
-      params.radius * 0.5,
+      params.radius * FOG_INNER_FRACTION,
       params.centerX,
       params.centerY,
       params.radius,
     );
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    gradient.addColorStop(0.4, 'rgba(0, 0, 0, 0.1)');
-    gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.3)');
-    gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.6)');
-    gradient.addColorStop(0.95, 'rgba(0, 0, 0, 0.9)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+    // Shared with the threat-sense marker, which decides from these stops
+    // whether a mob is already legible without one.
+    for (const [stop, alpha] of FOG_STOPS) {
+      gradient.addColorStop(stop, `rgba(0, 0, 0, ${alpha})`);
+    }
 
     fogCtx.fillStyle = gradient;
     fogCtx.fillRect(0, 0, params.logicalWidth, params.logicalHeight);

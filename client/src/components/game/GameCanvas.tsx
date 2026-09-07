@@ -59,6 +59,7 @@ import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn'
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
 import { mobSpriteCache } from '../../lib/game/renderer/mobSpriteCache';
+import { needsThreatMarker, markerStartDistance } from '../../lib/game/renderer/fogGradient';
 import {
   knockbackDestination,
   nearestFloorStep,
@@ -3256,11 +3257,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // opacity at `fogRadius`, so anything past it was drawn and then painted
     // over — on a wide screen that is most of the sector's population.
     //
-    // Only when the fog is actually opaque: threat-sense draws every enemy
-    // regardless, and a lightswitch reveal or a vision boost lifts the fog
-    // entirely, so in those cases the camera bound is the only one that holds.
+    // Only when the fog is actually opaque: a lightswitch reveal or a vision
+    // boost lifts the fog entirely, so there the camera bound is the only one
+    // that holds.
+    //
+    // Threat-sense used to disable this too, which cost the whole M7.1 saving
+    // whenever the scroll was up — every distant mob's sprite was drawn in full
+    // and then completely blacked out by opaque fog. Its marker is drawn later,
+    // in screen space, *after* the fog blit, so it reveals those mobs on its
+    // own and the wasted sprite pass buys nothing.
     const fogHidesDistantMobs =
-      !activeScrollEffectsRef.current.threatSense &&
       !lightswitchRevealEndTimeRef.current &&
       !temporaryVisionBoostRef.current;
     // One tile of slack so a mob is never popped out while still half-lit.
@@ -3621,8 +3627,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               Math.pow(entityScreenX - playerScreenX, 2) + Math.pow(entityScreenY - playerScreenY, 2)
             );
             
-            // Check if entity is outside visible range
-            const isOutsideRange = distFromPlayer > visionRadius;
+            // Marker only where the fog actually hides the mob.
+            //
+            // This used to be `distFromPlayer > visionRadius`, but `visionRadius`
+            // is where the fog reaches *full* opacity — not where it starts to
+            // hide anything. The lit spotlight is roughly the inner 70%, so the
+            // old gate stamped a marker over every mob in the lit disc and the
+            // whole falloff, covering the very art the player could already see.
+            const isOutsideRange = needsThreatMarker(distFromPlayer, visionRadius);
             
             if (isOutsideRange) {
               // Draw blurred entity with sparkling particles
@@ -3657,22 +3669,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 levelRef.current.particles.push(sparkle as any);
               }
             } else {
-              // Entity is in range - ensure it's fully visible with no blur, no particles, no rarity color effects
-              ctx.save();
-              ctx.filter = 'none'; // Explicitly clear blur
-              ctx.globalAlpha = 1.0; // Full opacity
-              ctx.shadowBlur = 0; // Clear any shadow effects
-              ctx.shadowColor = 'transparent'; // Clear shadow color
-              
-              const size = TILE_SIZE * 0.6;
-              ctx.fillStyle = '#ff4444';
-              ctx.beginPath();
-              ctx.arc(entityScreenX, entityScreenY, size / 2, 0, Math.PI * 2);
-              ctx.fill();
-              
-              ctx.restore();
-              
-              // Track this entity's position to remove nearby particles
+              // Thin enough fog that the real sprite reads: draw nothing. The
+              // old code stamped an opaque #ff4444 disc here too — the comment
+              // said "ensure it's fully visible", but it was covering the mob's
+              // own art, colour and health bar with a flat red circle.
+              //
+              // Still tracked, so the sparkle particles from when this mob was
+              // out of range get cleaned up as it comes into view.
               entitiesInRange.push({ x: entityScreenX, y: entityScreenY });
             }
           }

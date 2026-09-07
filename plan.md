@@ -1192,6 +1192,50 @@ distinction the first reading of this milestone got wrong.
 
 ---
 
+## Milestone 7.2 — Threat-Sense Marker & Cull Restoration
+
+**Status: complete.**
+
+**Goal:** The Scroll of Threat-sense should mark what the fog hides, and nothing
+else.
+
+**What it did instead.** The marker pass stamped a flat `#ff4444` disc over
+*every* enemy. Its gate was `distFromPlayer > visionRadius` — and `visionRadius`
+is the radius at which the fog reaches **full** opacity, not where it starts
+hiding anything. The lit spotlight is roughly the inner 70%, so the gate covered
+the entire lit disc plus the whole falloff. The in-range branch then drew the
+disc at `globalAlpha = 1.0` on top of the mob's real sprite, colour and health
+bar, behind a comment claiming it was making the mob "fully visible".
+
+**Tasks:**
+- [x] **One source of truth for the falloff** — `renderer/fogGradient.ts` holds
+  the gradient stops. `fogLayer` builds its radial gradient from them and the
+  marker asks them how much fog is actually over a mob. Those two had no
+  relationship before, which is how the gate drifted a full 0.2R from reality.
+- [x] **Gate on fog opacity, not the fog's edge.** `needsThreatMarker` fires at
+  fog alpha ≥ 0.35 — just past the 0.3 stop at `0.8 × radius`. Measured, the
+  marker now starts at **0.817R** instead of 1.0R: nothing in the lit disc, and
+  it still appears before the fog swallows a mob.
+- [x] **In-range enemies get no marker at all**, so the player sees the actual
+  mob. The `entitiesInRange` bookkeeping stays — it clears the sparkle particles
+  from when that mob was out of range.
+- [x] **Restored the M7.1 fog cull during threat sense.** It used to be disabled
+  whenever the scroll was up, so every distant mob's sprite was drawn in full and
+  then completely blacked out by opaque fog. The marker is drawn later, in screen
+  space, *after* the fog blit — it reveals those mobs on its own, and the sprite
+  pass bought nothing.
+
+**Not changed:** loot-sense has the same shape but its in-range branch redraws
+the real item icon, so it is already correct.
+
+**Files:** `renderer/fogGradient.ts` (new), `renderer/fogLayer.ts`,
+`GameCanvas.tsx`, `main.tsx`, `e2e/m7-2-threat-sense.spec.ts` (new).
+
+**Exit criteria:** no marker anywhere inside the lit disc; a mob beyond the fog
+is still marked; the fog layer and the marker read the same stops.
+
+---
+
 ## Milestone 8 — Architecture Refactor (Enabler)
 
 **Goal:** Split monolithic `GameCanvas.tsx` so future features and optimizations are localized.
@@ -1299,6 +1343,7 @@ M9 Progression & Variety
 | M6.7 | Mob containment & knockback | **P1** | Low — restores whole-tile movement; small Mace knockback buff at low weapon level | ✅ Complete |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
 | M7.1 | Entity draw scaling | P2 | Low | ✅ Complete |
+| M7.2 | Threat-sense marker & cull restoration | P2 | Low | ✅ Complete |
 | M8 | Architecture split | **P1** | High | **Next enabler — M6.1 follow-up and M6.4a have landed** |
 | M9 | Content/variety | P3 | Low | — |
 
