@@ -337,6 +337,57 @@ survive playtesting.
 
 ---
 
+## Milestone 5.6 — Inventory Surfaces: Shared Components, Layout & Filters
+
+**Status: complete.**
+
+**Goal:** One implementation of the inventory row, shared by the three surfaces
+that had grown their own copies — and with it, the layout fix and the category
+filters the in-run and vendor views never had.
+
+**The duplication was the bug.** `Game.tsx` held the equipped-slot row **six**
+times (three lobby, three in-run dialog), the inventory item card **twice**, and
+the vendor card twice; only the filter bar was unique, and only the lobby had
+one. The two triples had already drifted: the dialog's copy set the name to
+`font-pixel` and the button to `text-lg`, and **neither flex child carried
+`min-w-0`**. Press Start 2P is ~2× the advance width of the lobby's mono font,
+so a long name ("Necromancer's Mantle Lv16") could not shrink, the
+`whitespace-nowrap` button could not shrink, and the row overflowed.
+`DialogContent` is `overflow-x-hidden`, so instead of scrolling it **silently
+clipped UNEQUIP off-screen** — leaving no way to unequip that item.
+
+**Tasks:**
+- [x] Extract `EquippedSlotRow`, `ItemCard` and `ItemTypeFilterBar` into
+  `components/game/inventory/`, replacing all ten inline copies.
+- [x] Fix the overflow in one place: `min-w-0 flex-1 break-words` on the name,
+  `shrink-0` on the button, and the button sized from the lobby's `text-xs`
+  rather than the dialog's `text-lg`.
+- [x] A `density` prop (`default` / `compact`) carries the lobby-vs-modal sizing
+  difference explicitly instead of by drift.
+- [x] Filter bars on the in-run dialog and the vendor's SELL list, reusing the
+  lobby's pattern. The vendor keeps its own filter state so the two do not fight.
+- [x] One `unequipSlot` / `toggleEquipItem` pair replaces the equip/unequip
+  dispatch + toast that was inlined in every copy.
+- [x] Sizing lives in the components, **not** `mobile.css`: the dialog is
+  portaled to `document.body`, so every rule there scoped to `.lobby-page` /
+  `.lobby-page-grid` misses it entirely. That is a second reason the dialog
+  looked unstyled on a phone.
+
+**Test gap this closes:** `e2e/inventory-dialog.spec.ts` asserted only that the
+dialog *cannot scroll horizontally* — which stayed true the whole time the button
+was clipped. It now also asserts every action button's box is inside the dialog
+and the viewport, and that the button is the element at its own centre point
+(clipped is not the same as untappable, and only the second one is what the
+player feels).
+
+**Files:** `components/game/inventory/{EquippedSlotRow,ItemCard,ItemTypeFilterBar}.tsx`
+(new), `pages/Game.tsx`, `e2e/inventory-dialog.spec.ts`.
+
+**Exit criteria:** no action button clipped or unclickable at 1280×720, 390×844
+or 375×667 with the longest fixture names; all three surfaces filter by type.
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -1236,6 +1287,7 @@ M9 Progression & Variety
 | M5.3 | Floating touch sensitivity & control settings | P1 | Low | Done |
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M5.5 | Floating joystick re-anchor | P1 | Medium — changes how every mobile turn reads | Done |
+| M5.6 | Inventory surfaces: shared components, layout, filters | **P1** | Low — extraction plus a layout fix; no behaviour change | ✅ Complete |
 | M6 | Balance & clarity | P2 | Medium | Done |
 | M6.1 | Mob balance pass + cadence/movement correctness | **P1** | Medium — gameplay-visible cadence/movement fairness | Done |
 | M6.2 | Full run pause | P1 | Low | Done |
