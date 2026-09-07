@@ -1,5 +1,80 @@
 # Release Notes
 
+## Milestone 6.7 — Mob Containment & Knockback
+
+**Branch:** `claude/m6-7`
+
+Two ways a mob ended up inside a wall, found in device play: a Phase stranded in
+the outer wall of a sector, and Zeus knocked into a boundary corner. They turned
+out to be unrelated defects.
+
+### A phasing mob could strand itself in rock — permanently
+
+`checkCollision` reports out-of-bounds and "wall" with the same boolean. The
+movement gate consumed that one value, so a step *off the grid* was charged
+against the phase wall budget and then refused by the bounds check below it.
+Because `wallTilesTraversed` is only updated inside a **committed** move, the
+budget never reset. Meanwhile `case 'phase'` was a purely greedy step toward the
+player with no fallback.
+
+Put together: once the budget reached `PHASE_MAX_WALL_TILES` while the mob was
+inside the boundary ring, every wall step was refused, the only step it wanted
+was toward the player, and nothing ever cleared the counter. It retried the same
+blocked step forever.
+
+- Out-of-bounds is now separated from "wall" at the gate, so a phaser never
+  spends budget on a tile off the grid.
+- A refused step while phasing clears the budget, freeing the mob to surface on
+  its next tick.
+- A budget-exhausted phaser standing in rock stops chasing and steps toward the
+  nearest floor tile — `ai/wallEscape.ts`'s `nearestFloorStep`, a bounded BFS
+  *through* rock following the conventions in `exitPathHint.ts`.
+- The outer ring is **one-way**: a phaser may never step into it from the maze,
+  but one already there is free to move along and out of it.
+
+That last rule is not a detail. Blocking the ring in both directions looked
+right and deadlocked the corner — every cardinal neighbour of `(0,0)` is also
+ring, so a mob there had nowhere legal to go. The escape now reads
+`(0,0) → (1,0) → (1,1)`, out along the ring and then onto floor.
+
+### Knockback left mobs visually buried, and could tunnel
+
+The Mace pushed by a fractional `0.5 + 0.1 × (level − 1)` tiles and validated
+only the destination's **floored** tile. A mob shoved to `x = 28.45` passed the
+check while its sprite — drawn from `pos.x * TILE_SIZE` — visibly overlapped the
+wall at tile 29. That is the Zeus screenshot. And once the distance passed a
+whole tile, the destination could be a legal floor tile on the far side of a
+wall the mob was never allowed to cross.
+
+Knockback is now swept **one whole tile at a time**, stopping before the first
+wall or out-of-bounds tile — the same whole-tile step every other movement in
+the game uses. It is quantised to the dominant axis, because melee mobs approach
+cardinally and a diagonal sweep could slip a mob between two walls meeting at a
+corner.
+
+**One deliberate balance change:** distance now rounds to at least one tile. The
+old 0.5-tile push at weapon level 1 was less than a tile of travel, so
+quantising down would have made the Mace's signature effect invisible for its
+first ten levels. This is a small buff at low weapon level.
+
+### Verification
+- **`e2e/m6-7-containment.spec.ts`** (new) — knockback lands on whole tiles, on
+  floor, never through a wall, at weapon level 1 and level 20; a mob stranded in
+  an interior wall, on the ring, and in the corner each *walks itself out* to
+  floor (asserting the escape terminates, not just that a first step exists);
+  a live Phase sampled every 500 ms for 6 s is never off-grid and never stalled
+  on one tile inside rock; ten Mace swings leave every entity integral and on
+  floor.
+- `npm run build` clean; `npx tsc` at 15 errors, one *below* the 16 pre-existing
+  baseline — the knockback rewrite resolved an implicit-`any` chain.
+
+### Also
+`plan.md`'s status table was stale: M6.1, M6.4a, M6.4b, M6.5 and M6.6 all
+shipped in PRs #58–#64 but still read "Planned"/"Reopened". Corrected, and M8 is
+marked as the next enabler.
+
+---
+
 ## Operator preview — the four missing utility layers
 
 **Branch:** `claude/operator-utility-art`

@@ -950,6 +950,69 @@ For each, record:
 
 ---
 
+## Milestone 6.7 — Mob Containment & Knockback
+
+**Status: complete.**
+
+**Goal:** A mob is never inside a wall it cannot leave, and never rendered
+inside one it is not actually in. Two independent defects found in device play
+(a Phase stranded in the outer wall; Zeus knocked into a boundary corner).
+
+### 1. A phasing mob could strand itself in rock — permanently
+
+`checkCollision` (`lib/game/engine.ts:636`) reports out-of-bounds and "wall"
+with the same boolean. The movement commit gate consumed that one value, so a
+step *off the grid* was charged against the phase wall budget and then refused
+by the bounds check below it. Because `wallTilesTraversed` is only updated
+inside a **committed** move, the budget never reset. Meanwhile `case 'phase'`
+was a purely greedy step toward the player with no fallback.
+
+Put together: once the budget hit `PHASE_MAX_WALL_TILES` while the mob was
+inside the boundary ring, every wall step was refused, the only step it wanted
+was toward the player, and nothing ever cleared the counter. It retried the same
+blocked step forever.
+
+- [x] Separate out-of-bounds from "wall" at the gate; a phaser never spends
+  budget on a tile off the grid.
+- [x] The outer ring is impassable **even for phasers** — there is nothing
+  beyond it, so entering it can only end in a stall.
+- [x] A refused step while phasing clears the budget, so the mob is free to
+  surface on its next tick.
+- [x] A budget-exhausted phaser standing in rock stops chasing and takes a step
+  toward the nearest floor tile (`ai/wallEscape.ts` → `nearestFloorStep`, a
+  bounded BFS *through* rock, following the conventions in `exitPathHint.ts`).
+
+### 2. Knockback left mobs visually buried, and could tunnel
+
+The Mace pushed by a fractional `0.5 + 0.1 × (level − 1)` tiles and validated
+only the destination's **floored** tile. A mob shoved to `x = 28.45` passed the
+check while its sprite — drawn from `pos.x * TILE_SIZE` — visibly overlapped the
+wall at tile 29. And once the distance passed a whole tile, the destination
+could be a legal floor tile on the far side of a wall the mob was never allowed
+to cross.
+
+- [x] Knockback is swept **one whole tile at a time** (`knockbackDestination`),
+  stopping before the first wall or out-of-bounds tile — matching the whole-tile
+  step every other movement in the game uses.
+- [x] Quantised to the dominant axis. Melee mobs approach cardinally, and a
+  diagonal sweep could slip a mob between two walls meeting at a corner — the
+  tunnelling this is meant to stop.
+- [x] Distance rounds to **at least one tile**: the old 0.5-tile push at weapon
+  level 1 was less than a tile of travel, so quantising down would have made the
+  Mace's signature effect invisible for its first ten levels. This is a small
+  buff at low weapon level and is deliberate.
+
+**Files:** `lib/game/ai/wallEscape.ts` (new), `components/game/GameCanvas.tsx`
+(knockback ~1280, `case 'phase'` ~2002, commit gate ~2592), `main.tsx`.
+
+**Exit criteria:** a Phase is never stalled on one tile inside rock; every mob
+position is integral and on floor after knockback at any weapon level; no mob
+enters the boundary ring. All asserted in `e2e/m6-7-containment.spec.ts`.
+
+**Depends on:** M6.1 follow-up (the phase budget this builds on).
+
+---
+
 ## Milestone 7 — AI & Late-Game Performance
 
 **Goal:** Keep frame times stable as enemy count and sector level grow.
@@ -1174,16 +1237,17 @@ M9 Progression & Variety
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M5.5 | Floating joystick re-anchor | P1 | Medium — changes how every mobile turn reads | Done |
 | M6 | Balance & clarity | P2 | Medium | Done |
-| M6.1 | Mob balance pass + cadence/movement correctness | **P1** | Medium — gameplay-visible cadence/movement fairness | **Reopened — follow-up findings** |
+| M6.1 | Mob balance pass + cadence/movement correctness | **P1** | Medium — gameplay-visible cadence/movement fairness | Done |
 | M6.2 | Full run pause | P1 | Low | Done |
 | M6.3 | Opt-in portals | P1 | Medium — changes how a traversal feature works | Done |
-| M6.4a | Damage budget & scaling caps | **P1** | Medium — changes per-hit damage and the difficulty curve | Planned |
-| M6.4b | Attack-pressure scheduler | **P1** | Medium — changes roster composition and attack concurrency | Planned |
-| M6.5 | Boss encounters & arenas | **P1** | High — changes boss layouts/behavior/add pressure | Planned |
-| M6.6 | Tier scaling calibration | **P1** | Medium — changes global difficulty curves after mechanics stabilize | Planned |
+| M6.4a | Damage budget & scaling caps | **P1** | Medium — changes per-hit damage and the difficulty curve | Done |
+| M6.4b | Attack-pressure scheduler | **P1** | Medium — changes roster composition and attack concurrency | Done |
+| M6.5 | Boss encounters & arenas | **P1** | High — changes boss layouts/behavior/add pressure | Done |
+| M6.6 | Tier scaling calibration | **P1** | Medium — changes global difficulty curves after mechanics stabilize | Done |
+| M6.7 | Mob containment & knockback | **P1** | Low — restores whole-tile movement; small Mace knockback buff at low weapon level | ✅ Complete |
 | M7 | AI performance | P2 | Medium — changes gameplay-visible AI cadence for mid-range mobs (staggered) and far mobs (frozen); kill switch `?ai=legacy` | Done |
 | M7.1 | Entity draw scaling | P2 | Low | ✅ Complete |
-| M8 | Architecture split | **P1** | High | **After M6.1 follow-up + M6.4a** |
+| M8 | Architecture split | **P1** | High | **Next enabler — M6.1 follow-up and M6.4a have landed** |
 | M9 | Content/variety | P3 | Low | — |
 
 ---
