@@ -20,6 +20,7 @@ import {
   canEnterTile as phaseCanEnterTile,
   isEmergingStep,
   nextWallTilesTraversed,
+  PHASE_MAX_WALL_TILES,
 } from '../../lib/game/ai/phaseBudget';
 import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
 import {
@@ -58,6 +59,13 @@ import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn'
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
 import { mobSpriteCache } from '../../lib/game/renderer/mobSpriteCache';
+import {
+  knockbackDestination,
+  nearestFloorStep,
+  isBoundaryTile,
+  isFloorTile,
+  inBounds as tileInBounds,
+} from '../../lib/game/ai/wallEscape';
 import { Level, Position, Entity, Projectile, MobSubtype, Afterimage, Particle, Portal, Footprint } from '../../lib/game/types';
 import { getEffectiveStats, getTotalDefense } from '../../lib/game/stats';
 import { generateItem } from '../../lib/game/items';
@@ -1284,21 +1292,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const dy = enemy.pos.y - nextPos.y;
               const distance = Math.sqrt(dx * dx + dy * dy);
               
-              if (distance > 0) {
-                // Knockback distance: 0.5 tiles base, +0.1 per level
+              if (distance > 0 && levelRef.current) {
+                // Knockback distance: 0.5 tiles base, +0.1 per level.
+                //
+                // Swept a whole tile at a time rather than applied as a vector.
+                // The old fractional push validated only the destination's
+                // floored tile, so a mob shoved to x = 28.45 passed the check
+                // while its sprite visibly overlapped the wall at tile 29 — and
+                // past one tile of distance it could land beyond a wall it was
+                // never allowed to cross.
                 const knockbackDistance = 0.5 + (weaponLevel - 1) * 0.1;
-                const knockbackX = (dx / distance) * knockbackDistance;
-                const knockbackY = (dy / distance) * knockbackDistance;
-                
-                const newPos = {
-                  x: enemy.pos.x + knockbackX,
-                  y: enemy.pos.y + knockbackY
-                };
-                
-                // Only apply knockback if the new position is valid (not a wall)
-                if (!checkCollision(newPos, levelRef.current)) {
-                  enemy.pos = newPos;
-                }
+                enemy.pos = knockbackDestination(
+                  levelRef.current,
+                  enemy.pos,
+                  dx,
+                  dy,
+                  knockbackDistance,
+                );
               }
             }
             
@@ -2001,15 +2011,29 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             
             case 'phase': {
               // Hades Phase: Can move through walls
-              // Aggro'd: Move toward player
-              nextPos = {
+              const level = levelRef.current;
+              const insideRock =
+                level !== null &&
+                !isFloorTile(level.tiles, Math.floor(entity.pos.x), Math.floor(entity.pos.y));
+              const budgetSpent =
+                (entity.wallTilesTraversed ?? 0) >= PHASE_MAX_WALL_TILES;
+
+              // Out of budget and still in solid rock: stop chasing and surface.
+              // Without this the mob kept retrying the one step it wanted — the
+              // greedy step toward the player — and since the wall counter only
+              // updates on a committed move, the budget never reset either. In
+              // the boundary ring that meant stuck forever.
+              const escape = insideRock && budgetSpent && level
+                ? nearestFloorStep(level, entity.pos)
+                : null;
+
+              nextPos = escape ?? {
                 x: entity.pos.x + Math.sign(dx),
                 y: entity.pos.y + Math.sign(dy),
               };
               shouldMove = true;
               // Clear roaming state when aggro'd
               updatedEntity.roamDirection = null;
-              // Phase mobs ignore wall collision
               break;
             }
             
@@ -2590,21 +2614,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           
           // Apply movement if valid
           if (shouldMove && levelRef.current) {
-            const targetIsWall = checkCollision(nextPos, levelRef.current);
+            const level = levelRef.current;
+            const targetTileX = Math.floor(nextPos.x);
+            const targetTileY = Math.floor(nextPos.y);
+            // `checkCollision` reports out-of-bounds and "wall" with the same
+            // boolean. Conflating them let a phaser spend its wall budget on a
+            // step off the grid that the bounds check then refused — and since
+            // the counter only updates on a committed move, it never reset.
+            const targetInBounds = tileInBounds(level, targetTileX, targetTileY);
+            const targetIsWall =
+              targetInBounds && checkCollision(nextPos, level);
             // Phasing mobs may cut through walls, but only for a few tiles at a
             // time — otherwise the maze stops being cover and they become
             // unbreakable stalkers.
-            const canMove = targetIsWall
-              ? entity.canPhase &&
-                phaseCanEnterTile({
-                  wallTilesTraversed: entity.wallTilesTraversed ?? 0,
-                  targetIsWall: true,
-                })
-              : true;
+            //
+            // The outer ring is one-way: a phaser may never step *into* it from
+            // the maze (there is nothing beyond it, so it can only get stuck),
+            // but one already there must be free to move along and out of it.
+            // Blocking both directions strands a mob in the corner, where every
+            // cardinal neighbour is also ring.
+            const enteringBoundary =
+              isBoundaryTile(level, targetTileX, targetTileY) &&
+              !isBoundaryTile(level, Math.floor(entity.pos.x), Math.floor(entity.pos.y));
+            const canMove = !targetInBounds
+              ? false
+              : targetIsWall
+                ? entity.canPhase &&
+                  !enteringBoundary &&
+                  phaseCanEnterTile({
+                    wallTilesTraversed: entity.wallTilesTraversed ?? 0,
+                    targetIsWall: true,
+                  })
+                : true;
+            if (!canMove && entity.canPhase) {
+              // Refused while phasing: clear the budget so the mob is free to
+              // surface on its next tick instead of retrying the same step
+              // forever.
+              updatedEntity.wallTilesTraversed = 0;
+            }
             if (canMove) {
-              // Check bounds
-              if (nextPos.x >= 0 && nextPos.x < levelRef.current.width &&
-                  nextPos.y >= 0 && nextPos.y < levelRef.current.height) {
+              {
                 // Check if target tile is the exit - mobs cannot occupy exit tile
                 const tileX = Math.floor(nextPos.x);
                 const tileY = Math.floor(nextPos.y);
