@@ -1,5 +1,59 @@
 # Release Notes
 
+## Milestone 7.2 — Threat-Sense Marker & Cull Restoration
+
+**Branch:** `claude/m7-2`
+
+Reported from play: the threat-sense mask shouldn't be visible inside the
+spotlight.
+
+### The gate was off by a fifth of the fog radius
+
+Threat-sense stamped a flat `#ff4444` disc over **every** enemy. The gate read
+`distFromPlayer > visionRadius`, and `visionRadius` is where the fog reaches
+*full* opacity — not where it starts to hide anything. The lit spotlight is
+roughly the inner 70% of that, so the gate covered the whole lit disc and the
+entire falloff.
+
+The in-range branch then drew its disc at `globalAlpha = 1.0` directly over the
+mob's own sprite, colour and health bar — behind a comment saying it was
+ensuring the mob was "fully visible". Confirmed from the screenshot: the mobs
+inside the lit disc had a pixel-identical colour signature to the markers
+outside it.
+
+### Changed
+- **`renderer/fogGradient.ts`** (new) — the gradient stops, in one place.
+  `fogLayer` builds its radial gradient from them, and the marker asks them how
+  much fog is actually over a mob. The two had no relationship before, which is
+  exactly how the gate drifted.
+- The marker now fires at fog alpha ≥ 0.35, just past the 0.3 stop at
+  `0.8 × radius`. Measured: it starts at **0.817R** rather than 1.0R — nothing
+  in the lit disc, but still appearing before the fog swallows a mob.
+- In-range enemies get **no marker**; the real sprite shows through the thin
+  fog, which is the point. Particle bookkeeping is unchanged.
+- **The M7.1 fog cull works during threat sense again.** It had been disabled
+  whenever the scroll was up, so every distant mob's sprite was drawn in full and
+  then blacked out by opaque fog. The marker is drawn afterwards in screen space
+  and reveals those mobs by itself, so that sprite pass was pure waste.
+
+Loot-sense has the same shape but its in-range branch redraws the real item
+icon, so it was already correct and is untouched.
+
+### Verification
+- `npm run build` clean; `npx tsc` at the 15-error pre-existing baseline.
+- **`e2e/m7-2-threat-sense.spec.ts`** (new) — the fog alpha at 0 / 0.25 / 0.5 /
+  0.7 / 0.8 / 0.9 / 0.975 / 1 / 1.5 R, with no marker at or inside 0.7R and a
+  marker from 0.9R out; the marker's start distance is inside the fog radius,
+  not at it; a zero radius does not divide into NaN; the fog layer and the
+  marker read the same stops; and in a live sector a mob beside the player is
+  unmarked while one 14 tiles out is marked.
+- 12/13 on the first run of `m7-2` + `m3-canvas-fog` + `m7-1-draw-scaling`. The
+  one failure was `m3-canvas-fog`'s cache test timing out — since this milestone
+  edits `fogLayer.ts` that could not be waved off, so it was re-run 3× in full:
+  **21/21 passed**. A flake, not a regression.
+
+---
+
 ## Milestone 5.6 — Inventory Surfaces: Shared Components, Layout & Filters
 
 **Branch:** `claude/m5-6`
