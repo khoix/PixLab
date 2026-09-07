@@ -1,5 +1,33 @@
 # Release Notes
 
+## Inventory filter bar — centred on every surface
+
+**Branch:** `claude/inventory-filter-center`
+
+Follow-up to M5.6: the category buttons needed to be horizontally centred in the
+in-run inventory and the vendor, the way the main-menu inventory does it.
+
+The lobby gets that from `.lobby-page .inventory-header-mobile` in `mobile.css`
+(a `max-width: 767px` block that stacks the title above a centred button row).
+The in-run dialog is portaled to `document.body` and the vendor is
+`.vendor-station-page`, so neither is inside `.lobby-page` and neither ever saw
+the rule — the same reason M5.6 moved sizing into the component.
+
+So the layout moves there too: `flex-col items-center` with a full-width centred
+button row, switching to title-left / buttons-right at `md:` — the same shape at
+the same 768px breakpoint the lobby already used. One component, so all three
+surfaces match.
+
+### Verification
+- `e2e/inventory-dialog.spec.ts` gains a check at 390×844 that the bar stacks,
+  the button group computes to `justify-content: center`, and the slack either
+  side of the row is equal within 2px of rounding.
+- Confirmed the test is not vacuous: with the component change reverted it fails
+  on "the bar should stack on a phone".
+- 23/23 across `inventory-dialog` and `m5-mobile-ux`.
+
+---
+
 ## Milestone 7.2 — Threat-Sense Marker & Cull Restoration
 
 **Branch:** `claude/m7-2`
