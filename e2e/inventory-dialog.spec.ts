@@ -146,6 +146,43 @@ test.describe('In-game inventory dialog', () => {
     });
   }
 
+  test('the filter buttons are centred on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const dialog = await openInGameInventory(page);
+
+    // The lobby centres these under 768px via `.lobby-page
+    // .inventory-header-mobile` in mobile.css. The dialog is portaled to
+    // document.body and the vendor is `.vendor-station-page`, so neither is
+    // inside `.lobby-page` and neither ever saw that rule — the layout has to
+    // travel with the component instead.
+    const geometry = await dialog.evaluate((dlg) => {
+      const bar = dlg.querySelector('[data-testid="item-type-filter-bar"]') as HTMLElement;
+      const group = bar.querySelector('div:last-of-type') as HTMLElement;
+      const buttons = Array.from(
+        bar.querySelectorAll<HTMLElement>('[data-testid^="item-filter-"]'),
+      ).map((b) => b.getBoundingClientRect());
+      const barBox = bar.getBoundingClientRect();
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      return {
+        count: buttons.length,
+        stacked: getComputedStyle(bar).flexDirection === 'column',
+        leftGap: Math.round(first.left - barBox.left),
+        rightGap: Math.round(barBox.right - last.right),
+        groupJustify: getComputedStyle(group).justifyContent,
+      };
+    });
+
+    expect(geometry.count).toBe(5);
+    expect(geometry.stacked, 'the bar should stack on a phone').toBe(true);
+    expect(geometry.groupJustify).toBe('center');
+    // Centred means equal slack either side, within a pixel of rounding.
+    expect(
+      Math.abs(geometry.leftGap - geometry.rightGap),
+      `left gap ${geometry.leftGap}px vs right gap ${geometry.rightGap}px`,
+    ).toBeLessThanOrEqual(2);
+  });
+
   test('the dialog can filter by item type', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const dialog = await openInGameInventory(page);
