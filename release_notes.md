@@ -1,5 +1,58 @@
 # Release Notes
 
+## Milestone 5.6 — Inventory Surfaces: Shared Components, Layout & Filters
+
+**Branch:** `claude/m5-6`
+
+Reported from device play: the in-run inventory's UNEQUIP button ran off the
+screen, the text needed to scale, and neither the in-run view nor the vendor
+had the category filters the lobby does.
+
+### The duplication was the bug
+
+`Game.tsx` held the equipped-slot row **six** times — three in the lobby tab,
+three in the in-run dialog — plus the item card twice and the vendor card twice.
+Only the filter bar was unique, and only the lobby had one.
+
+The two triples had already drifted. The dialog's copy set the name to
+`font-pixel` and the button to `text-lg`, and **neither flex child carried
+`min-w-0`**. Press Start 2P is about twice the advance width of the lobby's mono
+font, so a long name could not shrink, the `whitespace-nowrap` button could not
+shrink, and the row overflowed. `DialogContent` is `overflow-x-hidden`, so
+rather than scrolling it **silently clipped UNEQUIP off-screen** — leaving no
+way to unequip that item at all.
+
+### Changed
+- **`components/game/inventory/`** (new) — `EquippedSlotRow`, `ItemCard` and
+  `ItemTypeFilterBar`, replacing all ten inline copies.
+- The overflow is fixed once: `min-w-0 flex-1 break-words` on the name,
+  `shrink-0` on the button, button sized from the lobby's `text-xs`. A `density`
+  prop carries the lobby-vs-modal difference explicitly instead of by drift.
+- Filter bars on the in-run dialog and the vendor's SELL list. The vendor keeps
+  its own filter state so the two views don't fight over one.
+- One `unequipSlot` / `toggleEquipItem` pair replaces the dispatch + toast that
+  was inlined in every copy.
+- Sizing lives in the components rather than `mobile.css`. The dialog is portaled
+  to `document.body`, so every rule in that file scoped to `.lobby-page` misses
+  it — a second reason the dialog looked unstyled on a phone.
+
+### The test gap this closes
+`e2e/inventory-dialog.spec.ts` asserted only that the dialog **cannot scroll
+horizontally**. That stayed true the entire time the button was clipped, which
+is why the suite was green through the bug. It now also asserts every action
+button's box sits inside the dialog and the viewport, and that the button is the
+element returned by `elementFromPoint` at its own centre — clipped and
+untappable are different failures, and only the second is what the player hits.
+
+### Verification
+- `npm run build` clean; `npx tsc` at 15 errors, the pre-existing baseline, none
+  in the new components.
+- 26/26 across `inventory-dialog`, `m5-vendor-station` and `m5-mobile-ux`,
+  including the new reachability checks at 1280×720, 390×844 and 375×667 and
+  filter coverage.
+
+---
+
 ## Milestone 6.7 — Mob Containment & Knockback
 
 **Branch:** `claude/m6-7`

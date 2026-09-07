@@ -95,5 +95,78 @@ test.describe('In-game inventory dialog', () => {
       expect(scroll.statsRowFits).toBe(true);
       expect(scroll.dialogWidth).toBeLessThanOrEqual(scroll.viewportWidth + 1);
     });
+
+    test(`every action button is reachable at ${vp.width}×${vp.height}`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      const dialog = await openInGameInventory(page);
+
+      // The assertions above only prove the dialog cannot be *scrolled*
+      // horizontally. `DialogContent` is `overflow-x-hidden`, so a row that is
+      // too wide is silently **clipped** instead — which is exactly how UNEQUIP
+      // ended up off-screen and untappable while this suite stayed green.
+      const buttons = await dialog.evaluate((dlg) => {
+        const box = dlg.getBoundingClientRect();
+        return Array.from(
+          dlg.querySelectorAll<HTMLElement>('[data-testid^="unequip-"], [data-testid^="item-action-"]'),
+        ).map((el) => {
+          const r = el.getBoundingClientRect();
+          return {
+            testid: el.dataset.testid ?? '?',
+            label: (el.textContent ?? '').trim(),
+            overflowRight: Math.round(r.right - box.right),
+            overflowLeft: Math.round(box.left - r.left),
+            width: Math.round(r.width),
+            insideViewport: r.right <= window.innerWidth + 1 && r.left >= -1,
+          };
+        });
+      });
+
+      // The fixture equips a weapon, armor and a utility with long names, so
+      // there is something to check.
+      expect(buttons.length).toBeGreaterThanOrEqual(3);
+      for (const b of buttons) {
+        expect(b.width, `${b.testid} has no width`).toBeGreaterThan(0);
+        expect(b.overflowRight, `${b.testid} (${b.label}) hangs ${b.overflowRight}px past the dialog`)
+          .toBeLessThanOrEqual(1);
+        expect(b.overflowLeft, `${b.testid} (${b.label}) hangs ${b.overflowLeft}px off the left`)
+          .toBeLessThanOrEqual(1);
+        expect(b.insideViewport, `${b.testid} is outside the viewport`).toBe(true);
+      }
+
+      // Clipping is not enough to prove tappability — the element also has to
+      // be the one that receives the tap.
+      const first = dialog.locator('[data-testid^="unequip-"]').first();
+      await expect(first).toBeVisible();
+      const hitsItself = await first.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return el === at || el.contains(at);
+      });
+      expect(hitsItself, 'the UNEQUIP button is not the element at its own centre').toBe(true);
+    });
   }
+
+  test('the dialog can filter by item type', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const dialog = await openInGameInventory(page);
+
+    const bar = dialog.locator('[data-testid="item-type-filter-bar"]');
+    await expect(bar).toBeVisible();
+
+    const rows = () => dialog.locator('[data-testid^="item-action-"]');
+    const allCount = await rows().count();
+    expect(allCount).toBeGreaterThan(0);
+
+    // The fixture holds one weapon, one armor, one utility and two consumables.
+    await dialog.locator('[data-testid="item-filter-weapon"]').click();
+    await expect(rows()).toHaveCount(1);
+
+    await dialog.locator('[data-testid="item-filter-consumable"]').click();
+    // Consumables are not equippable, so they render no action button.
+    await expect(rows()).toHaveCount(0);
+    await expect(dialog.getByText(/NO CONSUMABLE ITEMS|EMPTY/)).toHaveCount(0);
+
+    await dialog.locator('[data-testid="item-filter-all"]').click();
+    await expect(rows()).toHaveCount(allCount);
+  });
 });

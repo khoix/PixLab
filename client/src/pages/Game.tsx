@@ -35,6 +35,13 @@ import { getEffectiveStats, getTotalDefense } from '../lib/game/stats';
 import { Item } from '../lib/game/types';
 import type { GameState, MobileControlType } from '../lib/game/types';
 import { Plus, Sword, Shield, Wrench, FlaskConical, Settings, Terminal, Cog, Menu as MenuIcon } from 'lucide-react';
+import { EquippedSlotRow, type EquipSlot } from '@/components/game/inventory/EquippedSlotRow';
+import { ItemCard } from '@/components/game/inventory/ItemCard';
+import {
+  ItemTypeFilterBar,
+  filterItemsByType,
+  emptyFilterMessage,
+} from '@/components/game/inventory/ItemTypeFilterBar';
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { BroadcastGlitchScope } from '../components/BroadcastGlitch';
@@ -189,6 +196,40 @@ export default function Game() {
   const [lastItemCount, setLastItemCount] = useState(state.inventory.length);
   const [gameOverState, setGameOverState] = useState<{ type: 'death' | 'timeout' } | null>(null);
   const [inventoryFilter, setInventoryFilter] = useState<Item['type'] | 'all'>('all');
+  const [vendorFilter, setVendorFilter] = useState<Item['type'] | 'all'>('all');
+
+  // One equip/unequip path for every surface. These were duplicated inline in
+  // each of the six equipped-slot rows and both item lists, which is how the
+  // lobby and the in-run dialog drifted apart in the first place. Plain
+  // functions rather than `useCallback`: they read `state.loadout` on every
+  // call, and memoising them would capture a stale loadout.
+  const unequipSlot = (slot: EquipSlot, item: Item) => {
+    dispatch({ type: 'UNEQUIP_ITEM', payload: { slot } });
+    toast({
+      title: 'UNEQUIPPED',
+      description: item.name,
+      className: 'bg-yellow-900 border-yellow-500 text-yellow-100',
+    });
+  };
+
+  const toggleEquipItem = (item: Item, isEquipped: boolean) => {
+    if (isEquipped) {
+      const slot: EquipSlot =
+        state.loadout.weapon?.id === item.id ? 'weapon' :
+        state.loadout.armor?.id === item.id ? 'armor' : 'utility';
+      unequipSlot(slot, item);
+      return;
+    }
+    dispatch({
+      type: 'EQUIP_ITEM',
+      payload: { slot: item.type as EquipSlot, item },
+    });
+    toast({
+      title: 'EQUIPPED',
+      description: item.name,
+      className: 'bg-green-900 border-green-500 text-green-100',
+    });
+  };
   const [vendorItems, setVendorItems] = useState<Item[]>([]);
   const [soldItems, setSoldItems] = useState<Item[]>([]);
   const [showCommerceVendor, setShowCommerceVendor] = useState(false);
@@ -1024,132 +1065,9 @@ export default function Game() {
                   <div className="border border-primary/30 p-3 bg-primary/5">
                     <h4 className="font-pixel text-lg text-primary mb-2">EQUIPPED</h4>
                     <div className="space-y-2">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-lg font-mono text-muted-foreground">WEAPON:</span>
-                        </div>
-                        <div className={cn(
-                          "p-2 border text-lg font-mono",
-                          state.loadout.weapon ? "border-primary/30 bg-primary/5" : "border-white/10"
-                        )}>
-                          <div className="flex items-center justify-between">
-                            <span className={cn(
-                              state.loadout.weapon ? 'text-primary' : 'text-muted-foreground',
-                              "text-2xl"
-                            )}>
-                              {state.loadout.weapon?.name || 'NONE'}
-                            </span>
-                            {state.loadout.weapon && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                                onClick={() => {
-                                  dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'weapon' } });
-                                  toast({ 
-                                    title: "UNEQUIPPED", 
-                                    description: state.loadout.weapon?.name,
-                                    className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                                  });
-                                }}
-                              >
-                                UNEQUIP
-                              </Button>
-                            )}
-                          </div>
-                          {state.loadout.weapon?.stats && (
-                            <div className="text-xl text-muted-foreground space-y-0.5 mt-1">
-                              {state.loadout.weapon.stats.damage && <div>DMG: +{state.loadout.weapon.stats.damage}</div>}
-                              {state.loadout.weapon.stats.speed && <div>SPD: +{state.loadout.weapon.stats.speed}</div>}
-                              {state.loadout.weapon.stats.vision && <div>VIS: +{state.loadout.weapon.stats.vision}</div>}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-lg font-mono text-muted-foreground">ARMOR:</span>
-                        </div>
-                        <div className={cn(
-                          "p-2 border text-lg font-mono",
-                          state.loadout.armor ? "border-primary/30 bg-primary/5" : "border-white/10"
-                        )}>
-                          <div className="flex items-center justify-between">
-                            <span className={cn(
-                              state.loadout.armor ? 'text-primary' : 'text-muted-foreground',
-                              "text-2xl"
-                            )}>
-                              {state.loadout.armor?.name || 'NONE'}
-                            </span>
-                            {state.loadout.armor && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                                onClick={() => {
-                                  dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'armor' } });
-                                  toast({ 
-                                    title: "UNEQUIPPED", 
-                                    description: state.loadout.armor?.name,
-                                    className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                                  });
-                                }}
-                              >
-                                UNEQUIP
-                              </Button>
-                            )}
-                          </div>
-                          {state.loadout.armor?.stats && (
-                            <div className="text-xl text-muted-foreground space-y-0.5 mt-1">
-                              {state.loadout.armor.stats.defense && <div>DEF: +{state.loadout.armor.stats.defense}</div>}
-                              {state.loadout.armor.stats.speed && <div>SPD: +{state.loadout.armor.stats.speed}</div>}
-                              {state.loadout.armor.stats.vision && <div>VIS: +{state.loadout.armor.stats.vision}</div>}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-lg font-mono text-muted-foreground">UTILITY:</span>
-                        </div>
-                        <div className={cn(
-                          "p-2 border text-lg font-mono",
-                          state.loadout.utility ? "border-primary/30 bg-primary/5" : "border-white/10"
-                        )}>
-                          <div className="flex items-center justify-between">
-                            <span className={cn(
-                              state.loadout.utility ? 'text-primary' : 'text-muted-foreground',
-                              "text-2xl"
-                            )}>
-                              {state.loadout.utility?.name || 'NONE'}
-                            </span>
-                            {state.loadout.utility && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                                onClick={() => {
-                                  dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'utility' } });
-                                  toast({ 
-                                    title: "UNEQUIPPED", 
-                                    description: state.loadout.utility?.name,
-                                    className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                                  });
-                                }}
-                              >
-                                UNEQUIP
-                              </Button>
-                            )}
-                          </div>
-                          {state.loadout.utility?.stats && (
-                            <div className="text-xl text-muted-foreground space-y-0.5 mt-1">
-                              {state.loadout.utility.stats.damage && <div>DMG: +{state.loadout.utility.stats.damage}</div>}
-                              {state.loadout.utility.stats.speed && <div>SPD: +{state.loadout.utility.stats.speed}</div>}
-                              {state.loadout.utility.stats.vision && <div>VIS: +{state.loadout.utility.stats.vision}</div>}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <EquippedSlotRow label="WEAPON" slot="weapon" item={state.loadout.weapon} onUnequip={unequipSlot} />
+                      <EquippedSlotRow label="ARMOR" slot="armor" item={state.loadout.armor} onUnequip={unequipSlot} />
+                      <EquippedSlotRow label="UTILITY" slot="utility" item={state.loadout.utility} onUnequip={unequipSlot} />
                     </div>
                   </div>
 
@@ -1165,75 +1083,15 @@ export default function Game() {
 
                   {/* Inventory Items */}
                   <div>
-                    <div className="flex items-center justify-between mb-2 inventory-header-mobile">
-                      <h4 className="font-pixel text-lg text-primary inventory-title-mobile">INVENTORY ({state.inventory.length})</h4>
-                      <div className="flex items-center gap-1 inventory-buttons-mobile">
-                        <button
-                          onClick={() => setInventoryFilter('all')}
-                          className={cn(
-                            "p-1.5 border transition-all",
-                            inventoryFilter === 'all'
-                              ? "border-primary bg-primary/20 text-primary"
-                              : "border-white/20 hover:border-white/40 text-muted-foreground"
-                          )}
-                          title="All Items"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setInventoryFilter('weapon')}
-                          className={cn(
-                            "p-1.5 border transition-all",
-                            inventoryFilter === 'weapon'
-                              ? "border-primary bg-primary/20 text-primary"
-                              : "border-white/20 hover:border-white/40 text-muted-foreground"
-                          )}
-                          title="Weapons"
-                        >
-                          <Sword className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setInventoryFilter('armor')}
-                          className={cn(
-                            "p-1.5 border transition-all",
-                            inventoryFilter === 'armor'
-                              ? "border-primary bg-primary/20 text-primary"
-                              : "border-white/20 hover:border-white/40 text-muted-foreground"
-                          )}
-                          title="Armor"
-                        >
-                          <Shield className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setInventoryFilter('utility')}
-                          className={cn(
-                            "p-1.5 border transition-all",
-                            inventoryFilter === 'utility'
-                              ? "border-primary bg-primary/20 text-primary"
-                              : "border-white/20 hover:border-white/40 text-muted-foreground"
-                          )}
-                          title="Utility"
-                        >
-                          <Wrench className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setInventoryFilter('consumable')}
-                          className={cn(
-                            "p-1.5 border transition-all",
-                            inventoryFilter === 'consumable'
-                              ? "border-primary bg-primary/20 text-primary"
-                              : "border-white/20 hover:border-white/40 text-muted-foreground"
-                          )}
-                          title="Consumables"
-                        >
-                          <FlaskConical className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                      <ItemTypeFilterBar
+                        value={inventoryFilter}
+                        onChange={setInventoryFilter}
+                        heading={
+                          <h4 className="font-pixel text-lg text-primary inventory-title-mobile">INVENTORY ({state.inventory.length})</h4>
+                        }
+                      />
                     {(() => {
-                      const filteredInventory = inventoryFilter === 'all' 
-                        ? state.inventory 
-                        : state.inventory.filter(item => item.type === inventoryFilter);
+                      const filteredInventory = filterItemsByType(state.inventory, inventoryFilter);
                       
                       if (filteredInventory.length === 0) {
                         return (
@@ -1260,65 +1118,13 @@ export default function Game() {
                             : null;
                           
                           const itemContent = (
-                            <div
-                              className={cn(
-                                "p-3 border transition-all",
-                                isEquipped ? "border-primary bg-primary/10" : "border-white/10"
-                              )}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-pixel text-base" style={{ color: rarityColor }}>
-                                  {item.name}
-                                </span>
-                                {canEquip && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className={cn(
-                                      "h-6 px-2 text-xs font-pixel",
-                                      isEquipped
-                                        ? "border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                                        : "border-green-500/50 bg-green-500/10 hover:bg-green-500/20"
-                                    )}
-                                    onClick={() => {
-                                      if (isEquipped) {
-                                        // Unequip
-                                        const slot = state.loadout.weapon?.id === item.id ? 'weapon' :
-                                                     state.loadout.armor?.id === item.id ? 'armor' : 'utility';
-                                        dispatch({ type: 'UNEQUIP_ITEM', payload: { slot } });
-                                        toast({ 
-                                          title: "UNEQUIPPED", 
-                                          description: item.name,
-                                          className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                                        });
-                                      } else {
-                                        // Equip
-                                        dispatch({ type: 'EQUIP_ITEM', payload: { slot: item.type as 'weapon' | 'armor' | 'utility', item } });
-                                        toast({ 
-                                          title: "EQUIPPED", 
-                                          description: item.name,
-                                          className: "bg-green-900 border-green-500 text-green-100" 
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    {isEquipped ? 'UNEQUIP' : 'EQUIP'}
-                                  </Button>
-                                )}
-                              </div>
-                              {item.stats && (
-                                <div className="text-xl font-mono text-muted-foreground space-y-0.5">
-                                  {item.stats.damage && <div>DMG: +{item.stats.damage}</div>}
-                                  {item.stats.defense && <div>DEF: +{item.stats.defense}</div>}
-                                  {item.stats.speed && <div>SPD: +{item.stats.speed}</div>}
-                                  {item.stats.vision && <div>VIS: +{item.stats.vision}</div>}
-                                  {item.stats.heal && <div>HEAL: +{item.stats.heal}</div>}
-                                </div>
-                              )}
-                              {item.type === 'consumable' && (
-                                <div className="text-lg text-cyan-400 font-mono mt-1">[CONSUMABLE]</div>
-                              )}
-                            </div>
+                            <ItemCard
+                              item={item}
+                              rarityColor={rarityColor}
+                              isEquipped={isEquipped}
+                              canEquip={canEquip}
+                              onToggleEquip={toggleEquipItem}
+                            />
                           );
                           
                           return (
@@ -1903,7 +1709,13 @@ export default function Game() {
                   </div>
                 ) : (
                   <div className="overflow-x-hidden space-y-2 pb-4">
-                    {state.inventory.map(item => {
+                    <ItemTypeFilterBar value={vendorFilter} onChange={setVendorFilter} />
+                    {filterItemsByType(state.inventory, vendorFilter).length === 0 && (
+                      <p className="text-center text-lg text-muted-foreground mt-4">
+                        {emptyFilterMessage(state.inventory.length, vendorFilter)}
+                      </p>
+                    )}
+                    {filterItemsByType(state.inventory, vendorFilter).map(item => {
                       const rarityColor = RARITY_COLORS[item.rarity];
                       const sellValue = calculateSellValue(item);
                       const isEquipped = state.loadout.weapon?.id === item.id || 
@@ -2194,223 +2006,57 @@ export default function Game() {
               <div className="border border-primary/30 p-3 bg-primary/5">
                 <h4 className="font-pixel text-lg text-primary mb-2">EQUIPPED</h4>
                 <div className="space-y-2">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-lg font-mono text-muted-foreground">WEAPON:</span>
-                    </div>
-                    <div className={cn(
-                      "p-2 border text-lg font-mono",
-                      state.loadout.weapon ? "border-primary/30 bg-primary/5" : "border-white/10"
-                    )}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={cn(
-                          state.loadout.weapon ? 'text-primary' : 'text-muted-foreground',
-                          "text-base font-pixel"
-                        )}>
-                          {state.loadout.weapon?.name || 'NONE'}
-                        </span>
-                        {state.loadout.weapon && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-lg font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                            onClick={() => {
-                              dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'weapon' } });
-                              toast({ 
-                                title: "UNEQUIPPED", 
-                                description: state.loadout.weapon?.name,
-                                className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                              });
-                            }}
-                          >
-                            UNEQUIP
-                          </Button>
-                        )}
-                      </div>
-                      {state.loadout.weapon?.stats && (
-                        <div className="text-lg text-muted-foreground space-y-0.5 mt-1">
-                          {state.loadout.weapon.stats.damage && <div>DMG: +{state.loadout.weapon.stats.damage}</div>}
-                          {state.loadout.weapon.stats.speed && <div>SPD: +{state.loadout.weapon.stats.speed}</div>}
-                          {state.loadout.weapon.stats.vision && <div>VIS: +{state.loadout.weapon.stats.vision}</div>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-lg font-mono text-muted-foreground">ARMOR:</span>
-                    </div>
-                    <div className={cn(
-                      "p-2 border text-lg font-mono",
-                      state.loadout.armor ? "border-primary/30 bg-primary/5" : "border-white/10"
-                    )}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={cn(
-                          state.loadout.armor ? 'text-primary' : 'text-muted-foreground',
-                          "text-base font-pixel"
-                        )}>
-                          {state.loadout.armor?.name || 'NONE'}
-                        </span>
-                        {state.loadout.armor && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-lg font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                            onClick={() => {
-                              dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'armor' } });
-                              toast({ 
-                                title: "UNEQUIPPED", 
-                                description: state.loadout.armor?.name,
-                                className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                              });
-                            }}
-                          >
-                            UNEQUIP
-                          </Button>
-                        )}
-                      </div>
-                      {state.loadout.armor?.stats && (
-                        <div className="text-lg text-muted-foreground space-y-0.5 mt-1">
-                          {state.loadout.armor.stats.defense && <div>DEF: +{state.loadout.armor.stats.defense}</div>}
-                          {state.loadout.armor.stats.speed && <div>SPD: +{state.loadout.armor.stats.speed}</div>}
-                          {state.loadout.armor.stats.vision && <div>VIS: +{state.loadout.armor.stats.vision}</div>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-lg font-mono text-muted-foreground">UTILITY:</span>
-                    </div>
-                    <div className={cn(
-                      "p-2 border text-lg font-mono",
-                      state.loadout.utility ? "border-primary/30 bg-primary/5" : "border-white/10"
-                    )}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={cn(
-                          state.loadout.utility ? 'text-primary' : 'text-muted-foreground',
-                          "text-base font-pixel"
-                        )}>
-                          {state.loadout.utility?.name || 'NONE'}
-                        </span>
-                        {state.loadout.utility && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-lg font-pixel border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                            onClick={() => {
-                              dispatch({ type: 'UNEQUIP_ITEM', payload: { slot: 'utility' } });
-                              toast({ 
-                                title: "UNEQUIPPED", 
-                                description: state.loadout.utility?.name,
-                                className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                              });
-                            }}
-                          >
-                            UNEQUIP
-                          </Button>
-                        )}
-                      </div>
-                      {state.loadout.utility?.stats && (
-                        <div className="text-lg text-muted-foreground space-y-0.5 mt-1">
-                          {state.loadout.utility.stats.damage && <div>DMG: +{state.loadout.utility.stats.damage}</div>}
-                          {state.loadout.utility.stats.speed && <div>SPD: +{state.loadout.utility.stats.speed}</div>}
-                          {state.loadout.utility.stats.vision && <div>VIS: +{state.loadout.utility.stats.vision}</div>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <EquippedSlotRow label="WEAPON" slot="weapon" item={state.loadout.weapon} density="compact" onUnequip={unequipSlot} />
+                  <EquippedSlotRow label="ARMOR" slot="armor" item={state.loadout.armor} density="compact" onUnequip={unequipSlot} />
+                  <EquippedSlotRow label="UTILITY" slot="utility" item={state.loadout.utility} density="compact" onUnequip={unequipSlot} />
                 </div>
               </div>
 
               {/* Inventory Items */}
               <div>
-                <h4 className="font-pixel text-lg text-primary mb-2">ITEMS ({state.inventory.length})</h4>
-                {state.inventory.length === 0 ? (
-                  <p className="text-center text-lg text-muted-foreground mt-4">EMPTY</p>
-                ) : (
+                <ItemTypeFilterBar
+                  value={inventoryFilter}
+                  onChange={setInventoryFilter}
+                  heading={
+                    <h4 className="font-pixel text-lg text-primary">ITEMS ({state.inventory.length})</h4>
+                  }
+                />
+                {(() => {
+                  const filteredInventory = filterItemsByType(state.inventory, inventoryFilter);
+                  if (filteredInventory.length === 0) {
+                    return (
+                      <p className="text-center text-lg text-muted-foreground mt-4">
+                        {emptyFilterMessage(state.inventory.length, inventoryFilter)}
+                      </p>
+                    );
+                  }
+                  return (
                   <div className="space-y-2">
-                    {state.inventory.map(item => {
-                      const rarityColor = RARITY_COLORS[item.rarity];
-                      const isEquipped = state.loadout.weapon?.id === item.id || 
-                                       state.loadout.armor?.id === item.id || 
+                    {filteredInventory.map(item => {
+                      const isEquipped = state.loadout.weapon?.id === item.id ||
+                                       state.loadout.armor?.id === item.id ||
                                        state.loadout.utility?.id === item.id;
                       const canEquip = item.type === 'weapon' || item.type === 'armor' || item.type === 'utility';
-                      
-                      // Get equipped item of the same type (if different from current item)
                       const equippedItem = canEquip && !isEquipped
                         ? (item.type === 'weapon' ? state.loadout.weapon :
                            item.type === 'armor' ? state.loadout.armor :
                            item.type === 'utility' ? state.loadout.utility : null)
                         : null;
-                      
-                      const itemContent = (
-                        <div
-                          className={cn(
-                            "p-3 border transition-all",
-                            isEquipped ? "border-primary bg-primary/10" : "border-white/10"
-                          )}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-pixel text-base" style={{ color: rarityColor }}>
-                              {item.name}
-                            </span>
-                            {canEquip && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className={cn(
-                                  "h-6 px-2 text-lg font-pixel",
-                                  isEquipped
-                                    ? "border-red-500/50 bg-red-500/10 hover:bg-red-500/20"
-                                    : "border-green-500/50 bg-green-500/10 hover:bg-green-500/20"
-                                )}
-                                onClick={() => {
-                                  if (isEquipped) {
-                                    // Unequip
-                                    const slot = state.loadout.weapon?.id === item.id ? 'weapon' :
-                                                 state.loadout.armor?.id === item.id ? 'armor' : 'utility';
-                                    dispatch({ type: 'UNEQUIP_ITEM', payload: { slot } });
-                                    toast({ 
-                                      title: "UNEQUIPPED", 
-                                      description: item.name,
-                                      className: "bg-yellow-900 border-yellow-500 text-yellow-100" 
-                                    });
-                                  } else {
-                                    // Equip
-                                    dispatch({ type: 'EQUIP_ITEM', payload: { slot: item.type as 'weapon' | 'armor' | 'utility', item } });
-                                    toast({ 
-                                      title: "EQUIPPED", 
-                                      description: item.name,
-                                      className: "bg-green-900 border-green-500 text-green-100" 
-                                    });
-                                  }
-                                }}
-                              >
-                                {isEquipped ? 'UNEQUIP' : 'EQUIP'}
-                              </Button>
-                            )}
-                          </div>
-                          {item.stats && (
-                            <div className="text-lg font-mono text-muted-foreground space-y-0.5">
-                              {item.stats.damage && <div>DMG: +{item.stats.damage}</div>}
-                              {item.stats.defense && <div>DEF: +{item.stats.defense}</div>}
-                              {item.stats.speed && <div>SPD: +{item.stats.speed}</div>}
-                              {item.stats.vision && <div>VIS: +{item.stats.vision}</div>}
-                              {item.stats.heal && <div>HEAL: +{item.stats.heal}</div>}
-                            </div>
-                          )}
-                          {item.type === 'consumable' && (
-                            <div className="text-lg text-cyan-400 font-mono mt-1">[CONSUMABLE]</div>
-                          )}
-                        </div>
-                      );
-                      
+
                       return (
                         <InventoryItemWithHover
                           key={item.id}
                           item={item}
-                          itemContent={itemContent}
+                          itemContent={
+                            <ItemCard
+                              item={item}
+                              rarityColor={RARITY_COLORS[item.rarity]}
+                              isEquipped={isEquipped}
+                              canEquip={canEquip}
+                              density="compact"
+                              onToggleEquip={toggleEquipItem}
+                            />
+                          }
                           equippedItem={equippedItem}
                           canEquip={canEquip}
                           isMobile={isMobile}
@@ -2418,7 +2064,8 @@ export default function Game() {
                       );
                     })}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
               </DialogContent>
