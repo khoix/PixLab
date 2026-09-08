@@ -146,8 +146,17 @@ test.describe('In-game inventory dialog', () => {
     });
   }
 
-  test('the filter buttons are centred on a phone', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
+  // Checked at four widths on purpose. The first version of this test ran only
+  // at 390x844 and passed while the buttons sat hard right on anything >= 768px
+  // -- including an iPhone in landscape, which is 844px wide.
+  for (const vp of [
+    { width: 375, height: 667 },
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+    { width: 1280, height: 720 },
+  ]) {
+  test(`the filter buttons are centred at ${vp.width}x${vp.height}`, async ({ page }) => {
+    await page.setViewportSize(vp);
     const dialog = await openInGameInventory(page);
 
     // The lobby centres these under 768px via `.lobby-page
@@ -174,14 +183,15 @@ test.describe('In-game inventory dialog', () => {
     });
 
     expect(geometry.count).toBe(5);
-    expect(geometry.stacked, 'the bar should stack on a phone').toBe(true);
+    expect(geometry.stacked, 'the bar should stack the heading above the buttons').toBe(true);
     expect(geometry.groupJustify).toBe('center');
     // Centred means equal slack either side, within a pixel of rounding.
     expect(
       Math.abs(geometry.leftGap - geometry.rightGap),
-      `left gap ${geometry.leftGap}px vs right gap ${geometry.rightGap}px`,
+      `at ${vp.width}px: left gap ${geometry.leftGap}px vs right gap ${geometry.rightGap}px`,
     ).toBeLessThanOrEqual(2);
   });
+  }
 
   test('the dialog can filter by item type', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

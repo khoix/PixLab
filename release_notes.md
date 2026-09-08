@@ -1,5 +1,42 @@
 # Release Notes
 
+## Inventory filter bar — centred at every width
+
+**Branch:** `claude/filter-center-fix`
+
+Follow-up to the previous entry, which did not finish the job.
+
+That change centred the buttons with a `md:` breakpoint, reverting to
+title-left / buttons-right above 768px to mirror what the lobby gets from
+`.lobby-page .inventory-header-mobile` in `mobile.css`. That was wrong twice
+over. The ask was simply "centred". And **768px is below an iPhone's landscape
+width of 844px**, so rotating a phone pushed the buttons to the right edge —
+the breakpoint made the bug reachable on the very device it was meant to fix.
+
+Measured on `main` before this change:
+
+| Surface | 393px portrait | ≥768px |
+|---|---|---|
+| Lobby | 66 / 66 — centred | right-aligned |
+| Vendor | 58 / 58 — centred | right-aligned |
+| In-run dialog | 74 / 74 — centred | **202 / 0 — hard right** |
+
+The breakpoint is gone: heading above, buttons centred, every width, every
+surface.
+
+### The test gap
+The original assertion ran at **one** viewport, 390×844, and passed while the
+buttons sat hard right on anything ≥768px. It now runs at 375×667, 390×844,
+844×390 (landscape) and 1280×720, on both projects — 8/8.
+
+### Still open
+In portrait at 393px all three surfaces measured centred *before* this change as
+well, so the reported symptom is not reproduced in portrait. If it persists
+there, it is either a build predating the merge of #70 or a different element,
+and a screenshot would settle it.
+
+---
+
 ## Inventory filter bar — centred on every surface
 
 **Branch:** `claude/inventory-filter-center`
