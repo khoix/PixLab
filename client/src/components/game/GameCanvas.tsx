@@ -98,6 +98,13 @@ import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/rende
 import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
 import { buildDrawFrameSnapshot, type DrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
 import {
+  clientToCanvas,
+  createPerspectiveCamera,
+  screenToTile as projectedScreenToTile,
+  type PerspectiveCamera,
+} from '../../lib/game/renderer/projection';
+import { drawProjectionDiagnostic, isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
+import {
   trackStableViewport,
   type StableViewport,
 } from '../../lib/game/renderer/cameraAnchor';
@@ -251,6 +258,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // measured against it so a phone's URL bar sliding in and out — which shrinks
   // the `100dvh` run root — does not shift the world.
   const stableViewportRef = useRef<StableViewport | null>(null);
+  // Opt-in until the world/art passes are converted. Read once per mount.
+  const [perspectiveDiagnostic] = useState(isProjectionDiagnosticRequested);
+  // Picking must use the camera that produced the visible frame, including its
+  // interpolated focus, rather than a newer simulation position.
+  const renderedCameraRef = useRef<{
+    perspective: PerspectiveCamera;
+    legacyOffset: Position;
+  } | null>(null);
   const moveStartPosRef = useRef<Position>({ x: 0, y: 0 }); // Position when movement started
   const moveProgressRef = useRef<number>(1); // 0 = start, 1 = complete
   const lastTimeRef = useRef<number>(0);
@@ -589,6 +604,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       loadoutRef.current
     );
     levelRef.current = level;
+    renderedCameraRef.current = null;
     tileLayerCache.invalidate();
     fogLayerCache.invalidate();
     mobSpriteCache.setDpr(canvasSizeRef.current.dpr);
@@ -785,6 +801,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         dpr: dims.dpr,
       };
       applyCanvasDimensions(canvas, dims);
+      renderedCameraRef.current = null;
+      frameSnapshotRef.current = null;
       fogLayerCache.invalidate();
       tileLayerCache.invalidate();
       // Sprites carry a DPR-sized backing store, so they go with the rest.
@@ -916,14 +934,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas || !levelRef.current) return null;
     const rect = canvas.getBoundingClientRect();
-    const frame = getFrameSnapshot();
-    // Inverse of the draw transform: world px = screen px + camera offset. All
-    // canvas drawing is in CSS pixels, so DPR cancels out.
-    const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
-    const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
+    const rendered = renderedCameraRef.current;
+    if (!rendered) return null;
+    const screen = clientToCanvas({ x: clientX, y: clientY }, rect, rendered.perspective);
+    if (!screen) return null;
+    if (perspectiveDiagnostic) return projectedScreenToTile(rendered.perspective, screen);
+    const { x: camX, y: camY } = rendered.legacyOffset;
     return {
-      x: Math.floor((clientX - rect.left + camX) / TILE_SIZE),
-      y: Math.floor((clientY - rect.top + camY) / TILE_SIZE),
+      x: Math.floor((screen.x + camX) / TILE_SIZE),
+      y: Math.floor((screen.y + camY) / TILE_SIZE),
     };
   };
 
@@ -2977,6 +2996,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // pinned to the screen anchor (centred horizontally; lifted above centre on mobile).
     const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
     const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
+
+    const perspective = createPerspectiveCamera({
+      player: visualPosRef.current,
+      width: logicalWidth,
+      height: logicalHeight,
+      stableHeight: stableViewportRef.current?.height,
+      isMobile: frame.isMobileViewport,
+      tileSize: TILE_SIZE,
+    });
+    renderedCameraRef.current = { perspective, legacyOffset: { x: camX, y: camY } };
+    if (perspectiveDiagnostic) {
+      drawProjectionDiagnostic(ctx, perspective, levelRef.current);
+      if (isGamePaused()) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+      }
+      return;
+    }
 
     ctx.save();
     ctx.translate(-camX, -camY);
