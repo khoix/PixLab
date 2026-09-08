@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { initPerfMonitoring } from "./lib/game/perfMonitor";
+import { initPerfMonitoring, perfMonitor } from "./lib/game/perfMonitor";
 import { initGameInput } from "./lib/game/gameInput";
 import { initRenderQuality } from "./lib/game/renderQuality";
 import { initCanvasSizing } from "./lib/game/renderer/canvasSizing";
@@ -8,6 +8,7 @@ import { initFogLayerCache } from "./lib/game/renderer/fogLayer";
 import { initMobSpriteApi } from "./lib/game/renderer/mobSpriteCache";
 import { initWallEscapeApi } from "./lib/game/ai/wallEscape";
 import { initFogGradientApi } from "./lib/game/renderer/fogGradient";
+import { initViewportProbe } from "./lib/game/viewportProbe";
 import { fogLayerCache } from "./lib/game/renderer/cacheInstances";
 import { initModifiersApi } from "./lib/game/modifiers";
 import { initSectorTimerApi } from "./lib/game/sectorTimer";
@@ -46,6 +47,9 @@ initFogLayerCache(fogLayerCache);
 initMobSpriteApi();
 initWallEscapeApi();
 initFogGradientApi();
+// Records run-screen height over time. Inert unless perf mode is on; the API is
+// always installed so a trace can be started by hand from a device.
+initViewportProbe(perfMonitor.isActive());
 initModifiersApi();
 initSectorTimerApi();
 initGameLoopBatchApi();

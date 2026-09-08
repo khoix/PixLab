@@ -1,0 +1,138 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * M5.7 step 1 — measurement, not a fix.
+ *
+ * The report: during a long run the playfield creeps upward, leaving a growing
+ * black band at the bottom; returning to the main menu clears it.
+ *
+ * What the screenshots establish on their own: the HP row at the top stays
+ * pinned, and the mobile SECTOR badge — a DOM element at `absolute
+ * bottom-[100px]` — rises with the band. Across three captures on one
+ * 1170×2532 device the bottom of all content moved 2324 → 2081 → 1940 px.
+ *
+ * A canvas transform cannot move a DOM badge, and a page scroll would carry the
+ * top row away too, so the `.run-screen` box is getting shorter. That is as far
+ * as static reading goes: nothing in JS writes that height, it comes from a CSS
+ * `calc()`. This probe records the numbers so the mechanism can be identified
+ * from a device rather than guessed at.
+ */
+
+test.describe('M5.7 — viewport probe', () => {
+  test('records the run-screen box and the values that decide it', async ({ page }) => {
+    await page.goto('/?perf=1');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+    await page.waitForTimeout(300);
+
+    const sample = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.sample());
+    expect(sample).not.toBeNull();
+    console.log(`[m5.7] sample: ${JSON.stringify(sample)}`);
+
+    // The box the whole run is positioned against must be found and measured —
+    // if this ever reads -1 the probe is looking for the wrong element and every
+    // later reading is meaningless.
+    expect(sample!.runScreenHeight).toBeGreaterThan(0);
+    expect(sample!.canvasHeight).toBeGreaterThan(0);
+    expect(sample!.innerHeight).toBeGreaterThan(0);
+    expect(sample!.clientHeight).toBeGreaterThan(0);
+
+    // visualViewport is the one thing nothing else in the app reads, and the
+    // prime suspect on iOS. It has to come through as a real number.
+    expect(sample!.vvHeight).toBeGreaterThan(0);
+    expect(sample!.vvScale).toBeGreaterThan(0);
+  });
+
+  test('the probe is inert until started, and accumulates once it is', async ({ page }) => {
+    // No ?perf=1: the probe must not be running.
+    await page.goto('/');
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(false);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSamples().length)).toBe(0);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSummary())).toBeNull();
+
+    await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.start(200));
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(true);
+    await page.waitForTimeout(900);
+
+    const count = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSamples().length);
+    expect(count).toBeGreaterThan(2);
+
+    await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.stop());
+    const afterStop = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSamples().length);
+    await page.waitForTimeout(600);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSamples().length)).toBe(afterStop);
+  });
+
+  test('?perf=1 starts it automatically and the drift reads zero on a still viewport', async ({ page }) => {
+    await page.goto('/?perf=1');
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(true);
+
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.reset());
+    await page.waitForTimeout(3200);
+
+    const summary = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSummary());
+    expect(summary).not.toBeNull();
+    console.log(`[m5.7] summary: ${JSON.stringify(summary)}`);
+
+    expect(summary!.samples).toBeGreaterThan(1);
+    // A desktop browser that is not being touched must not drift at all. This is
+    // the control: if this ever reports movement, the creep is reproducible here
+    // and no device trace is needed.
+    expect(Math.abs(summary!.driftPx)).toBeLessThanOrEqual(1);
+    expect(summary!.maxRunScreenHeight - summary!.minRunScreenHeight).toBeLessThanOrEqual(1);
+  });
+
+  test('a resize is captured, so a real change is never missed between ticks', async ({ page }) => {
+    await page.goto('/?perf=1');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+    // `reset()` empties the buffer and the interval is 1 s, so take one
+    // explicitly rather than racing the next tick for a baseline.
+    await page.evaluate(() => {
+      window.__PIXLAB_VIEWPORT__!.reset();
+      window.__PIXLAB_VIEWPORT__!.sample();
+    });
+
+    const before = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSummary());
+    expect(before).not.toBeNull();
+    await page.setViewportSize({ width: 500, height: 500 });
+    await page.waitForTimeout(500);
+    const after = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSummary());
+    const reasons = await page.evaluate(() =>
+      window.__PIXLAB_VIEWPORT__!.getSamples().map((s) => s.reason),
+    );
+
+    console.log(`[m5.7] resize: ${before!.lastRunScreenHeight}px -> ${after!.lastRunScreenHeight}px`);
+    expect(reasons).toContain('resize');
+    expect(after!.lastRunScreenHeight).toBeLessThan(before!.lastRunScreenHeight);
+    // Shrinking the window is a real drift, and the probe must report it as one
+    // — that is the signal we are asking a device to reproduce.
+    expect(after!.driftPx).toBeLessThan(0);
+  });
+
+  test('the overlay shows the drift on screen, since the device is a phone', async ({ page }) => {
+    await page.goto('/?perf=1');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+    await page.waitForTimeout(1500);
+
+    const overlay = page.getByTestId('perf-overlay');
+    await expect(overlay).toBeVisible();
+    const block = page.getByTestId('perf-overlay-viewport');
+    await expect(block).toBeVisible();
+    await expect(page.getByTestId('perf-overlay-drift')).toContainText('Drift:');
+    // There is no console on a phone; the number has to be readable on screen.
+    await expect(block).toContainText('Run screen:');
+  });
+});
