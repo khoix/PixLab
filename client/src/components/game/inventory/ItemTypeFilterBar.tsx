@@ -58,21 +58,26 @@ export const ItemTypeFilterBar: React.FC<ItemTypeFilterBarProps> = ({
 }) => (
   <div
     className={cn(
-      // Stacked with the buttons centred on phones, title-left/buttons-right on
-      // desktop — the same shape the lobby gets from `.lobby-page
-      // .inventory-header-mobile` in mobile.css, at the same 768px breakpoint.
+      // Heading above, buttons centred — at every width, on every surface.
       //
-      // It has to be expressed here rather than there: the in-run dialog is
-      // portaled to document.body and the vendor is `.vendor-station-page`, so
-      // neither is inside `.lobby-page` and neither ever saw those rules.
-      'flex flex-col items-center gap-3 mb-2 md:flex-row md:items-center md:justify-between md:gap-2',
+      // This first shipped with `md:` variants that reverted to
+      // title-left/buttons-right above 768px, mirroring what the lobby gets from
+      // `.lobby-page .inventory-header-mobile` in mobile.css. That was the wrong
+      // call twice over: the ask was simply "centred", and 768px is *below* an
+      // iPhone's landscape width, so the buttons jumped to the right edge on a
+      // phone the moment it was rotated.
+      //
+      // It has to be expressed here rather than in mobile.css: the in-run dialog
+      // is portaled to document.body and the vendor is `.vendor-station-page`,
+      // so neither is inside `.lobby-page` and neither ever saw those rules.
+      'flex flex-col items-center gap-3 mb-2',
       'inventory-header-mobile',
       className,
     )}
     data-testid="item-type-filter-bar"
   >
     {heading}
-    <div className="flex w-full items-center justify-center gap-1 md:w-auto md:justify-end inventory-buttons-mobile">
+    <div className="flex w-full items-center justify-center gap-1 inventory-buttons-mobile">
       {OPTIONS.map(({ value: option, title, Icon }) => (
         <button
           key={option}
