@@ -9,3 +9,7 @@ Thumbs.db
 test-results/
 playwright-report/
 playwright/.cache/
+# macOS metadata
+.AppleDouble/
+._*
+.DS_Store
