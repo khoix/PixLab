@@ -7,7 +7,7 @@ export interface WorldOrderEntry extends GroundPoint { orderId: number }
 
 /** Ground-depth painter ordering. At equal depth, lateral blocks farther from
  * the eye draw first. The stable ID resolves exact ties without frame jitter.
- * Execution 3 can submit its own drawables into the same queue as the walls.
+ * Upright entity bodies and walls share this queue; overlays are screen-facing.
  */
 export function compareWorldOrder(camera: PerspectiveCamera, a: WorldOrderEntry, b: WorldOrderEntry): number {
   return worldDepth(camera, b) - worldDepth(camera, a)
@@ -17,6 +17,11 @@ export function compareWorldOrder(camera: PerspectiveCamera, a: WorldOrderEntry,
 
 export interface WorldDrawable extends WorldOrderEntry {
   draw(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void;
+  /** Floor-plane shadows / directional cues, before any raised geometry. */
+  drawGround?(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void;
+  drawOverlay?(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void;
+  /** Player-only navigation hint, clipped to wall faces painted after its body. */
+  drawOccluded?(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void;
 }
 export interface WallRecord extends WorldOrderEntry { col: number; row: number }
 

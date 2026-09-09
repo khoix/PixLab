@@ -33,6 +33,7 @@ export class VoxelWorldRenderer {
   private polygon = new ProjectedPolygon();
   private queue: (WallRecord | WorldDrawable)[] = [];
   private camera!: PerspectiveCamera;
+  private occlusionMask: Path2D | null = null;
   private compare = (a: WallRecord | WorldDrawable, b: WallRecord | WorldDrawable) => compareWorldOrder(this.camera, a, b);
   private paletteKey = '';
   private colors = { floor: '', alternate: '', top: '', front: '', side: '', back: '' };
@@ -85,6 +86,22 @@ export class VoxelWorldRenderer {
     this.polygon.path(ctx);
     ctx.fillStyle = color;
     ctx.fill();
+    if (this.occlusionMask) {
+      const p = this.polygon.points, count = this.polygon.count;
+      // All subpaths need the same winding so overlapping top/side faces
+      // form a union instead of cancelling holes in the navigation hint mask.
+      let area = 0;
+      for (let i = 0; i < count; i++) {
+        const next = (i + 1) % count;
+        area += p[i * 2] * p[next * 2 + 1] - p[next * 2] * p[i * 2 + 1];
+      }
+      this.occlusionMask.moveTo(p[0], p[1]);
+      for (let i = 1; i < count; i++) {
+        const index = area < 0 ? count - i : i;
+        this.occlusionMask.lineTo(p[index * 2], p[index * 2 + 1]);
+      }
+      this.occlusionMask.closePath();
+    }
     // Same-color subpixel seam coverage, not a contrasting block outline.
     if (seal) { ctx.strokeStyle = color; ctx.lineWidth = 0.65; ctx.stroke(); }
     return true;
@@ -103,6 +120,7 @@ export class VoxelWorldRenderer {
   draw(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera, level: Level,
     theme: ColorPalette, quality: EffectiveRenderQuality, drawables: readonly WorldDrawable[] = []): void {
     this.prepare(camera, level, theme);
+    this.occlusionMask = null;
     this.stats.quality = quality;
     const { minX, minY, maxX, maxY } = this.bounds;
     if (minX >= maxX || minY >= maxY) return;
@@ -143,14 +161,23 @@ export class VoxelWorldRenderer {
         }
       }
       for (const drawable of drawables) {
-        if (drawable.x >= minX - 1 && drawable.x <= maxX + 1 && drawable.y >= minY - 1 && drawable.y <= maxY + 1) {
+        if (drawable.x >= minX - 2 && drawable.x <= maxX + 2 && drawable.y >= minY - 2 && drawable.y <= maxY + 2) {
           this.queue.push(drawable); this.stats.drawables++;
+          drawable.drawGround?.(ctx, camera);
         }
       }
       this.queue.sort(this.compare);
       const eyeX = camera.focus.x, eyeY = camera.focus.y + camera.distance * camera.cosPitch;
+      let playerHint: WorldDrawable | undefined;
       for (const entry of this.queue) {
-        if ('draw' in entry) { entry.draw(ctx, camera); continue; }
+        if ('draw' in entry) {
+          entry.draw(ctx, camera);
+          if (entry.drawOccluded) {
+            playerHint = entry;
+            this.occlusionMask = new Path2D();
+          }
+          continue;
+        }
         const { col: x, row: y } = entry;
         const a = y * stride + x, b = a + 1, d = a + stride, c = d + 1;
         const mask = this.topology.exposed[y * level.width + x];
@@ -163,6 +190,13 @@ export class VoxelWorldRenderer {
         if (faces > 0) this.stats.walls++;
         this.stats.faces += faces;
       }
-    } finally { ctx.restore(); }
+      if (playerHint && this.occlusionMask) {
+        ctx.save();
+        ctx.clip(this.occlusionMask);
+        playerHint.drawOccluded!(ctx, camera);
+        ctx.restore();
+      }
+      for (const entry of this.queue) if ('draw' in entry) entry.drawOverlay?.(ctx, camera);
+    } finally { this.occlusionMask = null; ctx.restore(); }
   }
 }

@@ -58,6 +58,7 @@ import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../.
 import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
+import { PerspectiveEntities } from '../../lib/game/renderer/perspectiveEntities';
 import { mobSpriteCache } from '../../lib/game/renderer/mobSpriteCache';
 import { needsThreatMarker, markerStartDistance } from '../../lib/game/renderer/fogGradient';
 import {
@@ -262,6 +263,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Opt-in until the world/art passes are converted. Read once per mount.
   const [perspectiveDiagnostic] = useState(isProjectionDiagnosticRequested);
   const [voxelWorld] = useState(() => new VoxelWorldRenderer());
+  const [perspectiveEntities] = useState(() => new PerspectiveEntities());
   const [perspectiveMarkers] = useState(() => new PerspectiveMarkers());
   // Picking must use the camera that produced the visible frame, including its
   // interpolated focus, rather than a newer simulation position.
@@ -3011,8 +3013,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     });
     renderedCameraRef.current = { perspective, legacyOffset: { x: camX, y: camY } };
     if (perspectiveDiagnostic) {
-      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
-        perspectiveMarkers.prepare(levelRef.current, perspective));
+      const drawNow = getGameNow();
+      const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
+        drawNow, !!activeScrollEffectsRef.current.phasing?.active,
+        perspectiveMarkers.prepare(levelRef.current));
+      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality, entities);
+      perspectiveEntities.drawDamageNumbers(ctx, perspective, levelRef.current, drawNow);
+      if (perfMonitor.isActive()) perfMonitor.recordDrawnEntities(perspectiveEntities.drawnEntities);
       if (isGamePaused()) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.fillRect(0, 0, logicalWidth, logicalHeight);

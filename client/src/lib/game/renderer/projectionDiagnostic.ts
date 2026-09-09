@@ -12,9 +12,7 @@ export function isProjectionDiagnosticRequested(): boolean {
   return current === null ? initialRequest : current === '1';
 }
 
-/** Temporary Execution 1 markers, now submitted to the wall depth queue.
- * Replace this adapter with entity artwork in Execution 3, not the world pass.
- */
+/** Item/portal/stair placeholders pending the world-effects pass. */
 class GroundMarker implements WorldDrawable {
   x = 0;
   y = 0;
@@ -44,16 +42,14 @@ export class PerspectiveMarkers {
     this.active.push(marker);
   }
 
-  prepare(level: Level, camera: PerspectiveCamera): readonly WorldDrawable[] {
+  prepare(level: Level): readonly WorldDrawable[] {
     this.active.length = 0;
     const baseId = level.width * level.height;
-    for (const e of level.entities) this.add(e.pos.x + 0.5, e.pos.y + 0.5, '#ff627c', 0.2, baseId);
     for (const i of level.items) this.add(i.pos.x + 0.5, i.pos.y + 0.5, '#ffd166', 0.12, baseId);
     for (const p of level.portals) this.add(p.pos.x + 0.5, p.pos.y + 0.5, '#b594ff', 0.25, baseId);
     if (level.tiles[level.exitPos.y]?.[level.exitPos.x] === 'exit') {
       this.add(level.exitPos.x + 0.5, level.exitPos.y + 0.5, '#42d69b', 0.2, baseId);
     }
-    this.add(camera.focus.x, camera.focus.y, '#05d9e8', 0.25, baseId);
     return this.active;
   }
 }

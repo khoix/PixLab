@@ -1,89 +1,105 @@
-# 3D gameplay view — Execution 2 complete
+# 3D gameplay view — Execution 3 complete
 
-Branch: `astra/3d-conversion`. Execution 2 builds on `aff920b`; main was not merged.
-Open the title URL with `?perspective=1`, then start a run. This now renders the
-voxel world with temporary entity markers. Default top-down remains available
-until Execution 3 completes the entity/effect conversion. No PR yet.
+Branch: `astra/3d-conversion`. Built on Execution 2 (`6383960`); no main merge or PR.
+Open the title URL with `?perspective=1`, then start a run. Perspective remains
+opt-in while Execution 4 completes projectiles/fog/world effects. Default top-down
+still works. Simulation, AI, balance, movement rules, progression and HUD are unchanged.
 
-## Camera contract — unchanged
+## Camera / world contract — reused
 
-`projection.ts`: world units are tiles, integer coordinates are tile corners;
-`tileCenter(entity.pos)` gives ground centers. Screen units are CSS pixels, not
-backing pixels. Camera follows the interpolated player, with zero yaw and 60°
-downward pitch. Rows stay horizontal; depth converges upward toward the center.
+- `projection.ts`: tile units, integer corners, `tileCenter(pos)` for ground feet.
+  CSS screen pixels; +X right, +Y toward camera. Zero yaw, 60° downward pitch.
+- `PERSPECTIVE_CAMERA`: focal length 12 × TILE_SIZE (384 px), distance 8 tiles,
+  near/far 2/48, anchor X .5, desktop/mobile Y .5/.43. Stable viewport height and
+  48 px bottom margin remain. Player/camera use the existing interpolated position.
+- `voxelWorld.ts`: continuous ground undercoat, projected floor quads, wall contact
+  shading, then raised geometry. `WALL_HEIGHT = 1`; exposed sides and tops retain
+  theme colors. Shared lattice vertices/clipping and static topology cache remain.
+- `compareWorldOrder` still sorts descending ground depth, farther lateral distance,
+  then stable ID. No new camera equations, world bitmap, or 3D engine.
 
-`PERSPECTIVE_CAMERA`: focal length 12 × TILE_SIZE (384 px), distance 8 tiles,
-near/far depth clips 2/48 tiles, anchor X 0.5, desktop/mobile Y 0.5/0.43.
-Stable-height anchoring, the 48 px bottom margin, and inverse ground picking remain.
-Elevation support extends the existing camera transform; no camera redesign.
+## Entity architecture
 
-## World rendering / ordering
+- `entityBillboard.ts` centralizes existing subtype sizes/colors, semantic art bounds,
+  billboard layout, and projected world-direction vectors. Bottom ink touches the
+  projected tile-center footpoint; glow does not affect anchoring. Bodies stay
+  screen-upright and scale uniformly with ground `perspectiveScale`. Health bars
+  follow the art top with a CSS-pixel gap and bounded width for readability.
+- `perspectiveEntities.ts` pools records by entity ID and reuses its queue. It reads
+  fractional mob positions directly (including moth movement); player feet use the
+  interpolated camera focus. Existing grid-stepped mobs retain their movement timing.
+  Static artwork uses the existing cropped/DPR-aware mob sprite cache; cache-disabled
+  or allocation-failure paths still draw directly. No per-frame static-path rebuilds.
+- `GameCanvas` prepares these drawables and submits them with the remaining item/
+  portal/exit markers. Hit flashes, damage numbers, charge/ranged tells, boss phase
+  indicators and player phasing are rendered using the game clock. Pause and resize
+  continue through the existing snapshot/anchor system.
 
-- `voxelWorld.ts` owns the Canvas pass: projected ground undercoat, individual
-  floor quads, ground contact shading, then sorted walls/drawables. The undercoat
-  and same-color subpixel face sealing prevent antialiasing cracks.
-- `worldGeometry.ts` caches tile kinds, exposed-face masks, and reusable world
-  records. Walls are `WALL_HEIGHT = 1` tile high. Internal adjoining faces are
-  omitted; eye-facing sides and raised tops use the existing theme with restrained
-  value differences. No full-screen/world bitmap cache or 3D engine.
-- `projectedPolygon.ts` clips faces against near/far planes in camera space before
-  dividing by depth. Ground/top lattice vertices and clipping buffers are reused.
-- `compareWorldOrder` paints descending ground camera depth, then farther lateral
-  distance, then stable ID. All floors/shadows precede this queue. Walls and
-  `WorldDrawable` entries share it, so nearer walls occlude submitted objects.
-- `GameCanvas` constructs the existing camera and calls `voxelWorld.draw(...)`.
-  `projectionDiagnostic.ts` now only selects the view and pools the temporary
-  player/enemy/item/portal/exit markers submitted into the world queue.
+## Shadows / ordering / occlusion
 
-## Cache / performance
+`WorldDrawable` now has optional `drawGround`, `drawOverlay`, and player-only
+`drawOccluded` hooks. Ground hooks run after floors and wall contact shading;
+bodies run in the shared wall depth queue; health bars run afterward.
 
-View culling unions ground and raised-top footprints, retaining walls with
-offscreen bases. Only visible lattice vertices are transformed. Topology rebuilds
-on level identity/dimension changes; visible tiles plus a one-tile border detect
-in-place wall/exit edits and update neighboring masks without a full rebuild.
-Moving/resizing does not rebuild topology. The old flat tile/fog/sprite caches and
-render-quality gates remain intact. Low quality uses one narrow contact band;
-medium/high add a faint outer band. No expensive shadowBlur in the voxel pass.
+Contact shadows project a reusable 16-point world ellipse around each foot.
+Every tier keeps a small unblurred contact patch; high adds a faint outer band for
+all entities, medium only for player/bosses, low uses one band. Existing glow gates
+and sprite quality keys remain. Ground cues project their world endpoints, so
+north/south converge correctly off-center and east/west remain horizontal.
 
-`window.__PIXLAB_LEVEL__.getWorldRenderStats()` exposes culling/cache/face counts.
-In the final headless Chromium 152 smoke run:
+Nearer walls naturally cover bodies and their shadows. The player uses the same
+order; a faint outline of hidden body edges is clipped to wall faces painted later.
+The mask uses consistent winding to union overlapping faces. It is a navigation
+hint, not an opaque player drawn above walls. No mob cutaways or simulation changes.
+Entity culling includes sprite/overlay margins; ground/top world culling and
+in-place topology updates remain. Frame buffers and entity records are reused.
 
-| View / level | Quality | Avg draw | Visible walls / faces |
-| --- | --- | --- | --- |
-| 1280×720 maze / 1 | high | 4.04 ms | 260 / 455 |
-| 393×727 maze / 5 | low | 1.61 ms | 114 / 190 |
-| 1280×720 arena / 8 | high | 2.97 ms | 99 / 171 |
-| 844×390 arena / 16 | medium | 1.95 ms | 26 / 39 |
+## Targeted art changes
 
-These are desktop headless timings at those viewports, not physical phone
-benchmarks; startup peaks reached 39 ms. Static topology stayed cached while
-following. Raw canvas captures were visually inspected separately from the
-unchanged CRT overlay; corridors, faces, perspective, and overlap were coherent.
+- Phase retains its translucent wraith/eyes; its long tail defines its foot offset.
+- Charger remains an upright bull; a small projected facing cue and ground charge
+  arrow carry direction instead of rotating the face.
+- Turret billboard cache omits the old fixed-left barrel; its live barrel aims in
+  projected space. Turning does not build another sprite. Legacy art is unchanged.
+- Sniper keeps its diamond/reticle and gains the same projected directional cue.
+- Glitchmoth keeps its small dark body/wings with a faint wing rim for contrast.
+- Zeus/Hades/Ares retain their existing artwork/glows, including Ares charge state;
+  boss tells, grounding, health bars and wall sorting share the entity path.
 
 ## Validation / changed files
 
-- `npm run test:projection`: 10 passed. `npm run test:world`: 7 passed.
-- Playwright: 8 passed across `projection-camera.spec.ts`, `voxel-world.spec.ts`,
-  and `m6-2-pause-camera.spec.ts` using `chromium-desktop` (explicit mobile sizes).
-  Covers raster cracks at DPR 1/2 during motion, actual occlusion/reveal, generated
-  levels 1/5/8/16, quality tiers, cache reuse, picking, pause, and resizing.
-  Local runner used a scratch-only Chromium executable / 127.0.0.1 Vite override.
-- `npm run check`: 15 pre-existing diagnostics; normalized output exactly matches
-  Execution 1. No new errors. `git diff --check`: passed.
-- Changed: `GameCanvas.tsx`, `renderer/{projection,projectionDiagnostic}.ts`,
-  new `renderer/{worldGeometry,projectedPolygon,voxelWorld,worldGeometry.test}.ts`,
-  `testHooks.ts`, `package.json`, both projection/world e2e specs, this handoff.
+- `npm run test:projection`: 10 passed; `npm run test:world`: 7 passed;
+  `npm run test:entities`: 5 passed.
+- Playwright: 14 passed in `perspective-entities`, `projection-camera`, `voxel-world`,
+  `m6-2-pause-camera`, and `m7-1-mob-sprites` specs (`chromium-desktop`, explicit mobile
+  sizes). Real Canvas fixtures cover nine normal looks/all three bosses, four-way
+  turret aiming/cache reuse, shadows at all tiers, hit/health feedback, phasing,
+  wall hide/reveal and the clipped player hint. Live runs exercise actual movement
+  on desktop/mobile; existing tests cover generated levels 1/5/8/16, interpolation
+  math, picking, pause/resize, DPR 1/2 floor cracks and legacy sprite parity.
+- Raw canvas captures visually inspected: subtype gallery, low/high quality phasing,
+  hit flash, occluded/revealed entities, player partial occlusion and live mobile maze.
+- 60 visible billboard stress fixture: 3.87 ms low / 4.47 ms high average full draw
+  over 30 moving-camera frames, zero additional sprite builds after warm-up.
+  Headless Chromium 152 measurements, not physical-device benchmarks.
+- `npm run check`: same 15 pre-existing diagnostics as Execution 2 after normalizing
+  line numbers, no new errors. `git diff --check`: passed.
+- Changed: `GameCanvas.tsx`; renderer `entityBillboard.ts`, `entityBillboard.test.ts`,
+  `perspectiveEntities.ts`, `mobArt.ts`, `mobSpriteCache.ts`, `projectionDiagnostic.ts`,
+  `worldGeometry.ts`, `voxelWorld.ts`; `e2e/perspective-entities.spec.ts`; `package.json`;
+  this handoff.
 
-## Execution 3 starting point
+## Execution 4 starting point
 
-Read `WorldDrawable`, `compareWorldOrder`, and the `voxelWorld.draw` call in
-`GameCanvas`; replace `PerspectiveMarkers` with real entity drawables, reusing
-this camera and world pass. Sort IDs must remain stable; drawable callbacks must
-preserve Canvas state. Ground points use tile centers; height is visual only.
+Start at the perspective branch in `GameCanvas.draw`, the `WorldDrawable` hooks,
+and `PerspectiveEntities.prepare`. Keep the existing camera, floors, walls,
+billboards, shadow tiers and depth queue. Add remaining visuals through this pass:
+projectiles, fog/senses, particles/trails/afterimages, real items/stairs/portals,
+lightswitches and other world effects. Damage numbers are already projected.
 
-Remaining: player/mob artwork and height-aware occlusion, shadows for entities,
-projectiles, particles, fog/senses, afterimages, damage labels, and real stair/
-portal visuals. Markers may be completely hidden by walls; no mob-specific
-cutaway or silhouette treatment yet. Picking still intersects the ground plane.
-Simulation, generation, collision, combat, progression, item logic, and HUD/menu
-code remain unchanged. Do not restart world rendering or camera design.
+Those effects are intentionally still absent or represented by markers in the
+opt-in view; the legacy render path remains their reference. Ground picking still
+intersects the floor, not wall faces. Screen-facing health bars can show above
+walls. Bodies use ground-depth painter ordering rather than a per-pixel 3D depth
+buffer. Validate the complete effects pass before deciding to make perspective
+the default. Do not restart projection/world/entity design.
