@@ -58,6 +58,7 @@ import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../.
 import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
+import { PerspectiveLandmarks } from '../../lib/game/renderer/perspectiveLandmarks';
 import { PerspectiveItems } from '../../lib/game/renderer/perspectiveItems';
 import { PerspectiveProjectiles } from '../../lib/game/renderer/perspectiveProjectiles';
 import { PerspectiveEntities } from '../../lib/game/renderer/perspectiveEntities';
@@ -106,7 +107,7 @@ import {
   screenToTile as projectedScreenToTile,
   type PerspectiveCamera,
 } from '../../lib/game/renderer/projection';
-import { PerspectiveMarkers, isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
+import { isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
 import { VoxelWorldRenderer } from '../../lib/game/renderer/voxelWorld';
 import {
   trackStableViewport,
@@ -268,7 +269,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const [perspectiveItems] = useState(() => new PerspectiveItems());
   const [perspectiveProjectiles] = useState(() => new PerspectiveProjectiles());
   const [perspectiveEntities] = useState(() => new PerspectiveEntities());
-  const [perspectiveMarkers] = useState(() => new PerspectiveMarkers());
+  const [perspectiveLandmarks] = useState(() => new PerspectiveLandmarks());
   // Picking must use the camera that produced the visible frame, including its
   // interpolated focus, rather than a newer simulation position.
   const renderedCameraRef = useRef<{
@@ -3020,7 +3021,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const drawNow = getGameNow();
       const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
         drawNow, !!activeScrollEffectsRef.current.phasing?.active,
-        perspectiveMarkers.prepare(levelRef.current));
+        perspectiveLandmarks.prepare(levelRef.current, theme.floor, stairsImageCache.img, drawNow));
       voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
         perspectiveProjectiles.prepare(levelRef.current.projectiles, effectiveQuality,
           perspectiveItems.prepare(levelRef.current.items, entities)));

@@ -1,9 +1,40 @@
 # 3D gameplay view — Execution 4 partial checkpoint
 
-Branch: `astra/3d-conversion`. This checkpoint builds on Execution 3 (`67f6e6c`); no main merge or PR.
+Branch: `astra/3d-conversion`. This checkpoint builds on `602d64f` (projectiles/items); no main merge or PR.
 Open the title URL with `?perspective=1`, then start a run. Perspective remains
 opt-in while Execution 4 completes projectiles/fog/world effects. Default top-down
 still works. Simulation, AI, balance, movement rules, progression and HUD are unchanged.
+
+## Latest checkpoint — portals/stairs (Execution 4 still partial)
+
+Budget convention: Execution-Time-Budget.md v5, 60% × 20 = 12 minutes,
+fixed four-minute save buffer. Run start 18:27:41 UTC; cutoff 18:35:41;
+hard stop 18:39:41. No Execution 5 work has begun.
+
+- New `groundImage.ts` projects a reusable 5×5 vertex lattice and maps cached
+  artwork through 32 affine triangles onto the floor. Camera equations remain
+  in `projection.ts`. Tessellation approximates perspective within each patch.
+- New `perspectiveLandmarks.ts` submits portal/stair decals through `drawGround`,
+  before all walls/entities. Portals reuse cached purple glow/ring artwork with a
+  game-clock opacity pulse. Stairs reuse the existing PNG, theme tint, and rotation
+  when the tile above is a wall. A loading fallback remains; late image arrival
+  rebuilds the two cached stair variants. Every exit tile is handled, including
+  boss-created exits. No teleport, collision, pickup or selection rules changed.
+- `GameCanvas` replaces the final markers with these landmarks;
+  `projectionDiagnostic.ts` now only controls opt-in view selection.
+- Validation: `npm run check` matches the 15 pre-existing diagnostics; 17 existing
+  projection/world unit tests passed. Desktop/mobile `projection-camera.spec.ts`:
+  2 passed, including live rendering, inverse picking, pause and resizing.
+  Initial five-test browser attempt failed before test bodies due to the scratch
+  Chromium launch environment; restoring the executable allowed the focused rerun.
+  `git diff --check` passed. No landmark visual-quality approval or full portal/exit
+  interaction test is claimed. No new performance measurements.
+- Known pending checks: texture seams at high DPR/near distances, floor attachment,
+  portal tap and stair completion, decorative portal particles. Exit discovery
+  currently scans the level tile array per prepare; assess only if profiling shows
+  a material cost. All other unconverted effects/fog remain pending.
+- Changed: `GameCanvas.tsx`, `projectionDiagnostic.ts`, new `groundImage.ts`,
+  `perspectiveLandmarks.ts`, this handoff.
 
 ## Execution 4 checkpoint — September 9, 2026
 
@@ -120,11 +151,11 @@ in-place topology updates remain. Frame buffers and entity records are reused.
 
 ## Exact continuation — finish Execution 4 before Execution 5
 
-Resume with portals and stairs/exits. Read the legacy portal/stair drawing in
-`GameCanvas` and replace the remaining `PerspectiveMarkers` through existing
-`WorldDrawable` hooks. Keep projectile/item adapters and the completed camera,
-world and entity systems. Item pickup and item-wall occlusion still need live
-interaction validation; projected projectile raster occlusion is already tested.
+Resume by validating the new portal/stair floor decals and interactions. Inspect
+`PerspectiveLandmarks.prepare`, `GroundImage.draw`, and the unchanged portal APIs
+in `GameCanvas`. Check high-DPR seams and actual stair/portal artwork in the game.
+Keep the completed projectile/item/entity adapters. Item pickup and item-wall
+occlusion also need live interaction validation.
 
 Remaining after portals/stairs: audit world-space targeting/attack markers beyond
 existing ranged/charge cues, footprints, particles/trails/afterimages, path/exit
