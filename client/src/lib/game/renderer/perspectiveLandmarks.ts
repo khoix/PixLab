@@ -5,13 +5,14 @@ import { GroundImage } from './groundImage';
 
 class Landmark implements WorldDrawable {
   x = 0; y = 0; orderId = 0; alpha = 1;
+  opaque = false;
   image: CanvasImageSource | null = null;
   private projector = new GroundImage();
   draw(): void { /* Ground decals precede every wall and entity. */ }
   drawGround(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void {
     if (!this.image) return;
     ctx.save(); ctx.shadowBlur = 0; ctx.globalAlpha = this.alpha;
-    this.projector.draw(ctx, camera, this.image, this.x - 0.5, this.y - 0.5);
+    this.projector.draw(ctx, camera, this.image, this.x - 0.5, this.y - 0.5, this.opaque);
     ctx.restore();
   }
 }
@@ -55,10 +56,10 @@ export class PerspectiveLandmarks {
       this.stairs.push(canvas);
     }
   }
-  private add(x: number, y: number, image: CanvasImageSource, alpha: number): void {
+  private add(x: number, y: number, image: CanvasImageSource, alpha: number, opaque = false): void {
     const index = this.active.length, record = this.pool[index] ?? (this.pool[index] = new Landmark());
     record.x = x + 0.5; record.y = y + 0.5; record.orderId = 5_000_000 + index;
-    record.image = image; record.alpha = alpha; this.active.push(record);
+    record.opaque = opaque; record.image = image; record.alpha = alpha; this.active.push(record);
   }
   prepare(level: Level, floor: string, stairs: HTMLImageElement | null, now: number): readonly WorldDrawable[] {
     this.active.length = 0;
@@ -67,7 +68,7 @@ export class PerspectiveLandmarks {
     for (const portal of level.portals) this.add(portal.pos.x, portal.pos.y, this.portal, 0.85 + Math.sin(now * 0.003) * 0.15);
     // Iterate exit tiles, not just exitPos: preserves generated or boss-created exits.
     for (let y = 0; y < level.height; y++) for (let x = 0; x < level.width; x++) {
-      if (level.tiles[y][x] === 'exit') this.add(x, y, this.stairs[level.tiles[y - 1]?.[x] === 'wall' ? 1 : 0], 1);
+      if (level.tiles[y][x] === 'exit') this.add(x, y, this.stairs[level.tiles[y - 1]?.[x] === 'wall' ? 1 : 0], 1, true);
     }
     return this.active;
   }
