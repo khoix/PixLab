@@ -12,7 +12,7 @@ export function isProjectionDiagnosticRequested(): boolean {
   return current === null ? initialRequest : current === '1';
 }
 
-/** Item/portal/stair placeholders pending the world-effects pass. */
+/** Portal/stair placeholders pending the world-effects pass. */
 class GroundMarker implements WorldDrawable {
   x = 0;
   y = 0;
@@ -45,7 +45,6 @@ export class PerspectiveMarkers {
   prepare(level: Level): readonly WorldDrawable[] {
     this.active.length = 0;
     const baseId = level.width * level.height;
-    for (const i of level.items) this.add(i.pos.x + 0.5, i.pos.y + 0.5, '#ffd166', 0.12, baseId);
     for (const p of level.portals) this.add(p.pos.x + 0.5, p.pos.y + 0.5, '#b594ff', 0.25, baseId);
     if (level.tiles[level.exitPos.y]?.[level.exitPos.x] === 'exit') {
       this.add(level.exitPos.x + 0.5, level.exitPos.y + 0.5, '#42d69b', 0.2, baseId);

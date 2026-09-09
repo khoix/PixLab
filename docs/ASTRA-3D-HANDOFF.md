@@ -1,9 +1,38 @@
-# 3D gameplay view — Execution 3 complete
+# 3D gameplay view — Execution 4 partial checkpoint
 
-Branch: `astra/3d-conversion`. Built on Execution 2 (`6383960`); no main merge or PR.
+Branch: `astra/3d-conversion`. This checkpoint builds on Execution 3 (`67f6e6c`); no main merge or PR.
 Open the title URL with `?perspective=1`, then start a run. Perspective remains
 opt-in while Execution 4 completes projectiles/fog/world effects. Default top-down
 still works. Simulation, AI, balance, movement rules, progression and HUD are unchanged.
+
+## Execution 4 checkpoint — September 9, 2026
+
+Timebox: start 12:31:01 UTC, implementation cutoff 12:35:13, hard stop 12:38:13.
+Completed projectiles and item-drop rendering; this is NOT the full Execution 4.
+
+- `perspectiveProjectiles.ts` pools stable projectile records and submits normal,
+  boss and shadow-pulse shots to the existing wall/entity queue. Exact fractional
+  tile-center positions and shared perspective scale drive placement. Short bolts
+  orient with the existing projected-direction helper. Generic glow quality gates
+  remain; collision, velocity, damage, lifetime and wall-phasing mechanics are untouched.
+- `perspectiveItems.ts` replaces item markers with the existing weapon/armor/utility/
+  consumable icons, retaining cached PNG loading, rarity art and fallback handling.
+  Icons are upright, scaled with depth and bottom-anchored to their ground positions;
+  the shared world queue handles occlusion. Pickup logic is unchanged.
+- `GameCanvas` combines these adapters with existing entity drawables. Only portal/
+  stair placeholders remain in `projectionDiagnostic.ts`.
+- Focused unit tests: 2 passed (`node --import tsx --test
+  client/src/lib/game/renderer/perspectiveProjectiles.test.ts`). Browser tests:
+  2 projectile/item fixtures passed; 3 existing perspective-entity tests also passed
+  before the item adapter was added. Fixtures exercise normal/boss/shadow shots,
+  direction, wall hide/reveal, all four pickup icon categories and unchanged item data.
+  Live entity smoke ran at desktop/mobile sizes. Full pickup/portal/fog gameplay
+  validation is still outstanding; no complete Execution 4 validation is claimed.
+- `npm run check`: same 15 pre-existing diagnostics as Execution 3; no new errors.
+  `git diff --check`: passed. Scratch Chromium/Vite runner reused.
+- Changed this checkpoint: `GameCanvas.tsx`, `projectionDiagnostic.ts`, new renderer
+  `perspectiveProjectiles.ts`, `perspectiveProjectiles.test.ts`, `perspectiveItems.ts`,
+  `e2e/perspective-projectiles.spec.ts`, and this handoff.
 
 ## Camera / world contract — reused
 
@@ -66,7 +95,7 @@ in-place topology updates remain. Frame buffers and entity records are reused.
 - Zeus/Hades/Ares retain their existing artwork/glows, including Ares charge state;
   boss tells, grounding, health bars and wall sorting share the entity path.
 
-## Validation / changed files
+## Execution 3 validation / changed files (previous session)
 
 - `npm run test:projection`: 10 passed; `npm run test:world`: 7 passed;
   `npm run test:entities`: 5 passed.
@@ -89,17 +118,25 @@ in-place topology updates remain. Frame buffers and entity records are reused.
   `worldGeometry.ts`, `voxelWorld.ts`; `e2e/perspective-entities.spec.ts`; `package.json`;
   this handoff.
 
-## Execution 4 starting point
+## Exact continuation — finish Execution 4 before Execution 5
 
-Start at the perspective branch in `GameCanvas.draw`, the `WorldDrawable` hooks,
-and `PerspectiveEntities.prepare`. Keep the existing camera, floors, walls,
-billboards, shadow tiers and depth queue. Add remaining visuals through this pass:
-projectiles, fog/senses, particles/trails/afterimages, real items/stairs/portals,
-lightswitches and other world effects. Damage numbers are already projected.
+Resume with portals and stairs/exits. Read the legacy portal/stair drawing in
+`GameCanvas` and replace the remaining `PerspectiveMarkers` through existing
+`WorldDrawable` hooks. Keep projectile/item adapters and the completed camera,
+world and entity systems. Item pickup and item-wall occlusion still need live
+interaction validation; projected projectile raster occlusion is already tested.
 
-Those effects are intentionally still absent or represented by markers in the
-opt-in view; the legacy render path remains their reference. Ground picking still
-intersects the floor, not wall faces. Screen-facing health bars can show above
-walls. Bodies use ground-depth painter ordering rather than a per-pixel 3D depth
-buffer. Validate the complete effects pass before deciding to make perspective
-the default. Do not restart projection/world/entity design.
+Remaining after portals/stairs: audit world-space targeting/attack markers beyond
+existing ranged/charge cues, footprints, particles/trails/afterimages, path/exit
+hints, lightswitches, fog/senses and other world effects. Do not change mechanics.
+Damage numbers and entity ranged/charge cues were projected in Execution 3.
+
+Inverse mapping is unchanged from Execution 3; portal/touch interaction needs
+revalidation as those visuals are converted. Fog has NOT been adapted: the opt-in
+view still lacks it, and legacy fog is the reference for exact visibility rules.
+Health bars may show above walls; ordering remains a ground-depth painter queue.
+No new performance benchmark was run for projectiles/items in this timebox.
+
+Keep perspective opt-in until the remaining effects and visibility pass is complete.
+Execution 5 must begin only after that work and the full Execution 4 validation;
+start by reading this checkpoint rather than assuming Execution 4 is finished.

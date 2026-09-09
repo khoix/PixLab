@@ -58,6 +58,8 @@ import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../.
 import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
+import { PerspectiveItems } from '../../lib/game/renderer/perspectiveItems';
+import { PerspectiveProjectiles } from '../../lib/game/renderer/perspectiveProjectiles';
 import { PerspectiveEntities } from '../../lib/game/renderer/perspectiveEntities';
 import { mobSpriteCache } from '../../lib/game/renderer/mobSpriteCache';
 import { needsThreatMarker, markerStartDistance } from '../../lib/game/renderer/fogGradient';
@@ -263,6 +265,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Opt-in until the world/art passes are converted. Read once per mount.
   const [perspectiveDiagnostic] = useState(isProjectionDiagnosticRequested);
   const [voxelWorld] = useState(() => new VoxelWorldRenderer());
+  const [perspectiveItems] = useState(() => new PerspectiveItems());
+  const [perspectiveProjectiles] = useState(() => new PerspectiveProjectiles());
   const [perspectiveEntities] = useState(() => new PerspectiveEntities());
   const [perspectiveMarkers] = useState(() => new PerspectiveMarkers());
   // Picking must use the camera that produced the visible frame, including its
@@ -3017,7 +3021,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
         drawNow, !!activeScrollEffectsRef.current.phasing?.active,
         perspectiveMarkers.prepare(levelRef.current));
-      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality, entities);
+      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
+        perspectiveProjectiles.prepare(levelRef.current.projectiles, effectiveQuality,
+          perspectiveItems.prepare(levelRef.current.items, entities)));
       perspectiveEntities.drawDamageNumbers(ctx, perspective, levelRef.current, drawNow);
       if (perfMonitor.isActive()) perfMonitor.recordDrawnEntities(perspectiveEntities.drawnEntities);
       if (isGamePaused()) {
