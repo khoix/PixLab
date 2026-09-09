@@ -1,84 +1,89 @@
-# 3D gameplay view — Execution 1
+# 3D gameplay view — Execution 2 complete
 
-Branch: `astra/3d-conversion`. Started from main `fa7c9fd`.
-Foundation only; no gameplay simulation changes, voxel-world pass, or PR.
+Branch: `astra/3d-conversion`. Execution 2 builds on `aff920b`; main was not merged.
+Open the title URL with `?perspective=1`, then start a run. This now renders the
+voxel world with temporary entity markers. Default top-down remains available
+until Execution 3 completes the entity/effect conversion. No PR yet.
 
-## Architecture / entry point
+## Camera contract — unchanged
 
-- `renderer/projection.ts`: pure ground-plane perspective and inverse helpers.
-  World units are tiles, with integer coordinates at tile corners. Call
-  `tileCenter(entity.pos)` for entity centers (also accepts interpolated positions).
-  Screen units are logical CSS pixels, independent of DPR.
-- Camera looks along negative world Y with zero yaw. Rows remain horizontal;
-  depth converges upward toward the center. Pitch is measured down from horizontal.
-  Scale is focal length / camera depth. Clip rather than clamp to preserve inversion.
-- `GameCanvas` builds a camera from `visualPosRef` each draw, retaining existing
-  easing and stable viewport tracking. Pointer mapping uses the last rendered
-  camera, handles canvas offset/CSS sizing, and invalidates on resize/level changes.
-- Open the title URL with `?perspective=1`, then start a run normally. The request
-  survives title-to-lobby navigation for that page load. This enables a temporary
-  projected ground grid with simple player/enemy/item/portal markers. Reload the
-  title without the query to return to normal rendering. Default remains top-down
-  until subsequent executions convert the production layers.
-- Diagnostic drawing bypasses the flat tile, fog, and mob caches; their contents
-  and normal quality policy remain intact. No 3D engine or dependencies added.
+`projection.ts`: world units are tiles, integer coordinates are tile corners;
+`tileCenter(entity.pos)` gives ground centers. Screen units are CSS pixels, not
+backing pixels. Camera follows the interpolated player, with zero yaw and 60°
+downward pitch. Rows stay horizontal; depth converges upward toward the center.
 
-## Tunable camera defaults
+`PERSPECTIVE_CAMERA`: focal length 12 × TILE_SIZE (384 px), distance 8 tiles,
+near/far depth clips 2/48 tiles, anchor X 0.5, desktop/mobile Y 0.5/0.43.
+Stable-height anchoring, the 48 px bottom margin, and inverse ground picking remain.
+Elevation support extends the existing camera transform; no camera redesign.
 
-All perspective settings are in `PERSPECTIVE_CAMERA`; constructor overrides are supported.
+## World rendering / ordering
 
-| Setting | Default |
-| --- | --- |
-| Downward pitch | 60 degrees |
-| Focal length | 12 × TILE_SIZE = 384 CSS px |
-| Camera-to-focus distance | 8 tiles |
-| Near / far depth clips | 2 / 48 tiles |
-| Horizontal anchor | 50% of canvas width |
-| Desktop / mobile vertical anchor | 50% / 43% of stable canvas height |
-| Scale at player / near / far | 1.5× / 6× / 0.25× legacy tile size |
+- `voxelWorld.ts` owns the Canvas pass: projected ground undercoat, individual
+  floor quads, ground contact shading, then sorted walls/drawables. The undercoat
+  and same-color subpixel face sealing prevent antialiasing cracks.
+- `worldGeometry.ts` caches tile kinds, exposed-face masks, and reusable world
+  records. Walls are `WALL_HEIGHT = 1` tile high. Internal adjoining faces are
+  omitted; eye-facing sides and raised tops use the existing theme with restrained
+  value differences. No full-screen/world bitmap cache or 3D engine.
+- `projectedPolygon.ts` clips faces against near/far planes in camera space before
+  dividing by depth. Ground/top lattice vertices and clipping buffers are reused.
+- `compareWorldOrder` paints descending ground camera depth, then farther lateral
+  distance, then stable ID. All floors/shadows precede this queue. Walls and
+  `WorldDrawable` entries share it, so nearer walls occlude submitted objects.
+- `GameCanvas` constructs the existing camera and calls `voxelWorld.draw(...)`.
+  `projectionDiagnostic.ts` now only selects the view and pools the temporary
+  player/enemy/item/portal/exit markers submitted into the world queue.
 
-Focal length stays fixed in CSS pixels during browser-chrome resizing, so scale
-does not jump. The existing 48 px bottom anchor margin still applies. Width changes
-reset remembered height; at the same width the tallest height remains remembered.
+## Cache / performance
 
-## Files changed
+View culling unions ground and raised-top footprints, retaining walls with
+offscreen bases. Only visible lattice vertices are transformed. Topology rebuilds
+on level identity/dimension changes; visible tiles plus a one-tile border detect
+in-place wall/exit edits and update neighboring masks without a full rebuild.
+Moving/resizing does not rebuild topology. The old flat tile/fog/sprite caches and
+render-quality gates remain intact. Low quality uses one narrow contact band;
+medium/high add a faint outer band. No expensive shadowBlur in the voxel pass.
 
-- `client/src/lib/game/renderer/projection.ts` — math, settings, coordinate contracts.
-- `client/src/lib/game/renderer/projectionDiagnostic.ts` — opt-in inspection pass.
-- `client/src/components/game/GameCanvas.tsx` — camera integration and picking.
-- `client/src/lib/game/renderer/projection.test.ts` — 10 focused math tests.
-- `e2e/projection-camera.spec.ts` — desktop/mobile integration checks.
-- `package.json` — `test:projection` command.
-- This handoff.
+`window.__PIXLAB_LEVEL__.getWorldRenderStats()` exposes culling/cache/face counts.
+In the final headless Chromium 152 smoke run:
 
-## Validation
+| View / level | Quality | Avg draw | Visible walls / faces |
+| --- | --- | --- | --- |
+| 1280×720 maze / 1 | high | 4.04 ms | 260 / 455 |
+| 393×727 maze / 5 | low | 1.61 ms | 114 / 190 |
+| 1280×720 arena / 8 | high | 2.97 ms | 99 / 171 |
+| 844×390 arena / 16 | medium | 1.95 ms | 26 / 39 |
 
-- `npm run test:projection`: 10/10 passed (size/depth, horizontal rows, vanishing
-  point, inverse, tile centers, interpolation/follow, mobile anchoring, clipping,
-  CSS pointer conversion, and tuning).
-- Playwright `projection-camera.spec.ts`: 2/2 passed; actual player pixel and tile
-  picks verified on desktop and mobile, including height shrink, landscape, and pause.
-- Existing `m6-2-pause-camera.spec.ts`: 3/3 passed.
-- Browser tests used the `chromium-desktop` project (new tests set their own mobile
-  viewport), local Chromium 149, and a scratch-only config overriding executable
-  and Vite host to `127.0.0.1` for this environment. Standard reproduction:
-  `npx playwright test e2e/projection-camera.spec.ts e2e/m6-2-pause-camera.spec.ts --project=chromium-desktop --workers=1`.
-- `npm run check`: **15 pre-existing diagnostics**, identical on untouched main
-  `fa7c9fd` apart from shifted line numbers. Files: MazeBackground, DemoSidebar,
-  GameCanvas (MobTypeDef.coinPerLevel and two implicit-any errors), compendium,
-  Demo, Game, and Home. No new diagnostics; unrelated fixes deliberately deferred.
-- `git diff --check`: passed.
+These are desktop headless timings at those viewports, not physical phone
+benchmarks; startup peaks reached 39 ms. Static topology stayed cached while
+following. Raw canvas captures were visually inspected separately from the
+unchanged CRT overlay; corridors, faces, perspective, and overlap were coherent.
 
-## Execution 2 starting point / limitations
+## Validation / changed files
 
-Start with this file and `projection.ts`, then replace the diagnostic branch just
-after camera construction in `GameCanvas.draw` with the production world pass.
-Reuse the camera, projected corners, scale, and inverse; keep simulation in 2D.
-Use `worldDepth` descending for far-to-near painting. Audit old rectangular
-viewport culling and flat tile-cache blits when introducing projected floors/walls.
+- `npm run test:projection`: 10 passed. `npm run test:world`: 7 passed.
+- Playwright: 8 passed across `projection-camera.spec.ts`, `voxel-world.spec.ts`,
+  and `m6-2-pause-camera.spec.ts` using `chromium-desktop` (explicit mobile sizes).
+  Covers raster cracks at DPR 1/2 during motion, actual occlusion/reveal, generated
+  levels 1/5/8/16, quality tiers, cache reuse, picking, pause, and resizing.
+  Local runner used a scratch-only Chromium executable / 127.0.0.1 Vite override.
+- `npm run check`: 15 pre-existing diagnostics; normalized output exactly matches
+  Execution 1. No new errors. `git diff --check`: passed.
+- Changed: `GameCanvas.tsx`, `renderer/{projection,projectionDiagnostic}.ts`,
+  new `renderer/{worldGeometry,projectedPolygon,voxelWorld,worldGeometry.test}.ts`,
+  `testHooks.ts`, `package.json`, both projection/world e2e specs, this handoff.
 
-Diagnostic view is for camera inspection: radius limited to 12 tiles; walls are
-flat cells, entities are markers. Fog, shadows, projectile/effect art, and elevation
-are not converted. Tiles crossing depth clip planes are omitted; add polygon
-clipping with the voxel-world pass. Off-map ground coordinates may be returned by
-picking; level bounds/collision remain the logical caller's responsibility.
+## Execution 3 starting point
+
+Read `WorldDrawable`, `compareWorldOrder`, and the `voxelWorld.draw` call in
+`GameCanvas`; replace `PerspectiveMarkers` with real entity drawables, reusing
+this camera and world pass. Sort IDs must remain stable; drawable callbacks must
+preserve Canvas state. Ground points use tile centers; height is visual only.
+
+Remaining: player/mob artwork and height-aware occlusion, shadows for entities,
+projectiles, particles, fog/senses, afterimages, damage labels, and real stair/
+portal visuals. Markers may be completely hidden by walls; no mob-specific
+cutaway or silhouette treatment yet. Picking still intersects the ground plane.
+Simulation, generation, collision, combat, progression, item logic, and HUD/menu
+code remain unchanged. Do not restart world rendering or camera design.

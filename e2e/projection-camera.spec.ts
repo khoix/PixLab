@@ -47,13 +47,11 @@ test(`${scenario.name}: perspective rendering and picking agree through follow, 
       expect(await page.evaluate(p => window.__PIXLAB_LEVEL__!.screenToTile(p.x, p.y), client),
         JSON.stringify({ viewport, info, stable, anchor: camera.anchor, tile })).toEqual(tile);
     }
-    // The cyan player marker proves the diagnostic pass actually rendered.
-    const pixel = await page.evaluate(anchor => {
-      const c = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
-      const d = window.__PIXLAB_CANVAS__!.getDimensions(c).dpr;
-      return [...c.getContext('2d')!.getImageData(Math.floor(anchor.x * d), Math.floor(anchor.y * d), 1, 1).data];
-    }, camera.anchor);
-    expect(pixel.slice(0, 3)).toEqual([5, 217, 232]);
+    // Arbitrary test teleports can put the marker behind/in a wall now. Verify
+    // the live voxel pass rather than requiring the marker to ignore occlusion.
+    const world = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getWorldRenderStats());
+    expect(world.walls).toBeGreaterThan(0);
+    expect(world.faces).toBeGreaterThan(world.walls);
   }
   await page.getByTestId('game-menu-button').click();
   const pickedWhilePaused = await page.evaluate(p =>

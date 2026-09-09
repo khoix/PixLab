@@ -103,7 +103,8 @@ import {
   screenToTile as projectedScreenToTile,
   type PerspectiveCamera,
 } from '../../lib/game/renderer/projection';
-import { drawProjectionDiagnostic, isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
+import { PerspectiveMarkers, isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
+import { VoxelWorldRenderer } from '../../lib/game/renderer/voxelWorld';
 import {
   trackStableViewport,
   type StableViewport,
@@ -260,6 +261,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const stableViewportRef = useRef<StableViewport | null>(null);
   // Opt-in until the world/art passes are converted. Read once per mount.
   const [perspectiveDiagnostic] = useState(isProjectionDiagnosticRequested);
+  const [voxelWorld] = useState(() => new VoxelWorldRenderer());
+  const [perspectiveMarkers] = useState(() => new PerspectiveMarkers());
   // Picking must use the camera that produced the visible frame, including its
   // interpolated focus, rather than a newer simulation position.
   const renderedCameraRef = useRef<{
@@ -711,6 +714,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   useEffect(() => {
     window.__PIXLAB_LEVEL__ = {
       getPlayerPos: () => ({ ...playerPosRef.current }),
+      getWorldRenderStats: () => voxelWorld.getStats(),
       getPlayerHp: () => statsRef.current.hp,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
       getPressureStats: () => ({
@@ -3007,7 +3011,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     });
     renderedCameraRef.current = { perspective, legacyOffset: { x: camX, y: camY } };
     if (perspectiveDiagnostic) {
-      drawProjectionDiagnostic(ctx, perspective, levelRef.current);
+      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
+        perspectiveMarkers.prepare(levelRef.current, perspective));
       if (isGamePaused()) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.fillRect(0, 0, logicalWidth, logicalHeight);

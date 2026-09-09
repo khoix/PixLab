@@ -1,11 +1,9 @@
 import type { Level } from '../types';
-import {
-  perspectiveScale, projectedTileCorners, tileCenter, worldDepth, worldToScreen,
-  type GroundPoint, type PerspectiveCamera,
-} from './projection';
+import { perspectiveScale, worldToScreen, type PerspectiveCamera } from './projection';
+import type { WorldDrawable } from './worldGeometry';
 
 // The title screen navigates to /play without retaining its query string.
-// Remember an explicit diagnostic request for this page load only.
+// Remember an explicit perspective request for this page load only.
 const initialRequest = typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('perspective') === '1';
 
@@ -14,62 +12,48 @@ export function isProjectionDiagnosticRequested(): boolean {
   return current === null ? initialRequest : current === '1';
 }
 
-/** Temporary ground-only camera inspection pass, enabled by ?perspective=1.
- * Bypasses the flat tile/fog/sprite caches without modifying their contents.
- * This is intentionally not the production voxel-world renderer.
+/** Temporary Execution 1 markers, now submitted to the wall depth queue.
+ * Replace this adapter with entity artwork in Execution 3, not the world pass.
  */
-export function drawProjectionDiagnostic(
-  ctx: CanvasRenderingContext2D,
-  camera: PerspectiveCamera,
-  level: Level,
-): void {
-  ctx.save();
-  try {
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 1;
-    const radius = 12;
-    const minX = Math.max(0, Math.floor(camera.focus.x) - radius);
-    const maxX = Math.min(level.width, Math.ceil(camera.focus.x) + radius);
-    const minY = Math.max(0, Math.floor(camera.focus.y) - radius);
-    const maxY = Math.min(level.height, Math.ceil(camera.focus.y) + radius);
-    for (let y = minY; y < maxY; y++) {
-      for (let x = minX; x < maxX; x++) {
-        const corners = projectedTileCorners(camera, { x, y });
-        if (!corners || corners.every(p => p.x < 0) || corners.every(p => p.x > camera.width)
-          || corners.every(p => p.y < 0) || corners.every(p => p.y > camera.height)) continue;
-        const tile = level.tiles[y][x];
-        ctx.beginPath();
-        ctx.moveTo(corners[0].x, corners[0].y);
-        for (const p of corners.slice(1)) ctx.lineTo(p.x, p.y);
-        ctx.closePath();
-        ctx.fillStyle = tile === 'wall' ? '#38445a' : tile === 'exit' ? '#175b4a' : '#101d2b';
-        ctx.fill();
-        ctx.strokeStyle = '#628093';
-        ctx.stroke();
-      }
+class GroundMarker implements WorldDrawable {
+  x = 0;
+  y = 0;
+  orderId = 0;
+  color = '';
+  radius = 0;
+  draw(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void {
+    const p = worldToScreen(camera, this);
+    const scale = perspectiveScale(camera, this);
+    if (!p || scale === null) return;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, this.radius * camera.tileSize * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+export class PerspectiveMarkers {
+  private pool: GroundMarker[] = [];
+  private active: GroundMarker[] = [];
+
+  private add(x: number, y: number, color: string, radius: number, baseId: number): void {
+    const index = this.active.length;
+    const marker = this.pool[index] ?? (this.pool[index] = new GroundMarker());
+    marker.x = x; marker.y = y; marker.color = color; marker.radius = radius;
+    marker.orderId = baseId + index;
+    this.active.push(marker);
+  }
+
+  prepare(level: Level, camera: PerspectiveCamera): readonly WorldDrawable[] {
+    this.active.length = 0;
+    const baseId = level.width * level.height;
+    for (const e of level.entities) this.add(e.pos.x + 0.5, e.pos.y + 0.5, '#ff627c', 0.2, baseId);
+    for (const i of level.items) this.add(i.pos.x + 0.5, i.pos.y + 0.5, '#ffd166', 0.12, baseId);
+    for (const p of level.portals) this.add(p.pos.x + 0.5, p.pos.y + 0.5, '#b594ff', 0.25, baseId);
+    if (level.tiles[level.exitPos.y]?.[level.exitPos.x] === 'exit') {
+      this.add(level.exitPos.x + 0.5, level.exitPos.y + 0.5, '#42d69b', 0.2, baseId);
     }
-    const markers: { ground: GroundPoint; color: string; radius: number }[] = [
-      ...level.entities.map(e => ({ ground: tileCenter(e.pos), color: '#ff627c', radius: 0.2 })),
-      ...level.items.map(i => ({ ground: tileCenter(i.pos), color: '#ffd166', radius: 0.12 })),
-      ...level.portals.map(p => ({ ground: tileCenter(p.pos), color: '#b594ff', radius: 0.25 })),
-      { ground: camera.focus, color: '#05d9e8', radius: 0.25 },
-    ];
-    markers.sort((a, b) => worldDepth(camera, b.ground) - worldDepth(camera, a.ground));
-    for (const marker of markers) {
-      if (Math.abs(marker.ground.x - camera.focus.x) > radius
-        || Math.abs(marker.ground.y - camera.focus.y) > radius) continue;
-      const p = worldToScreen(camera, marker.ground);
-      const scale = perspectiveScale(camera, marker.ground);
-      if (!p || scale === null) continue;
-      ctx.fillStyle = marker.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, marker.radius * camera.tileSize * scale, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '12px monospace';
-    ctx.fillText('Perspective diagnostic · ground markers only', 12, 24);
-  } finally {
-    ctx.restore();
+    this.add(camera.focus.x, camera.focus.y, '#05d9e8', 0.25, baseId);
+    return this.active;
   }
 }
