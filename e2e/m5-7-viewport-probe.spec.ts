@@ -119,6 +119,52 @@ test.describe('M5.7 — viewport probe', () => {
     expect(after!.driftPx).toBeLessThan(0);
   });
 
+  test('the overlay can be switched on from settings, with no URL parameter', async ({ page }) => {
+    // Two full app boots and a reload, so the default 30 s is not enough.
+    test.slow();
+    // A home-screen web app always launches at the URL that was saved to the
+    // home screen, so `?perf=1` can never reach it. Without an in-app switch
+    // there is no way to capture a trace on the one device where this happens.
+    await page.goto('/');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => window.__PIXLAB_TEST__?.setLobbyTab('settings'));
+    await expect(page.getByTestId('lobby-settings-panel')).toBeVisible();
+
+    const block = page.getByTestId('diagnostics-settings');
+    await block.scrollIntoViewIfNeeded();
+    await expect(block).toBeVisible();
+
+    expect(await page.evaluate(() => window.__PIXLAB_PERF__!.isActive())).toBe(false);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(false);
+
+    await page.getByTestId('diagnostics-on').click();
+    expect(await page.evaluate(() => window.__PIXLAB_PERF__!.isActive())).toBe(true);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(true);
+
+    // It has to survive a reload, since that is what a relaunch of the web app
+    // looks like. This is the whole point: the flag is persisted, so the
+    // overlay is still on next time the app is opened from the home screen.
+    await page.reload();
+    expect(await page.evaluate(() => window.__PIXLAB_PERF__!.isActive())).toBe(true);
+
+    // And it has to be switchable back off from inside the app. The reload
+    // above already put us back on the home screen: `Game.tsx`'s refresh
+    // handler resets the run and navigates to `/` whenever `/play` is loaded
+    // without the `navigated_to_play` flag. Waiting for that redirect is far
+    // cheaper than a second full navigation, which is what pushed this test
+    // past the default budget.
+    await expect(page.getByTestId('start-run-button')).toBeVisible();
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.evaluate(() => window.__PIXLAB_TEST__?.setLobbyTab('settings'));
+    await expect(page.getByTestId('lobby-settings-panel')).toBeVisible();
+    await page.getByTestId('diagnostics-off').scrollIntoViewIfNeeded();
+    await page.getByTestId('diagnostics-off').click();
+    expect(await page.evaluate(() => window.__PIXLAB_PERF__!.isActive())).toBe(false);
+    expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(false);
+  });
+
   test('the overlay shows the drift on screen, since the device is a phone', async ({ page }) => {
     await page.goto('/?perf=1');
     await page.getByTestId('start-run-button').click();
