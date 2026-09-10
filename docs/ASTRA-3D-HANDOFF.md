@@ -1,9 +1,15 @@
 # Perspective gameplay conversion — final implementation summary
 
-Branch: `astra/3d-conversion`. Review mode remains opt-in: open `/?perspective=1`
-and start a run. Legacy presentation remains the default. No gameplay redesign.
+Branch: `astra/3d-conversion`. Choose **Settings → Gameplay View → Perspective (3D)** in the lobby.
+The choice persists across reloads and save-code export/import. Legacy presentation remains the default. No gameplay redesign.
 
 ## Integration and validation
+
+- Settings follow-up: 10 desktop/mobile tests passed (Settings selection, legacy
+  URL ignored, reload persistence, save-code round trip, and camera/picking through
+  resize/follow). `npm run check` still reports the same 15 existing diagnostics.
+  Changed GameCanvas, Game Settings UI, store/types/codec, migrated live-renderer
+  tests, and removed the diagnostic URL selector. PR #75 carries the latest CI.
 
 - Execution 6 reused the preceding 72 passing desktop/mobile browser checks,
   29 unit tests, captures and performance measurements. Coverage includes camera,
@@ -75,8 +81,8 @@ and start a run. Legacy presentation remains the default. No gameplay redesign.
   stair PNG variants and loading fallback. Both draw on the floor before walls.
   Every exit tile is handled, including boss-created exits. Exit discovery currently
   scans the tile array; optimize only if profiling demonstrates material cost.
-- `GameCanvas` combines all adapters. `projectionDiagnostic.ts` only selects opt-in
-  perspective. Existing inverse ground picking remains unchanged.
+- `GameCanvas` combines all adapters and reads `settings.gameplayView`. URL selection
+  was removed; inverse picking uses the view mode that produced the visible frame.
 
 ## World effects and deliberate compromises
 
@@ -86,7 +92,7 @@ visuals. Damage labels remain screen-facing at projected anchors. Fog uses the
 unchanged snapshot radius and shared radial falloff on an inverse-projected mask;
 raised art/walls use ground distance. Threat/loot reveal markers remain above fog.
 
-Perspective is deliberately opt-in for review. Wall fog is constant per voxel
+Perspective is selectable in Settings; top-down remains the default. Wall fog is constant per voxel
 center, floor fog is sampled by quality, and landmark textures use small affine
 patches. Upright health bars may appear above walls but obey fog. Picking selects
 the ground, not a wall face. No known unconverted world-space path remains.

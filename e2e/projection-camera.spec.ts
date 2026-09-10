@@ -16,8 +16,9 @@ test(`${scenario.name}: perspective rendering and picking agree through follow, 
     if (message.type() === 'error' && message.text().includes('Error in draw function')) errors.push(message.text());
   });
   await page.setViewportSize(scenario.sizes[0]);
-  await page.goto('/?perspective=1');
+  await page.goto('/');
   await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
   await page.waitForURL('**/play**');
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });

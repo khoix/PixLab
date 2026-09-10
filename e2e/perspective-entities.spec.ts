@@ -148,8 +148,9 @@ test('live perspective run follows movement with player and mob sprites at mobil
   page.on('console', m => { if (m.type() === 'error' && m.text().includes('Error in draw function')) errors.push(m.text()); });
   for (const width of [1000, 393]) {
     await page.setViewportSize({ width, height: 727 });
-    await page.goto('/?perspective=1&perf=1');
+    await page.goto('/?perf=1');
     await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
     await page.getByTestId('enter-sector-button').click();
     await expect.poll(() => page.evaluate(() => window.__PIXLAB_LEVEL__?.getWorldRenderStats().drawables ?? 0)).toBeGreaterThan(0);
     const start = await page.evaluate(() => {

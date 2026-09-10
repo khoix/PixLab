@@ -82,8 +82,9 @@ test('generated levels render, reuse topology while following, and respect quali
     { name: 'landscape-arena', width: 844, height: 390, level: 16, quality: 'medium' },
   ] as const) {
     await page.setViewportSize({ width: scenario.width, height: scenario.height });
-    await page.goto('/?perspective=1&perf=1');
+    await page.goto('/?perf=1');
     await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
     await page.getByTestId('enter-sector-button').click();
     await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
     await page.evaluate(s => {

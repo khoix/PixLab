@@ -488,6 +488,7 @@ export function encodeGameState(state: GameState): string {
         settings['11'] = state.settings.sectorTimerSide;
       }
       if (state.settings.relaxedTimer) settings['12'] = 1;
+      if (state.settings.gameplayView === 'perspective') settings['13'] = 1;
       return Object.keys(settings).length > 0 ? settings : undefined;
     })(),
   };
@@ -588,6 +589,7 @@ export function decodeGameState(code: string): Partial<GameState> | null {
         dpadSize: saveData.S?.['10'] ?? 1,
         sectorTimerSide: saveData.S?.['11'] === 'left' ? 'left' : 'right',
         relaxedTimer: saveData.S?.['12'] === 1,
+        gameplayView: saveData.S?.['13'] === 1 ? 'perspective' : 'top-down',
       },
     };
     

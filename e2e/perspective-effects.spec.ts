@@ -47,8 +47,9 @@ test('projected fog, ground effects and sense markers preserve visibility and ca
 });
 
 test('live perspective fog follows vision changes without rebuilding during ordinary movement', async ({ page }) => {
-  await page.goto('/?perspective=1');
+  await page.goto('/');
   await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas.game-canvas').waitFor();
   await page.evaluate(() => { window.__PIXLAB_LEVEL__!.clearMobs(); window.__PIXLAB_TEST__!.updateStats({ visionRadius: 3.5 }); });

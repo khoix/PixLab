@@ -3,8 +3,9 @@ import { writeFile } from 'node:fs/promises';
 
 test('projected portal taps select the visible ground tile and teleport only on request', async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 727 });
-  await page.goto('/?perspective=1');
+  await page.goto('/');
   await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas.game-canvas').waitFor();
   const portal = await page.evaluate(() => {
@@ -63,8 +64,9 @@ test('real stair texture and portal decals render on the floor at DPR 1 and 2', 
 });
 
 test('movement collects a projected pickup and entering the stairs completes the sector', async ({ page }) => {
-  await page.goto('/?perspective=1');
+  await page.goto('/');
   await page.getByTestId('start-run-button').click();
+  await page.evaluate(() => window.__PIXLAB_TEST__!.updateSettings({ gameplayView: 'perspective' }));
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas.game-canvas').waitFor();
   await page.evaluate(() => {

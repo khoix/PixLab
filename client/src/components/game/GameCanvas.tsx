@@ -110,7 +110,6 @@ import {
   screenToTile as projectedScreenToTile,
   type PerspectiveCamera,
 } from '../../lib/game/renderer/projection';
-import { isProjectionDiagnosticRequested } from '../../lib/game/renderer/projectionDiagnostic';
 import { VoxelWorldRenderer } from '../../lib/game/renderer/voxelWorld';
 import {
   trackStableViewport,
@@ -266,8 +265,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // measured against it so a phone's URL bar sliding in and out — which shrinks
   // the `100dvh` run root — does not shift the world.
   const stableViewportRef = useRef<StableViewport | null>(null);
-  // Opt-in until the world/art passes are converted. Read once per mount.
-  const [perspectiveDiagnostic] = useState(isProjectionDiagnosticRequested);
   const [voxelWorld] = useState(() => new VoxelWorldRenderer());
   const [perspectiveItems] = useState(() => new PerspectiveItems());
   const [perspectiveProjectiles] = useState(() => new PerspectiveProjectiles());
@@ -279,6 +276,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // interpolated focus, rather than a newer simulation position.
   const renderedCameraRef = useRef<{
     perspective: PerspectiveCamera;
+    perspectiveEnabled: boolean;
     legacyOffset: Position;
   } | null>(null);
   const moveStartPosRef = useRef<Position>({ x: 0, y: 0 }); // Position when movement started
@@ -959,7 +957,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     if (!rendered) return null;
     const screen = clientToCanvas({ x: clientX, y: clientY }, rect, rendered.perspective);
     if (!screen) return null;
-    if (perspectiveDiagnostic) return projectedScreenToTile(rendered.perspective, screen);
+    if (rendered.perspectiveEnabled) return projectedScreenToTile(rendered.perspective, screen);
     const { x: camX, y: camY } = rendered.legacyOffset;
     return {
       x: Math.floor((screen.x + camX) / TILE_SIZE),
@@ -3026,8 +3024,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       isMobile: frame.isMobileViewport,
       tileSize: TILE_SIZE,
     });
-    renderedCameraRef.current = { perspective, legacyOffset: { x: camX, y: camY } };
-    if (perspectiveDiagnostic) {
+    renderedCameraRef.current = { perspective, perspectiveEnabled: settingsRef.current.gameplayView === 'perspective', legacyOffset: { x: camX, y: camY } };
+    if (settingsRef.current.gameplayView === 'perspective') {
       const drawNow = getGameNow();
       const visibility = perspectiveFog.prepare(perspective, frame.fogRadius / TILE_SIZE, effectiveQuality);
       const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
