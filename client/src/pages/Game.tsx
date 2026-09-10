@@ -48,7 +48,8 @@ import {
 import pixlabImage from '../assets/pixlab3.PNG';
 import { MazeBackground } from '../components/MazeBackground';
 import { BroadcastGlitchScope } from '../components/BroadcastGlitch';
-import { useIsMobile } from '../hooks/use-mobile';
+import { useIsMobile, useIsLandscapePhone } from '../hooks/use-mobile';
+import { EventLogDrawer } from '../components/game/EventLogDrawer';
 import { QuickHealButton } from '../components/game/QuickHealButton';
 import { QuickConsumablesButton } from '../components/game/QuickConsumablesButton';
 import { ConsumableIcon } from '../components/game/ConsumableIcon';
@@ -189,6 +190,9 @@ export default function Game() {
   const { state, dispatch, resetGame } = useGame();
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
+  const isLandscapePhone = useIsLandscapePhone();
+  // The event log is a drawer on phones (M5.9); desktop keeps its split panel.
+  const [showEventLog, setShowEventLog] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   // Portals are opt-in (M6.3): the canvas tells us when the player is standing
   // on one, and hands us the API to enter it.
@@ -543,13 +547,15 @@ export default function Game() {
     if (!api) setStandingOnPortal(false);
   }, []);
 
-  const dialogOpen = !!gameOverState || showInventory || showMenu || showCommerceVendor;
+  const dialogOpen =
+    !!gameOverState || showInventory || showMenu || showCommerceVendor || showEventLog;
 
   /** Enter the portal underfoot, from a key press. */
   const handleEnterPortal = React.useCallback(() => {
-    if (gameOverState || showInventory || showMenu || showCommerceVendor) return false;
+    if (gameOverState || showInventory || showMenu || showCommerceVendor || showEventLog)
+      return false;
     return portalApiRef.current?.enterPortalUnderPlayer() ?? false;
-  }, [gameOverState, showInventory, showMenu, showCommerceVendor]);
+  }, [gameOverState, showInventory, showMenu, showCommerceVendor, showEventLog]);
 
   /** Enter from a tap or click at a viewport point, with 3x3 forgiveness. */
   const handlePortalPointer = React.useCallback(
@@ -1912,11 +1918,12 @@ export default function Game() {
         data-testid="run-screen"
         style={isMobile ? mobileHudStyle : undefined}
       >
-        {isMobile && (
-          <div className="mobile-run-landscape-hint hidden md:hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-[60] px-3 py-1 rounded bg-black/70 border border-primary/40 text-[10px] font-pixel text-primary">
-            Portrait recommended for controls
-          </div>
-        )}
+        {/* The "Portrait recommended for controls" hint lived here. It was
+            unreachable on the phones it was written for — gated on `isMobile`,
+            which a rotated 844px-wide phone failed, and revealed by a CSS rule
+            nested inside a 767px width query it could not satisfy either. M5.9
+            makes landscape a supported layout rather than one to steer away
+            from, so the hint is gone rather than repaired. */}
         <ResizablePanelGroup direction="vertical" className="h-full">
           <ResizablePanel defaultSize={85} minSize={50}>
             <div className="relative w-full h-full">
@@ -1997,6 +2004,18 @@ export default function Game() {
             >
               INVENTORY
             </DropdownMenuItem>
+            {isMobile && (
+              <DropdownMenuItem
+                className="font-pixel text-xs cursor-pointer"
+                onClick={() => {
+                  setShowEventLog(true);
+                  setShowMenu(false);
+                }}
+                data-testid="menu-event-log"
+              >
+                EVENT LOG
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem 
               className="font-pixel text-xs cursor-pointer text-red-400"
               onClick={() => {
@@ -2008,6 +2027,16 @@ export default function Game() {
             </DropdownMenuItem>
           </DropdownMenuContent>
               </DropdownMenu>
+              )}
+
+              {/* The event log, which desktop gets as a split panel below the
+                  canvas and phones had no access to at all before M5.9. */}
+              {isMobile && (
+                <EventLogDrawer
+                  open={showEventLog}
+                  onOpenChange={setShowEventLog}
+                  landscape={isLandscapePhone}
+                />
               )}
 
               {/* Inventory Dialog - Combined with Equipment */}

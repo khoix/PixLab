@@ -9,14 +9,24 @@ interface SectorTimerBarProps {
   activeModIds: string[];
   timeLeftSec: number;
   side?: 'left' | 'right';
+  /**
+   * Landscape puts this along the bottom instead of down an edge — a tall bar
+   * eats the short dimension on a rotated phone, where vertical space is the
+   * scarce one.
+   */
+  orientation?: 'vertical' | 'horizontal';
   className?: string;
 }
 
-/** Mobile sector timer — vertical bar on the left or right edge; drains top → bottom. */
+/**
+ * Mobile sector timer. Vertical by default — a bar down the left or right edge
+ * draining top → bottom — and horizontal along the bottom in landscape.
+ */
 export const SectorTimerBar: React.FC<SectorTimerBarProps> = ({
   activeModIds,
   timeLeftSec,
   side = 'right',
+  orientation = 'vertical',
   className,
 }) => {
   const timeLimitMs = getSectorTimeLimitMs(activeModIds);
@@ -28,7 +38,9 @@ export const SectorTimerBar: React.FC<SectorTimerBarProps> = ({
     <div
       className={cn(
         'mobile-sector-timer pointer-events-none',
-        side === 'left' && 'mobile-sector-timer--left',
+        orientation === 'horizontal'
+          ? 'mobile-sector-timer--bottom'
+          : side === 'left' && 'mobile-sector-timer--left',
         className,
       )}
       data-testid="mobile-sector-timer-bar"
@@ -44,12 +56,20 @@ export const SectorTimerBar: React.FC<SectorTimerBarProps> = ({
         {Math.floor(timeLeftSec)}s
       </span>
       <div className="mobile-sector-timer-track">
+        {/* The fill grows along whichever axis the track runs, so the animated
+            property has to switch with it — transitioning `height` on a bar
+            that drains horizontally makes it jump instead of drain. */}
         <div
           className={cn(
-            'mobile-sector-timer-fill transition-[height] duration-200',
+            'mobile-sector-timer-fill duration-200',
+            orientation === 'horizontal' ? 'transition-[width]' : 'transition-[height]',
             isLow ? 'bg-red-500 animate-pulse' : 'bg-primary',
           )}
-          style={{ height: `${progress * 100}%` }}
+          style={
+            orientation === 'horizontal'
+              ? { width: `${progress * 100}%`, height: '100%' }
+              : { height: `${progress * 100}%` }
+          }
           data-testid="mobile-sector-timer-fill"
         />
       </div>
