@@ -16,14 +16,32 @@ import { startSectorRun } from './helpers';
  * with `viewport-fit=cover` and a translucent status bar, they are not.
  *
  * `env()` cannot be emulated, so the insets are named as custom properties that
- * default to `env(...)`. Body's padding and the run height both read them, which
- * keeps the two from drifting apart and lets this test set a real phone's
- * values.
+ * default to `env(...)`, which lets this test set a real phone's values.
+ *
+ * ---
+ *
+ * M5.8 changed *how* the overhang is avoided, so these tests were updated
+ * deliberately. The original fix kept body's padding and shrank the run screen
+ * to match it. That worked, but it inset every HUD element twice — each one
+ * already carries its own `env()` offset — and cost the canvas the inset total
+ * off its height. A run is now full-bleed: body drops its vertical padding for
+ * the duration of the run and the run screen is the whole viewport.
+ *
+ * The invariant these tests exist to protect is unchanged, and is asserted
+ * exactly as before: **nothing may hang past the bottom of the viewport**,
+ * because that overhang is what iOS scrolls away. Full viewport against an
+ * unpadded body leaves nothing to scroll, the same as the padded body and
+ * shrunken run screen did. What changed is only which of the two halves moves.
  */
 
 // iPhone 14 Pro in standalone.
 const INSETS = ':root { --safe-top: 59px !important; --safe-bottom: 34px !important; }';
+// The pre-M6.2 combination, reproduced in full: body padding *and* a root
+// sized to the whole viewport. Body's padding is now dropped during a run, so
+// re-applying it is part of restoring the historical condition — without it
+// there is no overhang to demonstrate.
 const OLD_RULES =
+  'html.run-active body { padding-top: 59px !important; padding-bottom: 34px !important; }' +
   '#root { min-height: 100dvh !important; } .run-screen { height: 100dvh !important; }';
 
 async function geometry(page: import('@playwright/test').Page) {
@@ -58,15 +76,18 @@ test.describe('M6.2 — home-screen web app safe areas', () => {
     await page.waitForTimeout(300);
     const standalone = await geometry(page);
 
-    // Body took its padding...
-    expect(standalone.bodyPadTop).toBe('59px');
-    // ...and the run screen gave that height back instead of hanging past the
-    // bottom. Negative means it ends above the viewport edge, inside the bottom
-    // safe area, which is correct.
+    // M5.8: a run is full-bleed, so body drops its vertical padding and the
+    // run screen takes the whole viewport.
+    expect(standalone.bodyPadTop).toBe('0px');
+    // The point of the whole suite, and unchanged by M5.8: nothing hangs past
+    // the bottom edge, so there is nothing for iOS to scroll away when the
+    // menu takes focus.
     expect(standalone.rootOverhang).toBeLessThanOrEqual(0);
     expect(standalone.runOverhang).toBeLessThanOrEqual(0);
-    expect(standalone.runHeight).toBe(852 - 59 - 34);
-    // The canvas follows, so the playfield fills the safe region exactly.
+    expect(standalone.runHeight).toBe(852);
+    // The canvas follows, so the playfield fills the screen exactly. Under the
+    // old rules this was 852 - 59 - 34 = 759; the 93px it gives back is the
+    // milestone.
     expect(standalone.canvasHeight).toBe(standalone.runHeight);
   });
 
