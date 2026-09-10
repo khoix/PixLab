@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createPerspectiveCamera, tileCenter, worldToScreen } from '../client/src/lib/game/renderer/projection';
-import { trackStableViewport, type StableViewport } from '../client/src/lib/game/renderer/cameraAnchor';
+import { tileCenter, worldToScreen } from '../client/src/lib/game/renderer/projection';
 
 for (const scenario of [
   { name: 'mobile', sizes: [{ width: 393, height: 727 }, { width: 393, height: 652 }, { width: 727, height: 393 }] },
@@ -10,7 +9,7 @@ for (const scenario of [
 ]) {
 test.describe(scenario.name, () => {
   test.use({ deviceScaleFactor: scenario.dpr ?? 1 });
-test(`${scenario.name}: perspective rendering and picking agree through follow, pause and resize`, async ({ page }) => {
+test(`${scenario.name}: perspective rendering and picking agree through follow, pause and resize`, async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
@@ -23,7 +22,6 @@ test(`${scenario.name}: perspective rendering and picking agree through follow, 
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
   await page.evaluate(() => window.__PIXLAB_LEVEL__!.clearMobs());
-  let stable: StableViewport | null = null;
   let anchorClient = { x: 0, y: 0 };
   let previous: { width: number; anchorY: number } | null = null;
   for (const viewport of scenario.sizes) {
@@ -37,12 +35,16 @@ test(`${scenario.name}: perspective rendering and picking agree through follow, 
       const rect = canvas.getBoundingClientRect();
       return { dims: window.__PIXLAB_CANVAS__!.getDimensions(canvas),
         rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
-        player: window.__PIXLAB_LEVEL__!.getPlayerPos() };
+        player: window.__PIXLAB_LEVEL__!.getPlayerPos(), rendered: window.__PIXLAB_LEVEL__!.getRenderedPerspectiveCamera() };
     });
-    stable = trackStableViewport(stable, info.dims.logicalWidth, info.dims.logicalHeight);
-    const camera = createPerspectiveCamera({ player: info.player, width: info.dims.logicalWidth,
-      height: info.dims.logicalHeight, stableHeight: stable.height,
-      isMobile: info.dims.logicalWidth < 768 || viewport.width < 768, tileSize: 32 });
+    // ResizeObserver can see intermediate canvas heights during HUD reflow.
+    // Stable anchoring deliberately remembers those; a camera reconstructed from
+    // only the final dimensions does not represent the frame under the pointer.
+    const camera = info.rendered!;
+    expect(camera).not.toBeNull();
+    expect(camera.width).toBe(info.dims.logicalWidth);
+    expect(camera.height).toBe(info.dims.logicalHeight);
+    expect(camera.focus).toEqual({ x: info.player.x + 0.5, y: info.player.y + 0.5 });
     expect(camera.anchor.y).toBeGreaterThan(0);
     expect(camera.anchor.y).toBeLessThanOrEqual(camera.height - 48);
     if (previous?.width === camera.width) expect(camera.anchor.y).toBe(previous.anchorY);
@@ -55,18 +57,32 @@ test(`${scenario.name}: perspective rendering and picking agree through follow, 
       const client = { x: info.rect.left + screen.x * info.rect.width / camera.width,
         y: info.rect.top + screen.y * info.rect.height / camera.height };
       expect(await page.evaluate(p => window.__PIXLAB_LEVEL__!.screenToTile(p.x, p.y), client),
-        JSON.stringify({ viewport, info, stable, anchor: camera.anchor, tile })).toEqual(tile);
+        JSON.stringify({ viewport, info, anchor: camera.anchor, tile })).toEqual(tile);
     }
     // Arbitrary test teleports can put the marker behind/in a wall now. Verify
     // the live voxel pass rather than requiring the marker to ignore occlusion.
     const world = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getWorldRenderStats());
     expect(world.walls).toBeGreaterThan(0);
     expect(world.faces).toBeGreaterThan(world.walls);
+    await page.screenshot({ path: testInfo.outputPath(`viewport-${viewport.width}x${viewport.height}.png`) });
   }
   await page.getByTestId('game-menu-button').click();
   const pickedWhilePaused = await page.evaluate(p =>
     window.__PIXLAB_LEVEL__!.screenToTile(p.x, p.y), anchorClient);
   expect(pickedWhilePaused).toEqual({ x: 10, y: 11 });
+  const paused = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getRenderedPerspectiveCamera()!);
+  const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: viewport.width, height: viewport.height - 40 });
+  // A resize while paused still redraws. Browser chrome must not move the anchor
+  // unless the existing bottom-clearance clamp requires it.
+  await expect.poll(() => page.evaluate(() => {
+    const camera = window.__PIXLAB_LEVEL__!.getRenderedPerspectiveCamera();
+    const canvas = document.querySelector('canvas.game-canvas') as HTMLCanvasElement;
+    return camera?.height === window.__PIXLAB_CANVAS__!.getDimensions(canvas).logicalHeight;
+  })).toBe(true);
+  const afterPauseResize = await page.evaluate(() => window.__PIXLAB_LEVEL__!.getRenderedPerspectiveCamera()!);
+  expect(afterPauseResize.anchor.y).toBe(Math.min(paused.anchor.y, afterPauseResize.height - 48));
+  expect(afterPauseResize.focus).toEqual(paused.focus);
   expect(errors).toEqual([]);
 });
 });

@@ -1,78 +1,65 @@
-# 3D gameplay view — Execution 5 responsive checkpoint
+# 3D gameplay view — Execution 5 complete
 
-Branch: `astra/3d-conversion`. This checkpoint builds on `f30add2`.
-Execution 4 rendering integration is complete; Execution 5 is INCOMPLETE.
-No PR or main merge. Open the title URL with `?perspective=1`, then start a run.
-Keep perspective opt-in through stabilization/final validation.
+Branch: `astra/3d-conversion`; this work builds on `405407d`.
+Execution 5 is complete; ready for final Execution 6 integration validation.
+Perspective remains opt-in: open `/?perspective=1`, then start a run.
+No PR or main merge. Reuse the camera/world/entity/effects design below.
 
-## Execution 5 — responsive test expansion
+## Execution 5 changes and findings
 
-Convention v5: 25% × 20 = 5 minutes; implementation one minute, save buffer four.
-2026-09-10 UTC: start 01:42:19, cutoff 01:43:19, hard stop 01:47:19.
+Convention v5: 95% × 20 = 19 minutes, four-minute save buffer. 2026-09-10 UTC:
+start 11:45:29, implementation cutoff 12:00:29, hard stop 12:04:29.
 
-- Expanded `e2e/projection-camera.spec.ts` with wide desktop (1920×800 →
-  1440×600, DPR 2), and DPR 3 phone (430×820 → 430×745 → 820×360 →
-  740×280). Assertions cover same-width anchor stability, bottom clearance,
-  capped DPR, world rendering and projected picking through follow/pause/resize.
-- Desktop, mobile/chrome and wide-desktop scenarios passed. High-DPR landscape
-  failed at 820×360: canvas logical 820×305, DPR 2, predicted anchor (410,152.5),
-  projected tile (10,10) picked (10,9). Final 740×280 step was not reached.
-  A second isolated run reproduced the identical failure.
-  This is an intentionally retained failing reproduction, not a verified renderer
-  bug diagnosis. Check resize/frame synchronization and test camera assumptions
-  before changing production projection. No production code changed this run.
-- 10 projection unit tests passed. `npm run check` retains the same pre-existing
-  diagnostics (15 occurrences / 12 unique normalized messages), no new errors.
-  `git diff --check` passed. Full suite, profiling and visual review not performed.
-- Changed only `e2e/projection-camera.spec.ts` and this handoff. No responsive
-  fix or optimization is claimed. Execution 6 is not ready.
+- Resolved the landscape picking reproduction: the test reconstructed a camera
+  from final dimensions and missed intermediate ResizeObserver heights. Actual
+  camera/picking agreed. At 820×360 the canvas briefly reached height 360 before
+  HUD reflow settled at 305; stable anchoring correctly retained Y=180. No camera
+  equations or framing constants changed. Added a defensive-copy read-only
+  `getRenderedPerspectiveCamera` test hook and assertions against rendered frames.
+- Responsive checks cover 393/430 phone widths, mobile chrome shrinkage,
+  727/820 landscape, 740×280 short landscape, 1280 desktop, 1920/1440 wide desktop,
+  DPR 1/2/3, pause and resize while paused. Anchors stay stable unless the existing
+  48 px bottom-clearance clamp applies. Inspected corresponding captures.
+- `PerspectiveFog` now caches inverse-projected ground distances by viewport and
+  camera shape, and reuses ImageData. Vision/debuff changes only recompute alpha.
+  Translation still reuses the whole mask. Radius and falloff mechanics unchanged.
+- `VoxelWorldRenderer` skips fully fog-hidden body/overlay draw callbacks; opaque
+  walls and ground passes remain intact. This also avoids building invisible mob
+  sprites. Updated live test placement to keep its cache assertions within vision.
+- Existing topology/culling, sprite caching, shadow/quality gates, DPR budget and
+  once-per-frame snapshots remain. No simulation, combat, HUD or UI changes.
 
-## Latest checkpoint — effects, visibility and interaction
+## Measurements and validation
 
-Convention: Execution-Time-Budget.md v5. 95% × 20 = 19 minutes; four-minute
-save buffer. Start 00:12:08 UTC, cutoff 00:27:08, hard stop 00:31:08 (2026-09-10).
+Combined fixture: 80×80 map, 30 mobs, 30 particles, 10 shots, item/portal/exit;
+1000×700 canvas, DPR 1/2, all quality tiers, 24 moving and 24 changing-vision frames.
+Headless Chromium/software rendering; these are not physical-device FPS promises.
 
-- `perspectiveEffects.ts`: pooled world-ground footprints, afterimages, path hints,
-  lightswitches, world particles, and bounded analytic portal sparkles. Positions,
-  directions and game-clock lifetimes stay logical; no simulation particle mutation.
-  Ground effects precede walls; particles join the existing wall/entity depth queue.
-- `perspectiveFog.ts`: unchanged snapshot radius and shared fogGradient falloff.
-  Cached inverse-projected ground mask; upright artwork/overlays and walls shade
-  by ground distance. Fully hidden walls stay opaque black for occlusion, without
-  colored seam leakage. Cache excludes camera translation; quality samples at
-  4/6/8 CSS pixels. DPR is handled by the existing canvas transform.
-- `perspectiveSenses.ts`: threat/loot reveal markers remain above fog/walls as in
-  the legacy view, now with projected anchors/scales and bounded sparkle decoration.
-  Phase/moth direct artwork and player alpha preserve inherited visibility.
-- Damage labels retain upright animation with projected fog-aware anchors.
-  Existing ranged/charge cues already use projected ground geometry. Audit found
-  no additional separate melee/attack-zone drawing beyond existing hit feedback.
-  Legacy flat drawing remains only in the non-perspective branch; HUD unchanged.
-- Inverse picking uses the rendered camera. Live mobile portal tap selects the
-  visible tile; standing alone does not teleport. Pickup and stair movement retain
-  their mechanics. Item raster tests cover front/behind-wall and zero-vision cases.
+| Fog rebuild cost (ms/frame) | Before | After |
+| --- | ---: | ---: |
+| Low, DPR 2 | 1.25 | 0.33 |
+| Medium, DPR 2 | 1.97 | 0.63 |
+| High, DPR 2 | 4.56 | 1.04 |
 
-## Validation this checkpoint
-
-- 28 focused unit tests passed (projection, world order, billboard/projectile math,
-  effect pooling/aging, radial visibility, unchanged debuff/reveal snapshot behavior).
-- 13 distinct relevant browser tests passed across targeted runs: three entity,
-  three landmark/interaction, three projectile/item, two effects/fog, two camera.
-  Includes desktop/mobile movement and resize/picking, all subtype/boss fixtures,
-  hit/status/charge cues, DPR 1/2 landmarks, normal/boss/shadow projectile raster
-  checks, real pickup/exit completion, reduced live vision, senses and fog caching.
-  Initial new tests were corrected for the existing test API and partial item
-  visibility above a wall; all final targeted runs passed.
-- Inspected normal/reduced fog and live mobile screenshots: ground-aligned falloff,
-  raised walls, footprint/trail/hint/light geometry. Fixed fully dark wall seam leak.
-- `npm run check`: same 15 pre-existing diagnostics, normalized comparison shows
-  zero new errors. `git diff --check`: passed. Full suite not run in this timebox.
-- Existing 60-entity fixture: 4.28 ms low / 5.36 ms high, zero extra sprite builds;
-  this fixture excludes fog and is not a physical-device performance measurement.
-- Changed: GameCanvas.tsx; renderer/{perspectiveEffects.ts,perspectiveEffects.test.ts,
-  perspectiveFog.ts,perspectiveSenses.ts,perspectiveEntities.ts,voxelWorld.ts,mobArt.ts};
-  testHooks.ts; e2e/{perspective-effects,perspective-landmarks,perspective-projectiles}.spec.ts;
-  this handoff.
+- All tiers: zero extra fog/sprite builds while following after warmup. Visible
+  topology stays at 1,269 of 6,400 tiles. High-DPR dense-scene stable draw remains
+  approximately 19–27 ms here; final physical-device profiling is still appropriate.
+- Six combined captures (all tiers, DPR 1/2) are pixel-identical before/after.
+  Automated fog reference comparison covers three tiers, two viewport heights,
+  normal/reduced/zero/reveal radii. Inspected generated maze/arena, live mobile
+  mobs, damage feedback and charge cues; no new geometry/grounding defect found.
+- 29 unit tests passed: renderer `*.test.ts` plus `scaling.test.ts`.
+- Final relevant browser suite: 72 passed (1.4 minutes), both Chromium desktop
+  and mobile projects. Combined performance/cache fixture also passed separately.
+  Initial landscape test-camera and hidden-mob cache assumptions were corrected;
+  the final combined run is green.
+- `npm run check`: same 15 pre-existing diagnostics / 12 unique normalized
+  messages; zero new errors. `git diff --check` passed. Full 490-case browser suite
+  was not practical within this timebox; focused coverage includes legacy parity.
+- Changed: GameCanvas.tsx; renderer/{perspectiveFog.ts,voxelWorld.ts}; testHooks.ts;
+  e2e/{projection-camera,perspective-effects,perspective-entities,
+  perspective-performance}.spec.ts; this handoff. Benchmark test reports timings
+  and verifies caches without fragile machine-speed thresholds.
 
 ## Completed architecture — reuse
 
@@ -106,40 +93,29 @@ save buffer. Start 00:12:08 UTC, cutoff 00:27:08, hard stop 00:31:08 (2026-09-10
 - `GameCanvas` combines all adapters. `projectionDiagnostic.ts` only selects opt-in
   perspective. Existing inverse ground picking remains unchanged.
 
-## Earlier validation — do not recreate baselines
+## Exact starting checklist — final Execution 6
 
-Execution 3: 22 unit tests and 14 browser tests passed, covering camera math,
-mobile anchoring, wall order, entities, sprite parity/cache, generated levels and
-DPR floor gaps. A 60-entity fixture averaged 3.87 ms low / 4.47 ms high full draw
-in headless Chromium 152 (not physical-device measurements).
-Earlier Execution 4 checkpoints: 2 projectile unit tests, projectile/item Canvas
-fixtures, existing entity smoke and desktop/mobile projection-camera tests passed.
-Projectile raster occlusion and all four item icon categories are covered.
-Use existing scratch Chromium/Vite override if necessary; an executable restored
-from the installed @sparticuz/chromium archive resolved a prior launch failure.
+1. Start from this branch and handoff; no new visual-design pass. Confirm clean
+   state and inspect any newer commits before final integration work.
+2. Run a production build and combined gameplay review: melee/ranged and bosses,
+   Nyx reduced vision/recovery, sense-scroll expiry, pickups, portals/stairs and
+   touch picking. Reuse the deterministic rendering tests and captures above.
+3. Check actual phone/browser chrome and orientation if hardware is available.
+   Review dense high-DPR performance; target only measured regressions. Core
+   geometry and visibility must remain enabled at low quality.
+4. Run relevant tests and full practical CI suite; distinguish the existing
+   typecheck errors from branch regressions. Current focused command: Playwright
+   projection-camera, perspective-effects/entities/landmarks/projectiles,
+   voxel-world, m2-render-quality, m3-canvas-fog, m6-2-pause-camera and
+   m7-1-mob-sprites on both Chromium projects; run perspective-performance alone
+   for timing. Unit command: `node --import tsx --test
+   client/src/lib/game/renderer/*.test.ts client/src/lib/game/scaling.test.ts`.
+5. Follow the user's final integration instructions for release/PR decisions;
+   perspective is still opt-in, and this execution neither enabled it by default
+   nor opened a PR.
 
-## Exact continuation — Execution 5 stabilization
-
-1. FIRST resolve the new high-DPR landscape picking reproduction in
-   `e2e/projection-camera.spec.ts` (grep `high-DPR phone`). Confirm the canvas
-   resize and rendered camera have settled before diagnosing projection math.
-   Then complete responsive live validation:
-   wide desktop, phone portrait/landscape, short landscape, mobile chrome, DPR,
-   resize/orientation. Perspective remains opt-in.
-2. Profile combined fog/world/entities/effects. Fog mask rebuilds are avoided on
-   follow; debuff decay legitimately changes the radius. Consider measured cost
-   of mask rebuilding during decay, exit scans, and offscreen sense/icon drawing.
-3. Run relevant/full practical automated and e2e suites. Existing typecheck baseline
-   is 15 errors, not introduced by this checkpoint. Do not repair unrelated systems.
-4. Review extended live combat (melee/ranged, boss phases, Nyx debuff application
-   and recovery), sense scroll expiry, and physical touch/orientation. Deterministic
-   render fixtures and snapshot/live-radius tests passed; a complete manual combat
-   playthrough and physical-device validation were not performed.
-
-Known limitations: wall visibility is constant per voxel ground center; floor fog
-is a quality-dependent sampled mask. Health bars remain screen-facing above walls
-but respect fog. Texture mapping is a small-patch approximation. Ground picking
-intersects the floor, not wall faces. Analytic portal/sense sparkles replace legacy
-screen-pixel particles. No known unconverted world-space rendering path remains;
-retained flat code is the intentionally supported legacy mode. Keep simulation,
-AI, combat, movement, progression, level generation and HUD unchanged.
+Known limits: wall fog is constant per voxel ground center; sampled floor fog and
+small-patch landmark textures are approximations. Health bars are upright above
+walls but obey fog. Ground picking intersects the floor, not wall faces. Physical
+hardware and a complete long combat playthrough remain final-validation work.
+No known unconverted world-space path remains; flat code supports legacy mode.

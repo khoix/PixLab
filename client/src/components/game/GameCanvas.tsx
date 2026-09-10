@@ -727,6 +727,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     window.__PIXLAB_LEVEL__ = {
       getPlayerPos: () => ({ ...playerPosRef.current }),
       getWorldRenderStats: () => voxelWorld.getStats(),
+      getRenderedPerspectiveCamera: () => {
+        const camera = renderedCameraRef.current?.perspective;
+        return camera ? { ...camera, focus: { ...camera.focus }, anchor: { ...camera.anchor } } : null;
+      },
       getPerspectiveFogStats: () => perspectiveFog.getStats(),
       getPlayerHp: () => statsRef.current.hp,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',

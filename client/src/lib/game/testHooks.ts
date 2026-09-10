@@ -1,4 +1,5 @@
 import type { GameState, Item, MobSubtype, Position } from './types';
+import type { PerspectiveCamera } from './renderer/projection';
 import type { WorldRenderStats } from './renderer/voxelWorld';
 
 export interface LevelDebugEntity {
@@ -16,6 +17,7 @@ declare global {
     __PIXLAB_LEVEL__?: {
       getPlayerPos: () => Position;
       getWorldRenderStats: () => WorldRenderStats;
+      getRenderedPerspectiveCamera: () => PerspectiveCamera | null;
       getPerspectiveFogStats: () => { builds: number; width: number; height: number; radiusTiles: number };
       /** Live attack-pressure occupancy, for M6.4b assertions. */
       getPressureStats: () => { used: number; cap: number; holders: number; peakUsed: number };

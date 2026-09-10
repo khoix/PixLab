@@ -59,3 +59,33 @@ test('live perspective fog follows vision changes without rebuilding during ordi
   await page.keyboard.down('ArrowRight'); await page.waitForTimeout(300); await page.keyboard.up('ArrowRight');
   expect(await page.evaluate(() => window.__PIXLAB_LEVEL__!.getPerspectiveFogStats().builds)).toBe(before);
 });
+
+test('cached fog distances preserve reference pixels through vision changes and viewport changes', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { PerspectiveFog } = await import('/src/lib/game/renderer/perspectiveFog.ts');
+    const { createPerspectiveCamera, screenToGround } = await import('/src/lib/game/renderer/projection.ts');
+    const { fogAlphaAtDistance } = await import('/src/lib/game/renderer/fogGradient.ts');
+    const fog = new PerspectiveFog(), canvas = document.createElement('canvas'), reference = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!, ref = reference.getContext('2d')!;
+    let differences = 0;
+    for (const quality of ['low', 'medium', 'high']) for (const height of [240, 320]) for (const radius of [3.5, 1.75, 0, 1000]) {
+      const camera = createPerspectiveCamera({ player: { x: 12.25, y: 14.5 }, width: 320, height, tileSize: 32, isMobile: true });
+      canvas.width = reference.width = camera.width; canvas.height = reference.height = height;
+      const step = quality === 'high' ? 4 : quality === 'medium' ? 6 : 8;
+      const sample = document.createElement('canvas'); sample.width = Math.ceil(camera.width / step); sample.height = Math.ceil(height / step);
+      const small = sample.getContext('2d')!, pixels = small.createImageData(sample.width, sample.height);
+      for (let y = 0; y < sample.height; y++) for (let x = 0; x < sample.width; x++) {
+        const point = screenToGround(camera, { x: (x + 0.5) * camera.width / sample.width, y: (y + 0.5) * height / sample.height });
+        pixels.data[(y * sample.width + x) * 4 + 3] = Math.round(255 * (point
+          ? fogAlphaAtDistance(Math.hypot(point.x - camera.focus.x, point.y - camera.focus.y), radius) : 1));
+      }
+      small.putImageData(pixels, 0, 0); ref.imageSmoothingEnabled = true; ref.drawImage(sample, 0, 0, camera.width, height);
+      fog.prepare(camera, radius, quality).drawGround(ctx, camera);
+      const expected = ref.getImageData(0, 0, camera.width, height).data, actual = ctx.getImageData(0, 0, camera.width, height).data;
+      for (let i = 0; i < actual.length; i++) if (actual[i] !== expected[i]) differences++;
+    }
+    return differences;
+  });
+  expect(result).toBe(0);
+});

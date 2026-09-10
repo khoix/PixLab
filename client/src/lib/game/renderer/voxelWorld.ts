@@ -182,8 +182,11 @@ export class VoxelWorldRenderer {
       let playerHint: WorldDrawable | undefined;
       for (const entry of this.queue) {
         if ('draw' in entry) {
-          ctx.save(); ctx.globalAlpha *= visibility?.visibilityAt(entry) ?? 1;
-          entry.draw(ctx, camera); ctx.restore();
+          const alpha = visibility?.visibilityAt(entry) ?? 1;
+          if (alpha > 0) {
+            ctx.save(); ctx.globalAlpha *= alpha;
+            entry.draw(ctx, camera); ctx.restore();
+          }
           if (entry.drawOccluded) {
             playerHint = entry;
             this.occlusionMask = new Path2D();
@@ -209,8 +212,10 @@ export class VoxelWorldRenderer {
         playerHint.drawOccluded!(ctx, camera);
         ctx.restore();
       }
-      for (const entry of this.queue) if ('draw' in entry) {
-        ctx.save(); ctx.globalAlpha *= visibility?.visibilityAt(entry) ?? 1;
+      for (const entry of this.queue) if ('draw' in entry && entry.drawOverlay) {
+        const alpha = visibility?.visibilityAt(entry) ?? 1;
+        if (alpha <= 0) continue;
+        ctx.save(); ctx.globalAlpha *= alpha;
         entry.drawOverlay?.(ctx, camera); ctx.restore();
       }
     } finally { this.occlusionMask = null; ctx.restore(); }

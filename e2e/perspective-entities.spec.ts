@@ -164,7 +164,10 @@ test('live perspective run follows movement with player and mob sprites at mobil
       const subtypes = ['phase', 'charger', 'turret', 'sniper', 'moth'];
       let index = 0;
       for (let y = p.y - 4; y <= p.y + 4; y++) for (let x = p.x - 4; x <= p.x + 4; x++) {
-        if (api.isFloor(x, y) && Math.hypot(x - p.x, y - p.y) >= 2 && index < subtypes.length) {
+        // Keep the cache assertion meaningful: these mobs must be inside
+        // vision after the eastward step, not hidden sprites that need no draw.
+        if (api.isFloor(x, y) && Math.hypot(x - p.x, y - p.y) >= 2
+          && Math.hypot(x - (p.x + 1), y - p.y) <= 2.5 && index < subtypes.length) {
           api.spawnMob(subtypes[index++] as never, { x, y });
         }
       }
