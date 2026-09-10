@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { useGame } from '../lib/store';
 import { useLocation } from '../lib/router';
 import { GameCanvas } from '../components/game/GameCanvas';
+import { isPerfOverlayEnabled, setPerfOverlayEnabled } from '../lib/game/perfFlags';
+import { perfMonitor } from '../lib/game/perfMonitor';
+import { viewportProbe } from '../lib/game/viewportProbe';
 import { FloatingTouchControl } from '../components/game/FloatingTouchControl';
 import { PortalPrompt } from '../components/game/PortalPrompt';
 import type { PortalApi } from '../components/game/GameCanvas';
@@ -197,6 +200,23 @@ export default function Game() {
   const [gameOverState, setGameOverState] = useState<{ type: 'death' | 'timeout' } | null>(null);
   const [inventoryFilter, setInventoryFilter] = useState<Item['type'] | 'all'>('all');
   const [vendorFilter, setVendorFilter] = useState<Item['type'] | 'all'>('all');
+
+  // Diagnostics overlay. `?perf=1` cannot reach a home-screen web app — it
+  // always launches at the URL that was saved — so the flag needs an in-app
+  // switch. It is persisted in localStorage by `setPerfOverlayEnabled`.
+  const [diagnosticsOn, setDiagnosticsOn] = useState(() => isPerfOverlayEnabled());
+
+  const setDiagnostics = (enabled: boolean) => {
+    setPerfOverlayEnabled(enabled);
+    setDiagnosticsOn(enabled);
+    if (enabled) {
+      perfMonitor.enable();
+      if (!viewportProbe.isActive()) viewportProbe.start();
+    } else {
+      perfMonitor.disable();
+      viewportProbe.stop();
+    }
+  };
 
   // One equip/unequip path for every surface. These were duplicated inline in
   // each of the six equipped-slot rows and both item lists, which is how the
@@ -1430,6 +1450,32 @@ export default function Game() {
                           </label>
                         </div>
                       </RadioGroup>
+                    </div>
+                    <div data-testid="diagnostics-settings">
+                      <label className="text-lg font-pixel text-primary mb-2 block">DIAGNOSTICS OVERLAY</label>
+                      <RadioGroup
+                        value={diagnosticsOn.toString()}
+                        onValueChange={(value) => setDiagnostics(value === 'true')}
+                        className="flex flex-col gap-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="true" id="diagnostics-on" data-testid="diagnostics-on" style={{ minWidth: '40px' }} />
+                          <label htmlFor="diagnostics-on" className="text-sm font-mono text-foreground cursor-pointer">
+                            On (FPS, draw cost, viewport drift)
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="false" id="diagnostics-off" data-testid="diagnostics-off" style={{ minWidth: '40px' }} />
+                          <label htmlFor="diagnostics-off" className="text-sm font-mono text-foreground cursor-pointer">
+                            Off
+                          </label>
+                        </div>
+                      </RadioGroup>
+                      <p className="text-xs font-mono text-muted-foreground mt-2">
+                        The same overlay as <code>?perf=1</code>. A home-screen web app always
+                        launches at its saved URL, so a query parameter can never reach it —
+                        this is the only way to turn it on there.
+                      </p>
                     </div>
                     {!isMobile && (
                       <div data-testid="relaxed-timer-settings">

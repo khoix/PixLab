@@ -1,5 +1,69 @@
 # Release Notes
 
+## Milestone 5.7 (step 1) — Viewport probe for the upward creep
+
+**Branch:** `claude/m5-7-viewport`
+
+Instrumentation, not a fix. The reported creep — the playfield riding up over a
+run, leaving a growing black band — has a clear *shape* but no confirmed
+mechanism, and the candidates need different repairs.
+
+### What the screenshots already proved
+Measured across three captures on one 1170×2532 device, the bottom of all app
+content moved 2324 → 2081 → 1940 px: the band grew 207 → 591 px. The HP row at
+the top stayed pinned in every frame, and the mobile SECTOR badge — a DOM element
+at `absolute bottom-[100px]` — rose with the band.
+
+A leaked canvas transform cannot move a DOM badge, and a page scroll would carry
+the top row away too. So `.run-screen` is **getting shorter**, which also fits
+the report that the main menu looks normal: that box only exists during a run.
+
+### Added
+- **`lib/game/viewportProbe.ts`** — records `.run-screen`'s box next to
+  everything that could decide it: `innerHeight`, `documentElement.clientHeight`,
+  `scrollY`, the whole `visualViewport` (width/height/offsetTop/pageTop/scale),
+  the canvas box, and the resolved `--run-height` / `--safe-top` /
+  `--safe-bottom`. Samples on an interval *and* on resize, orientationchange and
+  `visualViewport` resize/scroll, so nothing slips between ticks. `visualViewport`
+  is the prime suspect precisely because nothing else in the app reads it.
+- **A live drift readout in the perf overlay.** This happens on a phone, where
+  there is no console, so the current run-screen height and the drift since the
+  run began are on screen, turning red past −8px.
+- Auto-starts under `?perf=1`; the API is always installed so a trace can be
+  started by hand. `toCsv()` dumps the series.
+
+### A correction
+The plan had listed `--run-height` as double-subtracting the safe-area insets.
+That is wrong — Tailwind's preflight sets `box-sizing: border-box`, so `body`'s
+content box is already `100dvh − safe-top − safe-bottom`. Shipping that "fix"
+would have changed correct code. No change made.
+
+### Found while instrumenting
+`--run-height` is defined **only** inside `@media (max-width: 767px)`. Above that,
+`.run-screen` falls back to plain `100dvh` with no inset handling — the probe
+reports `(unset)` on a 1280px viewport. Worth knowing before anyone edits the
+safe-area maths.
+
+### Verification
+- `npm run build` clean; `npx tsc` at the 15-error pre-existing baseline.
+- **`e2e/m5-7-viewport-probe.spec.ts`** (new), 10/10 on both projects: the probe
+  finds and measures the run-screen and canvas boxes; it is inert until started
+  and stops when stopped; `?perf=1` auto-starts it; a resize is captured as its
+  own sample (727 → 500 px) and reported as negative drift; and the overlay shows
+  the numbers on screen.
+- The **control** asserts zero drift on an untouched desktop viewport — 0px over
+  2s. If that ever fails, the creep is reproducible here and no device trace is
+  needed.
+
+### Next
+Capture a trace on the phone where it happens, identify the driver, then fix.
+Two real defects found while reading are deliberately **not** bundled in, so they
+cannot confound the diagnosis: `trackStableViewport` is a one-way ratchet that
+never recovers, and the draw loop's `finally` restores the shadow gate but not the
+canvas save-stack.
+
+---
+
 ## Inventory filter bar — centred at every width
 
 **Branch:** `claude/filter-center-fix`

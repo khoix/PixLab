@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { perfMonitor, type PerfSnapshot } from '../../lib/game/perfMonitor';
 import { getActiveRenderQuality } from '../../lib/game/renderQuality';
+import { viewportProbe, type ViewportSummary } from '../../lib/game/viewportProbe';
 
 interface PerfOverlayProps {
   visible: boolean;
@@ -8,6 +9,7 @@ interface PerfOverlayProps {
 
 export const PerfOverlay: React.FC<PerfOverlayProps> = ({ visible }) => {
   const [snapshot, setSnapshot] = useState<PerfSnapshot | null>(null);
+  const [viewport, setViewport] = useState<ViewportSummary | null>(null);
 
   useEffect(() => {
     if (!visible) return;
@@ -19,15 +21,31 @@ export const PerfOverlay: React.FC<PerfOverlayProps> = ({ visible }) => {
     };
 
     frameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameId);
+    // The viewport summary changes on the order of seconds, and reading layout
+    // boxes every frame would itself perturb what it measures.
+    const viewportTimer = window.setInterval(() => {
+      setViewport(viewportProbe.getSummary());
+    }, 1000);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.clearInterval(viewportTimer);
+    };
   }, [visible]);
 
   if (!visible || !snapshot) return null;
 
+  // `fixed` deliberately: anchored to the viewport rather than to
+  // `.run-screen`, the overlay held still in the first device trace while the
+  // whole run screen slid up around it, which is what identified the movement
+  // as a translation rather than a resize. Keep it out of the run screen.
+  //
+  // It has to clear the status bar, though — at a flat `top-2` the title and
+  // FPS row sat under the clock on a phone with a 47px top inset, and these
+  // numbers are read off screenshots.
   return (
     <div
       data-testid="perf-overlay"
-      className="pointer-events-none fixed top-2 left-2 z-[300] rounded border border-cyan-400/40 bg-black/80 px-3 py-2 font-mono text-[11px] leading-relaxed text-cyan-200 shadow-lg"
+      className="pointer-events-none fixed top-[calc(env(safe-area-inset-top,0px)+0.5rem)] left-[calc(env(safe-area-inset-left,0px)+0.5rem)] z-[300] rounded border border-cyan-400/40 bg-black/80 px-3 py-2 font-mono text-[11px] leading-relaxed text-cyan-200 shadow-lg"
       aria-hidden="true"
     >
       <div className="text-cyan-300 font-bold mb-1">PERF (M0)</div>
@@ -41,6 +59,34 @@ export const PerfOverlay: React.FC<PerfOverlayProps> = ({ visible }) => {
       <div>Input updates: {snapshot.inputDirectionUpdates}</div>
       <div>Samples: {snapshot.sampleCount}</div>
       <div>Quality: {getActiveRenderQuality()}</div>
+      {viewport && (
+        <div className="mt-1 border-t border-cyan-400/30 pt-1" data-testid="perf-overlay-viewport">
+          <div className="text-cyan-300 font-bold">VIEWPORT (M5.7)</div>
+          <div>Run screen: {viewport.lastRunScreenHeight}px</div>
+          <div
+            className={viewport.driftPx <= -8 ? 'text-red-300' : undefined}
+            data-testid="perf-overlay-drift"
+          >
+            Drift: {viewport.driftPx > 0 ? '+' : ''}{viewport.driftPx}px
+            {' '}(min {viewport.minRunScreenHeight}, max {viewport.maxRunScreenHeight})
+          </div>
+          {/* The first device trace showed height dead flat at 763px while the
+              whole run screen slid up ~47px on a menu open. Size alone reads
+              "no drift" straight through that, so the box's top and the two
+              things that can move it without resizing it are on screen too. */}
+          <div
+            className={Math.abs(viewport.topShiftPx) >= 8 ? 'text-red-300' : undefined}
+            data-testid="perf-overlay-shift"
+          >
+            Top: {viewport.lastRunScreenTop}px (shift {viewport.topShiftPx > 0 ? '+' : ''}
+            {viewport.topShiftPx})
+          </div>
+          <div data-testid="perf-overlay-scroll">
+            Scroll: {viewport.lastScrollY} (max {viewport.maxScrollY})
+            {' '}VV: {viewport.lastVvOffsetTop}/{viewport.lastVvPageTop}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -388,6 +388,65 @@ or 375×667 with the longest fixture names; all three surfaces filter by type.
 
 ---
 
+## Milestone 5.7 — Run Viewport Stability (the upward creep)
+
+**Status: step 1 (measurement) complete. The fix is gated on a device trace.**
+
+**Symptom:** during a long run the playfield creeps upward, leaving a growing
+black band at the bottom. Returning to the main menu clears it.
+
+**What the screenshots establish before any code was read.** Measured across
+three captures on one 1170×2532 device: the bottom of all app content moved
+2324 → 2081 → 1940 px, so the band grew 207 → 591 px (8% → 23% of the screen).
+Critically, **the HP row at the top stays pinned in every frame**, and the mobile
+SECTOR badge — a DOM element at `absolute bottom-[100px]` (`HUD.tsx:113`) — rises
+with the band.
+
+That rules out the two leading theories at once: a leaked canvas transform cannot
+move a DOM badge, and a page scroll would carry the top row away too. **The
+`.run-screen` box is getting shorter.** The user's observation that it looks
+normal back at the main menu fits — `.run-screen` and `html.run-active` exist
+only during a run.
+
+**Why step 1 is instrumentation.** Nothing in JS writes that height; it comes
+from a CSS `calc()`. Static reading gives the shape of the bug but not the
+mechanism, and the remaining candidates need different fixes.
+
+- [x] **`lib/game/viewportProbe.ts`** — records `.run-screen`'s box alongside
+  everything that could decide it: `innerHeight`, `documentElement.clientHeight`,
+  `scrollY`, the full `visualViewport` (width/height/offsetTop/pageTop/scale),
+  the canvas box, and the resolved `--run-height` / `--safe-top` / `--safe-bottom`.
+  Samples on an interval *and* on resize, orientationchange and `visualViewport`
+  resize/scroll, so a change between ticks is never missed. `getSummary()` gives
+  first/last/min/max and the drift; `toCsv()` dumps a trace.
+- [x] **Live drift readout in the perf overlay.** The device this happens on is a
+  phone with no console, so the number is on screen and turns red past −8px.
+  Capturing this is a screenshot, not a debugging session.
+- [x] Auto-starts under `?perf=1`; the API is always installed so a trace can be
+  started by hand.
+
+**Correction to this plan's earlier draft.** It listed `--run-height` as
+double-subtracting the safe-area insets. That is wrong: Tailwind's preflight sets
+`box-sizing: border-box`, so `body`'s content box is already
+`100dvh − safe-top − safe-bottom` and the `calc()` is correct. No change made.
+
+**Found while instrumenting:** `--run-height` is defined **only** inside
+`@media (max-width: 767px)`. Above that `.run-screen` falls back to plain
+`100dvh` with no inset handling — confirmed by the probe reporting `(unset)` on a
+1280px viewport. Worth knowing before anyone edits the safe-area maths.
+
+**Still to do (needs the trace):** identify the driver, fix it, add a regression
+test. Two defects found while reading remain real regardless and are deliberately
+*not* bundled in, so they cannot confound the diagnosis: `trackStableViewport`
+(`renderer/cameraAnchor.ts:31-43`) is a one-way ratchet that never recovers, and
+the draw loop's `finally` (`GameCanvas.tsx:2906`) restores the shadow gate but not
+the canvas save-stack.
+
+**Files:** `lib/game/viewportProbe.ts` (new), `main.tsx`,
+`components/game/PerfOverlay.tsx`, `e2e/m5-7-viewport-probe.spec.ts` (new).
+
+---
+
 ## Milestone 6 — Gameplay Balance: Speed, Timer, Combat Clarity
 
 **Goal:** Improve fairness and pacing, especially for mobile sessions.
@@ -1332,6 +1391,7 @@ M9 Progression & Variety
 | M5.4 | Timer side, sensitivity range, font scale | P1 | Low | Done |
 | M5.5 | Floating joystick re-anchor | P1 | Medium — changes how every mobile turn reads | Done |
 | M5.6 | Inventory surfaces: shared components, layout, filters | **P1** | Low — extraction plus a layout fix; no behaviour change | ✅ Complete |
+| M5.7 | Run viewport stability | **P1** | Medium — mechanism not yet identified | Step 1 (measurement) complete; fix gated on a device trace |
 | M6 | Balance & clarity | P2 | Medium | Done |
 | M6.1 | Mob balance pass + cadence/movement correctness | **P1** | Medium — gameplay-visible cadence/movement fairness | Done |
 | M6.2 | Full run pause | P1 | Low | Done |
