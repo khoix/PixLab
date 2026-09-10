@@ -3,7 +3,7 @@ import { useGame } from '../../lib/store';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { getSectorTimeLeftSec } from '../../lib/game/sectorTimer';
-import { useIsMobile } from '../../hooks/use-mobile';
+import { useIsMobile, useIsLandscapePhone } from '../../hooks/use-mobile';
 import { EyeOff } from 'lucide-react';
 import { SectorTimerBar } from './SectorTimerBar';
 
@@ -15,6 +15,7 @@ interface HUDProps {
 export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
   const { state } = useGame();
   const isMobile = useIsMobile();
+  const isLandscapePhone = useIsLandscapePhone();
   const [timeLeft, setTimeLeft] = useState(() =>
     Math.ceil(getSectorTimeLeftSec(state.activeMods)),
   );
@@ -99,12 +100,15 @@ export const HUD: React.FC<HUDProps> = ({ isShop, isBoss }) => {
 
       </div>
 
-      {/* Mobile: vertical sector timer (right edge, safe from browser chrome) */}
+      {/* Mobile sector timer: down an edge in portrait, along the bottom when
+          the phone is rotated — in landscape height is the scarce dimension and
+          a full-height bar spends it on nothing. */}
       {isMobile && !isShop && !isBoss && (
         <SectorTimerBar
           activeModIds={state.activeMods}
           timeLeftSec={timeLeft}
           side={state.settings.sectorTimerSide ?? 'right'}
+          orientation={isLandscapePhone ? 'horizontal' : 'vertical'}
         />
       )}
 
