@@ -50,7 +50,11 @@ export const EventLogDrawer: React.FC<EventLogDrawerProps> = ({
           drawer instead of growing past it — a flex child defaults to
           min-height:auto and would refuse to shrink. */}
       <div className="min-h-0 flex-1">
-        <GameEventLogViewer />
+        {/* Compact: the viewer's default layout is built for the desktop split
+            panel, and at drawer width its absolutely-positioned controls sit on
+            top of the entries while the timestamp and type columns squeeze the
+            message into a one-word column. */}
+        <GameEventLogViewer compact />
       </div>
     </SheetContent>
   </Sheet>

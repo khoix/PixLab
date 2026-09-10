@@ -347,6 +347,11 @@ export default function Game() {
     if (showInventory) pauseReasons.push('inventory');
     if (showMenu) pauseReasons.push('menu');
     if (showCommerceVendor) pauseReasons.push('commerce');
+    // The event-log drawer covers the playfield like any other dialog, so the
+    // run freezes behind it too. M5.9 added it to `dialogOpen`, which turned
+    // out to feed only the portal prompt — this effect keeps its own list, and
+    // that is the one that stops the clock.
+    if (showEventLog) pauseReasons.push('event-log');
 
     pauseReasons.forEach((reason) => {
       pushSectorTimerPause(reason);
@@ -358,7 +363,7 @@ export default function Game() {
         resumeGameClock(reason);
       });
     };
-  }, [state.screen, showInventory, showMenu, showCommerceVendor]);
+  }, [state.screen, showInventory, showMenu, showCommerceVendor, showEventLog]);
 
   // Handle page refresh - clean up game state and navigate to Home (no UI prompt)
   useEffect(() => {

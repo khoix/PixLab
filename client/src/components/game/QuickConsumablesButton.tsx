@@ -27,7 +27,7 @@ export const QuickConsumablesButton: React.FC<QuickConsumablesButtonProps> = ({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[49] md:hidden bg-transparent"
+            className="fixed inset-0 z-[49] bg-transparent"
             aria-label="Close consumables menu"
             data-testid="quick-consumables-backdrop"
             onClick={() => setOpen(false)}
@@ -85,7 +85,8 @@ export const QuickConsumablesButton: React.FC<QuickConsumablesButtonProps> = ({
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'md:hidden flex flex-col items-center justify-center gap-1',
+          // See FloatingTouchControl: width-based hiding breaks landscape.
+          'flex flex-col items-center justify-center gap-1',
           'w-14 h-14 rounded-full border-2 border-primary/50 bg-black/70 backdrop-blur-sm',
           'transition-all active:scale-95 relative',
           disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary/20',
