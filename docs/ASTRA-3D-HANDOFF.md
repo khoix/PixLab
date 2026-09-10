@@ -1,9 +1,31 @@
-# 3D gameplay view — Execution 4 integrated
+# 3D gameplay view — Execution 5 responsive checkpoint
 
 Branch: `astra/3d-conversion`. This checkpoint builds on `f30add2`.
-Execution 4 rendering integration is complete; Execution 5 has not started.
+Execution 4 rendering integration is complete; Execution 5 is INCOMPLETE.
 No PR or main merge. Open the title URL with `?perspective=1`, then start a run.
 Keep perspective opt-in through stabilization/final validation.
+
+## Execution 5 — responsive test expansion
+
+Convention v5: 25% × 20 = 5 minutes; implementation one minute, save buffer four.
+2026-09-10 UTC: start 01:42:19, cutoff 01:43:19, hard stop 01:47:19.
+
+- Expanded `e2e/projection-camera.spec.ts` with wide desktop (1920×800 →
+  1440×600, DPR 2), and DPR 3 phone (430×820 → 430×745 → 820×360 →
+  740×280). Assertions cover same-width anchor stability, bottom clearance,
+  capped DPR, world rendering and projected picking through follow/pause/resize.
+- Desktop, mobile/chrome and wide-desktop scenarios passed. High-DPR landscape
+  failed at 820×360: canvas logical 820×305, DPR 2, predicted anchor (410,152.5),
+  projected tile (10,10) picked (10,9). Final 740×280 step was not reached.
+  A second isolated run reproduced the identical failure.
+  This is an intentionally retained failing reproduction, not a verified renderer
+  bug diagnosis. Check resize/frame synchronization and test camera assumptions
+  before changing production projection. No production code changed this run.
+- 10 projection unit tests passed. `npm run check` retains the same pre-existing
+  diagnostics (15 occurrences / 12 unique normalized messages), no new errors.
+  `git diff --check` passed. Full suite, profiling and visual review not performed.
+- Changed only `e2e/projection-camera.spec.ts` and this handoff. No responsive
+  fix or optimization is claimed. Execution 6 is not ready.
 
 ## Latest checkpoint — effects, visibility and interaction
 
@@ -98,7 +120,10 @@ from the installed @sparticuz/chromium archive resolved a prior launch failure.
 
 ## Exact continuation — Execution 5 stabilization
 
-1. Reuse all adapters and camera math. Start with responsive live validation:
+1. FIRST resolve the new high-DPR landscape picking reproduction in
+   `e2e/projection-camera.spec.ts` (grep `high-DPR phone`). Confirm the canvas
+   resize and rendered camera have settled before diagnosing projection math.
+   Then complete responsive live validation:
    wide desktop, phone portrait/landscape, short landscape, mobile chrome, DPR,
    resize/orientation. Perspective remains opt-in.
 2. Profile combined fog/world/entities/effects. Fog mask rebuilds are avoided on
