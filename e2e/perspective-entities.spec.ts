@@ -128,6 +128,9 @@ test('entity bodies cross behind and in front of walls; only hidden player edges
     const entries = draw(), withHint = ctx.getImageData(0, 0, 800, 600).data;
     captures.push({ name: 'player-partially-occluded', data: canvas.toDataURL() });
     entries[entries.length - 1].drawOccluded = undefined;
+    // Compare independent frames. Repainting over the first image accumulates
+    // antialiasing/glow at the frustum edges and is not a hint-only difference.
+    ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, 800, 600);
     world.draw(ctx, camera, level, { floor: '#304055', wall: '#243044' }, 'low', entries);
     const noHint = ctx.getImageData(0, 0, 800, 600).data;
     let hintPixels = 0;

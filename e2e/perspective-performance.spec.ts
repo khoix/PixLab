@@ -58,13 +58,21 @@ test('combined perspective scene retains caches across follow and all quality ti
       fogMs = 0; start = performance.now();
       for (let i = 0; i < 24; i++) draw(3 + i / 24);
       runs.push({ dpr, quality, stableMs, stableFogMs, decayMs: (performance.now() - start) / 24,
-        decayFogMs: fogMs / 24, extraSprites, extraFog, tiles: world.getStats().visibleTiles });
+        decayFogMs: fogMs / 24, extraSprites, extraFog, tiles: world.getStats().visibleTiles,
+        // Original 1600-tile budget used an 8-tile camera distance. Widening
+        // the view increases ground area approximately with distance squared.
+        tileBudget: Math.ceil(1600 * (camera.distance / 8) ** 2) });
       captures.push({ name: `${quality}-dpr${dpr}`, data: canvas.toDataURL() });
     }
     return { runs, captures };
   });
   console.log('COMBINED_PERFORMANCE', JSON.stringify(result.runs));
   await testInfo.attach('combined-performance', { body: JSON.stringify(result.runs, null, 2), contentType: 'application/json' });
-  for (const run of result.runs) { expect(run.extraSprites).toBe(0); expect(run.extraFog).toBe(0); expect(run.tiles).toBeLessThan(1600); }
+  for (const run of result.runs) {
+    expect(run.extraSprites).toBe(0);
+    expect(run.extraFog).toBe(0);
+    expect(run.tiles).toBeLessThan(run.tileBudget);
+    expect(run.tiles).toBeLessThan(80 * 80 / 2);
+  }
   for (const capture of result.captures) await writeFile(testInfo.outputPath(`${capture.name}.png`), Buffer.from(capture.data.split(',')[1], 'base64'));
 });

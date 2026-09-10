@@ -5,6 +5,15 @@ The choice persists across reloads and save-code export/import. Legacy presentat
 
 ## Integration and validation
 
+- CI repair after zoom-out: run 34531327322 had 517 passes, 9 skips and four
+  failures (two tests on both browser profiles). The player-hint comparison now
+  clears both frames identically, avoiding accumulated edge antialiasing; its
+  original <250-pixel outline assertion is unchanged. The culling budget scales
+  the old 1600-tile allowance by camera-distance squared (2500 at distance 10),
+  with an independent half-map ceiling. Actual count: 1856; sprite/fog cache
+  rebuilds remain zero. Both complete affected specs passed locally: 8 tests.
+  Typecheck retains 15 pre-existing diagnostics. Only tests and this note changed.
+
 - Prop/framing follow-up: pickups retain cached category/rarity icons on shallow
   voxel bases; portals have raised faceted rims and rising particles; unactivated
   light switches have raised housings. All use the shared projection/depth queue.
