@@ -13,8 +13,12 @@
    desktop fails the pointer test and a tablet in landscape is taller than
    500px, so neither is pulled in.
 
-   Kept in step with `computeIsMobile()` in hooks/use-mobile.tsx, which carries
-   the same condition in JS. */
+   `MOBILE_MEDIA_QUERY` in hooks/use-mobile.tsx is this same string, and the
+   hook matches against it rather than reimplementing the condition. That is
+   deliberate: a first cut expressed it in JS as "the short edge is under
+   768px", which sounds equivalent and is not — a 1280x720 touch viewport is a
+   phone by that rule and a desktop by this one, and the two silently disagreed
+   about who gets the desktop consumables panel. */
 @media (max-width: 767px),
   (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
   /* Virtual Joystick Base Styles */

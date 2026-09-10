@@ -3,35 +3,33 @@ import * as React from "react"
 const MOBILE_BREAKPOINT = 768
 
 /**
- * The short edge decides, not the width.
+ * The one definition of "present the phone layout", shared with CSS.
  *
- * This was `window.innerWidth < 768`, which calls a phone in landscape a
- * desktop: a 390x844 handset is 844px wide the moment it is rotated. That one
- * comparison did three things at once, all of them wrong on a rotated phone —
- * `Game.tsx` gates the joystick, d-pad and quick actions on it, so the touch
- * controls disappeared entirely; it gates the desktop event-log panel on its
- * negation, so that appeared instead; and `mobile.css` is scoped to the same
- * 767px, so the safe-area insets switched off in the one orientation where the
- * notch is on a *side*.
+ * `mobile.css` opens with this exact query. Keeping the string identical is the
+ * point: an earlier cut of this hook expressed the same intent in JS as "the
+ * short edge is under 768px", which sounds equivalent and is not. On the
+ * chromium-mobile Playwright project a test sets a 1280x720 viewport; that
+ * reports a coarse pointer, so the short-edge rule made it a phone and hid the
+ * desktop consumables panel, while the CSS — which asks for a viewport 500px
+ * tall or less — correctly called it a desktop. Two rules that were supposed to
+ * agree, quietly disagreeing.
  *
- * A phone is still a phone when you turn it, so measure the short edge. Width
- * alone continues to promote a narrow desktop window, which is existing
- * behaviour and worth keeping. The coarse-pointer test is what stops that short
- * edge from dragging in a large touch screen: a tablet in landscape is 820px on
- * its short edge and stays on the desktop layout.
+ * What it matches:
+ *   - anything under 768px wide: a portrait phone, or a narrow desktop window,
+ *     which is long-standing behaviour and stays;
+ *   - a coarse pointer on a short, wide viewport: a phone that has been
+ *     rotated. This is the case the old `innerWidth < 768` test missed, since a
+ *     390x844 handset is 844px wide in landscape.
  *
- * Kept in step with the media query at the top of `mobile.css`, which carries
- * the same condition in CSS form.
+ * A tablet in landscape is taller than 500px and a desktop has a fine pointer,
+ * so neither is pulled in.
  */
+export const MOBILE_MEDIA_QUERY =
+  `(max-width: ${MOBILE_BREAKPOINT - 1}px), (pointer: coarse) and (orientation: landscape) and (max-height: 500px)`
+
 function computeIsMobile(): boolean {
   if (typeof window === "undefined") return false
-
-  const width = window.innerWidth
-  const height = window.innerHeight
-  if (width < MOBILE_BREAKPOINT) return true
-
-  const coarsePointer = window.matchMedia("(pointer: coarse)").matches
-  return coarsePointer && Math.min(width, height) < MOBILE_BREAKPOINT
+  return window.matchMedia(MOBILE_MEDIA_QUERY).matches
 }
 
 export function useIsMobile() {
@@ -40,20 +38,20 @@ export function useIsMobile() {
   React.useEffect(() => {
     const onChange = () => setIsMobile(computeIsMobile())
 
-    // A `matchMedia("(max-width: 767px)")` listener cannot see the case this
-    // exists for: rotating a phone moves the width from 390 to 844, and that
-    // query is false on both sides of the change, so it never fires. Listen to
-    // the resize itself.
+    // The query covers both clauses, so it fires on a rotation that crosses
+    // either one. The resize listener is still here because Playwright's
+    // `setViewportSize` and some mobile browsers resize without the media
+    // query re-evaluating in time to be observed.
+    const query = window.matchMedia(MOBILE_MEDIA_QUERY)
+    query.addEventListener("change", onChange)
     window.addEventListener("resize", onChange)
     window.addEventListener("orientationchange", onChange)
-    const pointerQuery = window.matchMedia("(pointer: coarse)")
-    pointerQuery.addEventListener("change", onChange)
 
     onChange()
     return () => {
+      query.removeEventListener("change", onChange)
       window.removeEventListener("resize", onChange)
       window.removeEventListener("orientationchange", onChange)
-      pointerQuery.removeEventListener("change", onChange)
     }
   }, [])
 

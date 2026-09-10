@@ -145,6 +145,40 @@ test.describe('M5.9 — orientation-aware mobile layout', () => {
     expect(box.x).toBeGreaterThan(size.w / 2);
   });
 
+  test('the JS and CSS agree about what a phone is, at every shape', async ({ page }) => {
+    test.slow();
+    // The drift that made this necessary: the hook once decided "phone" from
+    // the short edge while mobile.css decided it from `max-height: 500px`. On
+    // a 1280x720 coarse-pointer viewport — which `consumables-panel.spec.ts`
+    // sets on the mobile project — the hook said phone and the stylesheet said
+    // desktop, and the desktop consumables panel vanished.
+    //
+    // Neither side is asserted directly here; what matters is that they never
+    // disagree. `touchControls` is gated in JS on `useIsMobile`, `--safe-top`
+    // is defined only inside the CSS query, so the two must rise and fall
+    // together at every viewport.
+    await page.goto('/?perf=1');
+    await enterRun(page);
+
+    const shapes = [
+      { name: 'portrait phone', width: 390, height: 844 },
+      { name: 'landscape phone', width: 844, height: 390 },
+      { name: 'short wide viewport', width: 1280, height: 720 },
+      { name: 'narrow window', width: 500, height: 900 },
+    ];
+
+    for (const shape of shapes) {
+      await page.setViewportSize({ width: shape.width, height: shape.height });
+      const seen = await layout(page);
+      const jsMobile = seen.touchControls;
+      const cssMobile = seen.safeTopVar !== '(unset)';
+      console.log(
+        `[m5.9] ${shape.name} ${shape.width}x${shape.height}: js=${jsMobile} css=${cssMobile}`,
+      );
+      expect(jsMobile, `${shape.name}: JS and CSS disagree`).toBe(cssMobile);
+    }
+  });
+
   test('desktop still gets the split panel and no touch controls', async ({ page }) => {
     test.slow();
     test.skip((page.viewportSize()?.width ?? 0) < 768, 'desktop viewports only');
