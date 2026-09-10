@@ -61,3 +61,35 @@ test('real stair texture and portal decals render on the floor at DPR 1 and 2', 
   expect(result.counts).toEqual([3, 3]); expect(result.afterRemoval).toBe(2);
   for (let i = 0; i < result.captures.length; i++) await writeFile(testInfo.outputPath(`landmarks-dpr${i + 1}.png`), Buffer.from(result.captures[i].split(',')[1], 'base64'));
 });
+
+test('movement collects a projected pickup and entering the stairs completes the sector', async ({ page }) => {
+  await page.goto('/?perspective=1');
+  await page.getByTestId('start-run-button').click();
+  await page.getByTestId('enter-sector-button').click();
+  await page.locator('canvas.game-canvas').waitFor();
+  await page.evaluate(() => {
+    const api = window.__PIXLAB_LEVEL__!; api.clearMobs(); api.clearPortals();
+    for (let y = 10; y < 20; y++) for (let x = 10; x < 20; x++) {
+      if (api.isFloor(x, y) && api.isFloor(x + 1, y)) {
+        api.setPlayerPos({ x, y });
+        api.spawnItem({ id: 'projected-pickup', name: 'Scanner Lv1', type: 'utility', rarity: 'common', price: 0, description: '' }, { x: x + 1, y });
+        return;
+      }
+    }
+    throw new Error('No pickup corridor');
+  });
+  await page.keyboard.down('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__PIXLAB_LEVEL__!.getItems().some(i => i.item.id === 'projected-pickup'))).toBe(false);
+  await page.keyboard.up('ArrowRight');
+  const key = await page.evaluate(() => {
+    const api = window.__PIXLAB_LEVEL__!, exit = api.getExitPos()!;
+    for (const [dx, dy, key] of [[-1, 0, 'ArrowRight'], [1, 0, 'ArrowLeft'], [0, -1, 'ArrowDown'], [0, 1, 'ArrowUp']] as const) {
+      const pos = { x: exit.x + dx, y: exit.y + dy };
+      if (api.isFloor(pos.x, pos.y)) { api.setPlayerPos(pos); return key; }
+    }
+    throw new Error('No accessible exit neighbor');
+  });
+  await page.keyboard.down(key);
+  await expect(page.getByTestId('enter-sector-button')).toBeVisible();
+  await page.keyboard.up(key);
+});

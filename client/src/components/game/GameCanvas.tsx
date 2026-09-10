@@ -58,6 +58,9 @@ import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../.
 import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
+import { drawPerspectiveSenses } from '../../lib/game/renderer/perspectiveSenses';
+import { PerspectiveFog } from '../../lib/game/renderer/perspectiveFog';
+import { PerspectiveEffects } from '../../lib/game/renderer/perspectiveEffects';
 import { PerspectiveLandmarks } from '../../lib/game/renderer/perspectiveLandmarks';
 import { PerspectiveItems } from '../../lib/game/renderer/perspectiveItems';
 import { PerspectiveProjectiles } from '../../lib/game/renderer/perspectiveProjectiles';
@@ -269,6 +272,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const [perspectiveItems] = useState(() => new PerspectiveItems());
   const [perspectiveProjectiles] = useState(() => new PerspectiveProjectiles());
   const [perspectiveEntities] = useState(() => new PerspectiveEntities());
+  const [perspectiveFog] = useState(() => new PerspectiveFog());
+  const [perspectiveEffects] = useState(() => new PerspectiveEffects());
   const [perspectiveLandmarks] = useState(() => new PerspectiveLandmarks());
   // Picking must use the camera that produced the visible frame, including its
   // interpolated focus, rather than a newer simulation position.
@@ -722,6 +727,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     window.__PIXLAB_LEVEL__ = {
       getPlayerPos: () => ({ ...playerPosRef.current }),
       getWorldRenderStats: () => voxelWorld.getStats(),
+      getPerspectiveFogStats: () => perspectiveFog.getStats(),
       getPlayerHp: () => statsRef.current.hp,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
       getPressureStats: () => ({
@@ -3019,13 +3025,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     renderedCameraRef.current = { perspective, legacyOffset: { x: camX, y: camY } };
     if (perspectiveDiagnostic) {
       const drawNow = getGameNow();
+      const visibility = perspectiveFog.prepare(perspective, frame.fogRadius / TILE_SIZE, effectiveQuality);
       const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
         drawNow, !!activeScrollEffectsRef.current.phasing?.active,
-        perspectiveLandmarks.prepare(levelRef.current, theme.floor, stairsImageCache.img, drawNow));
+        perspectiveEffects.prepare(levelRef.current, drawNow, effectiveQuality, exitPathHintRef.current,
+          perspectiveLandmarks.prepare(levelRef.current, theme.floor, stairsImageCache.img, drawNow)));
       voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
         perspectiveProjectiles.prepare(levelRef.current.projectiles, effectiveQuality,
-          perspectiveItems.prepare(levelRef.current.items, entities)));
-      perspectiveEntities.drawDamageNumbers(ctx, perspective, levelRef.current, drawNow);
+          perspectiveItems.prepare(levelRef.current.items, entities)), visibility);
+      perspectiveEntities.drawDamageNumbers(ctx, perspective, levelRef.current, drawNow, visibility);
+      drawPerspectiveSenses(ctx, perspective, levelRef.current, frame.visionRadiusPx / TILE_SIZE,
+        !!activeScrollEffectsRef.current.threatSense, !!activeScrollEffectsRef.current.lootSense,
+        drawNow, effectiveQuality);
       if (perfMonitor.isActive()) perfMonitor.recordDrawnEntities(perspectiveEntities.drawnEntities);
       if (isGamePaused()) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';

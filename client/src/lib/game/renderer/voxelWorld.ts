@@ -1,3 +1,4 @@
+import type { WorldVisibility } from './perspectiveFog';
 import type { Level } from '../types';
 import type { ColorPalette } from '../colorThemes';
 import type { EffectiveRenderQuality } from '../renderQuality';
@@ -33,6 +34,7 @@ export class VoxelWorldRenderer {
   private polygon = new ProjectedPolygon();
   private queue: (WallRecord | WorldDrawable)[] = [];
   private camera!: PerspectiveCamera;
+  private wallFogAlpha = 0;
   private occlusionMask: Path2D | null = null;
   private compare = (a: WallRecord | WorldDrawable, b: WallRecord | WorldDrawable) => compareWorldOrder(this.camera, a, b);
   private paletteKey = '';
@@ -84,6 +86,8 @@ export class VoxelWorldRenderer {
     this.quad[0] = a; this.quad[1] = b; this.quad[2] = c; this.quad[3] = d;
     if (!this.polygon.project(this.camera, this.vertices, this.quad)) return false;
     this.polygon.path(ctx);
+    // Fully hidden walls still occlude, but must never leak colored seam pixels.
+    if (this.wallFogAlpha >= 1) color = '#000000';
     ctx.fillStyle = color;
     ctx.fill();
     if (this.occlusionMask) {
@@ -104,6 +108,11 @@ export class VoxelWorldRenderer {
     }
     // Same-color subpixel seam coverage, not a contrasting block outline.
     if (seal) { ctx.strokeStyle = color; ctx.lineWidth = 0.65; ctx.stroke(); }
+    if (this.wallFogAlpha > 0 && this.wallFogAlpha < 1) {
+      ctx.save(); ctx.globalAlpha *= this.wallFogAlpha; ctx.fillStyle = '#000'; ctx.fill();
+      if (seal) { ctx.strokeStyle = '#000'; ctx.stroke(); }
+      ctx.restore();
+    }
     return true;
   }
 
@@ -118,7 +127,8 @@ export class VoxelWorldRenderer {
   }
 
   draw(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera, level: Level,
-    theme: ColorPalette, quality: EffectiveRenderQuality, drawables: readonly WorldDrawable[] = []): void {
+    theme: ColorPalette, quality: EffectiveRenderQuality, drawables: readonly WorldDrawable[] = [], visibility?: WorldVisibility): void {
+    this.wallFogAlpha = 0;
     this.prepare(camera, level, theme);
     this.occlusionMask = null;
     this.stats.quality = quality;
@@ -166,18 +176,21 @@ export class VoxelWorldRenderer {
           drawable.drawGround?.(ctx, camera);
         }
       }
+      visibility?.drawGround(ctx, camera);
       this.queue.sort(this.compare);
       const eyeX = camera.focus.x, eyeY = camera.focus.y + camera.distance * camera.cosPitch;
       let playerHint: WorldDrawable | undefined;
       for (const entry of this.queue) {
         if ('draw' in entry) {
-          entry.draw(ctx, camera);
+          ctx.save(); ctx.globalAlpha *= visibility?.visibilityAt(entry) ?? 1;
+          entry.draw(ctx, camera); ctx.restore();
           if (entry.drawOccluded) {
             playerHint = entry;
             this.occlusionMask = new Path2D();
           }
           continue;
         }
+        this.wallFogAlpha = 1 - (visibility?.visibilityAt(entry) ?? 1);
         const { col: x, row: y } = entry;
         const a = y * stride + x, b = a + 1, d = a + stride, c = d + 1;
         const mask = this.topology.exposed[y * level.width + x];
@@ -196,7 +209,10 @@ export class VoxelWorldRenderer {
         playerHint.drawOccluded!(ctx, camera);
         ctx.restore();
       }
-      for (const entry of this.queue) if ('draw' in entry) entry.drawOverlay?.(ctx, camera);
+      for (const entry of this.queue) if ('draw' in entry) {
+        ctx.save(); ctx.globalAlpha *= visibility?.visibilityAt(entry) ?? 1;
+        entry.drawOverlay?.(ctx, camera); ctx.restore();
+      }
     } finally { this.occlusionMask = null; ctx.restore(); }
   }
 }

@@ -69,3 +69,34 @@ test('pickup icons replace markers at projected ground anchors without changing 
   });
   expect(result.visible).toBe(4); expect(result.unchanged).toBe(true); expect(result.cleared).toBe(0);
 });
+
+test('pickup icons share wall occlusion and vanish outside vision', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { PerspectiveItems } = await import('/src/lib/game/renderer/perspectiveItems.ts');
+    const { PerspectiveFog } = await import('/src/lib/game/renderer/perspectiveFog.ts');
+    const { VoxelWorldRenderer } = await import('/src/lib/game/renderer/voxelWorld.ts');
+    const { createPerspectiveCamera, worldToScreen } = await import('/src/lib/game/renderer/projection.ts');
+    const canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 600;
+    const ctx = canvas.getContext('2d')!, world = new VoxelWorldRenderer(), items = new PerspectiveItems(), fog = new PerspectiveFog();
+    const camera = createPerspectiveCamera({ player: { x: 12, y: 14 }, width: 800, height: 600, tileSize: 32, isMobile: false });
+    const level = { width: 30, height: 30, levelNumber: 1, tiles: Array.from({ length: 30 }, () => Array(30).fill('floor')) };
+    const item = { pos: { x: 12, y: 10 }, item: { id: 'pickup', name: 'Test', type: 'weapon', rarity: 'common' } };
+    const draw = (show, radius = 100) => {
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 800, 600);
+      world.draw(ctx, camera, level, { floor: '#304055', wall: '#243044' }, 'low', items.prepare(show ? [item] : []), fog.prepare(camera, radius, 'low'));
+      const p = worldToScreen(camera, { x: item.pos.x + 0.5, y: item.pos.y + 0.5 });
+      return [...ctx.getImageData(Math.round(p.x) - 12, Math.round(p.y) - 12, 24, 12).data];
+    };
+    const open = draw(true), empty = draw(false);
+    level.tiles[11][12] = 'wall'; const hidden = draw(true), wall = draw(false);
+    item.pos.y = 12; const front = draw(true), frontEmpty = draw(false);
+    const dark = draw(true, 0), darkEmpty = draw(false, 0);
+    return { open, empty, hidden, wall, front, frontEmpty, dark, darkEmpty };
+  });
+  expect(result.open).not.toEqual(result.empty);
+  expect(result.hidden).toEqual(result.wall);
+  expect(result.front).not.toEqual(result.frontEmpty);
+  expect(result.dark).toEqual(result.darkEmpty);
+  expect(result.dark.every((v, i) => i % 4 === 3 || v === 0)).toBe(true);
+});

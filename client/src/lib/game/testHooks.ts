@@ -16,6 +16,7 @@ declare global {
     __PIXLAB_LEVEL__?: {
       getPlayerPos: () => Position;
       getWorldRenderStats: () => WorldRenderStats;
+      getPerspectiveFogStats: () => { builds: number; width: number; height: number; radiusTiles: number };
       /** Live attack-pressure occupancy, for M6.4b assertions. */
       getPressureStats: () => { used: number; cap: number; holders: number; peakUsed: number };
       getPlayerHp: () => number;

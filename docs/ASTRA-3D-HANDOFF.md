@@ -1,28 +1,56 @@
-# 3D gameplay view — Execution 4 partial checkpoint
+# 3D gameplay view — Execution 4 integrated
 
-Branch: `astra/3d-conversion`. Current work builds on `6e673b2`.
-Execution 4 is NOT complete; Execution 5 has not started. No PR or main merge.
-Open the title URL with `?perspective=1`, then start a run. Keep perspective opt-in
-until the remaining effects, visibility and interaction work is validated.
+Branch: `astra/3d-conversion`. This checkpoint builds on `f30add2`.
+Execution 4 rendering integration is complete; Execution 5 has not started.
+No PR or main merge. Open the title URL with `?perspective=1`, then start a run.
+Keep perspective opt-in through stabilization/final validation.
 
-## Latest checkpoint — landmark validation / stair seam correction
+## Latest checkpoint — effects, visibility and interaction
 
-Convention: Execution-Time-Budget.md v5. 30% × 20 = 6 minutes, four-minute save
-buffer. Run start 19:37:23 UTC; planned cutoff 19:39:23; hard stop 19:43:23.
+Convention: Execution-Time-Budget.md v5. 95% × 20 = 19 minutes; four-minute
+save buffer. Start 00:12:08 UTC, cutoff 00:27:08, hard stop 00:31:08 (2026-09-10).
 
-- Added `e2e/perspective-landmarks.spec.ts`: actual mobile portal standing does not
-  teleport automatically; projected ground picking returns the portal tile, and
-  an explicit tap teleports. Real stairs.png loads into both rotated/unrotated
-  ground decals; portal/exit records render at DPR 1 and 2 and removed exits disappear.
-- Visually inspected the DPR 2 capture and found internal stair texture seams.
-  `GroundImage` now optionally overlaps opaque texture triangles. Stair decals
-  enable that coverage; transparent portal glow retains exact clipping to avoid
-  double-compositing alpha. The resulting capture no longer shows the stair grid.
-- Final targeted browser run: 2 passed. `npm run check`: same 15 pre-existing
-  diagnostics as the previous checkpoint, no new errors. `git diff --check`: passed.
-  No full-suite run or new performance benchmark in this timebox.
-- Changed: `renderer/groundImage.ts`, `renderer/perspectiveLandmarks.ts`,
-  `e2e/perspective-landmarks.spec.ts`, this handoff. No gameplay changes.
+- `perspectiveEffects.ts`: pooled world-ground footprints, afterimages, path hints,
+  lightswitches, world particles, and bounded analytic portal sparkles. Positions,
+  directions and game-clock lifetimes stay logical; no simulation particle mutation.
+  Ground effects precede walls; particles join the existing wall/entity depth queue.
+- `perspectiveFog.ts`: unchanged snapshot radius and shared fogGradient falloff.
+  Cached inverse-projected ground mask; upright artwork/overlays and walls shade
+  by ground distance. Fully hidden walls stay opaque black for occlusion, without
+  colored seam leakage. Cache excludes camera translation; quality samples at
+  4/6/8 CSS pixels. DPR is handled by the existing canvas transform.
+- `perspectiveSenses.ts`: threat/loot reveal markers remain above fog/walls as in
+  the legacy view, now with projected anchors/scales and bounded sparkle decoration.
+  Phase/moth direct artwork and player alpha preserve inherited visibility.
+- Damage labels retain upright animation with projected fog-aware anchors.
+  Existing ranged/charge cues already use projected ground geometry. Audit found
+  no additional separate melee/attack-zone drawing beyond existing hit feedback.
+  Legacy flat drawing remains only in the non-perspective branch; HUD unchanged.
+- Inverse picking uses the rendered camera. Live mobile portal tap selects the
+  visible tile; standing alone does not teleport. Pickup and stair movement retain
+  their mechanics. Item raster tests cover front/behind-wall and zero-vision cases.
+
+## Validation this checkpoint
+
+- 28 focused unit tests passed (projection, world order, billboard/projectile math,
+  effect pooling/aging, radial visibility, unchanged debuff/reveal snapshot behavior).
+- 13 distinct relevant browser tests passed across targeted runs: three entity,
+  three landmark/interaction, three projectile/item, two effects/fog, two camera.
+  Includes desktop/mobile movement and resize/picking, all subtype/boss fixtures,
+  hit/status/charge cues, DPR 1/2 landmarks, normal/boss/shadow projectile raster
+  checks, real pickup/exit completion, reduced live vision, senses and fog caching.
+  Initial new tests were corrected for the existing test API and partial item
+  visibility above a wall; all final targeted runs passed.
+- Inspected normal/reduced fog and live mobile screenshots: ground-aligned falloff,
+  raised walls, footprint/trail/hint/light geometry. Fixed fully dark wall seam leak.
+- `npm run check`: same 15 pre-existing diagnostics, normalized comparison shows
+  zero new errors. `git diff --check`: passed. Full suite not run in this timebox.
+- Existing 60-entity fixture: 4.28 ms low / 5.36 ms high, zero extra sprite builds;
+  this fixture excludes fog and is not a physical-device performance measurement.
+- Changed: GameCanvas.tsx; renderer/{perspectiveEffects.ts,perspectiveEffects.test.ts,
+  perspectiveFog.ts,perspectiveSenses.ts,perspectiveEntities.ts,voxelWorld.ts,mobArt.ts};
+  testHooks.ts; e2e/{perspective-effects,perspective-landmarks,perspective-projectiles}.spec.ts;
+  this handoff.
 
 ## Completed architecture — reuse
 
@@ -68,19 +96,25 @@ Projectile raster occlusion and all four item icon categories are covered.
 Use existing scratch Chromium/Vite override if necessary; an executable restored
 from the installed @sparticuz/chromium archive resolved a prior launch failure.
 
-## Exact continuation — complete Execution 4 before Execution 5
+## Exact continuation — Execution 5 stabilization
 
-1. Verify actual stair/exit completion through movement (rendering and portal tap
-   are now checked). Item pickup and item-wall occlusion still need live validation.
-2. Continue the remaining world-space audit: footprints, particles/trails/afterimages,
-   decorative portal particles, path/exit hints, lightswitches, targeting/attack zones
-   beyond existing ranged/charge cues, and other world feedback.
-3. Convert fog/vision/senses rendering while preserving exact existing mechanics.
-   Fog is still absent in the opt-in view. Use the legacy path as the reference.
-4. Complete the original Execution 4 validation checklist, including Blind/reduced
-   visibility, interactions and remaining effects. Only then start Execution 5.
+1. Reuse all adapters and camera math. Start with responsive live validation:
+   wide desktop, phone portrait/landscape, short landscape, mobile chrome, DPR,
+   resize/orientation. Perspective remains opt-in.
+2. Profile combined fog/world/entities/effects. Fog mask rebuilds are avoided on
+   follow; debuff decay legitimately changes the radius. Consider measured cost
+   of mask rebuilding during decay, exit scans, and offscreen sense/icon drawing.
+3. Run relevant/full practical automated and e2e suites. Existing typecheck baseline
+   is 15 errors, not introduced by this checkpoint. Do not repair unrelated systems.
+4. Review extended live combat (melee/ranged, boss phases, Nyx debuff application
+   and recovery), sense scroll expiry, and physical touch/orientation. Deterministic
+   render fixtures and snapshot/live-radius tests passed; a complete manual combat
+   playthrough and physical-device validation were not performed.
 
-Keep current camera/world/entity design. Ground picking intersects the floor, not
-wall faces; health bars may remain visible above walls. Texture mapping is a small
-patch approximation; wider/nearer/high-DPR visual checks remain appropriate.
-Simulation, movement, collision, AI, combat balance, progression and HUD are unchanged.
+Known limitations: wall visibility is constant per voxel ground center; floor fog
+is a quality-dependent sampled mask. Health bars remain screen-facing above walls
+but respect fog. Texture mapping is a small-patch approximation. Ground picking
+intersects the floor, not wall faces. Analytic portal/sense sparkles replace legacy
+screen-pixel particles. No known unconverted world-space rendering path remains;
+retained flat code is the intentionally supported legacy mode. Keep simulation,
+AI, combat, movement, progression, level generation and HUD unchanged.

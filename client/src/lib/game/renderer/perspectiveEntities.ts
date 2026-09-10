@@ -1,3 +1,4 @@
+import type { WorldVisibility } from './perspectiveFog';
 import { TILE_SIZE } from '../constants';
 import type { Entity, Level } from '../types';
 import { makeStrokeGlowCircle, setShadowTier, type EffectiveRenderQuality } from '../renderQuality';
@@ -91,7 +92,7 @@ class EntityBillboard implements WorldDrawable {
     setShadowTier(!e ? 'player' : e.isBoss ? 'boss' : 'generic');
     ctx.translate(p.x, p.centerY); ctx.scale(p.scale, p.scale);
     if (!e) {
-      ctx.globalAlpha = this.phasing ? 0.7 : 1;
+      ctx.globalAlpha *= this.phasing ? 0.7 : 1;
       ctx.shadowColor = this.phasing ? '#9d4edd' : a.color;
       ctx.shadowBlur = this.phasing ? 20 : 15;
       ctx.fillStyle = a.color; ctx.fillRect(-10, -10, 20, 20);
@@ -136,7 +137,7 @@ class EntityBillboard implements WorldDrawable {
   drawOverlay(ctx: CanvasRenderingContext2D): void {
     const e = this.entity, p = this.layout;
     if (!e || !p) return;
-    ctx.save(); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    ctx.save(); ctx.shadowBlur = 0;
     const width = p.barWidth, y = p.topY - 7;
     ctx.fillStyle = '#180c14'; ctx.fillRect(p.x - width / 2 - 1, y - 1, width + 2, 5);
     ctx.fillStyle = '#ff0000'; ctx.fillRect(p.x - width / 2, y, width, 3);
@@ -188,7 +189,7 @@ export class PerspectiveEntities {
     return this.active;
   }
 
-  drawDamageNumbers(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera, level: Level, now: number): void {
+  drawDamageNumbers(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera, level: Level, now: number, visibility?: WorldVisibility): void {
     if (!level.damageNumbers?.length) return;
     ctx.save(); ctx.shadowBlur = 0; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
     for (const entry of level.damageNumbers) {
@@ -196,7 +197,7 @@ export class PerspectiveEntities {
       if (t >= 1) continue;
       const p = billboardLayout(camera, { x: entry.pos.x + 0.5, y: entry.pos.y + 0.5 }, entityAppearance(null));
       if (!p) continue;
-      ctx.globalAlpha = 1 - t; ctx.fillStyle = entry.isCrit ? '#ffd700' : '#ffffff';
+      ctx.globalAlpha = (1 - t) * (visibility?.visibilityAt({ x: entry.pos.x + 0.5, y: entry.pos.y + 0.5 }) ?? 1); ctx.fillStyle = entry.isCrit ? '#ffd700' : '#ffffff';
       ctx.fillText(String(entry.amount), p.x, p.topY - 12 - t * 20);
     }
     ctx.restore();

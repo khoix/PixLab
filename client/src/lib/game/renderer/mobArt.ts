@@ -117,7 +117,8 @@ export function drawMobArt(
     
     // Wispy, ethereal body - elongated oval shape
     ctx.save();
-    ctx.globalAlpha = 0.7; // Semi-transparent ghostly effect
+    const inheritedAlpha = ctx.globalAlpha;
+    ctx.globalAlpha *= 0.7; // Semi-transparent ghostly effect
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 15;
@@ -133,7 +134,7 @@ export function drawMobArt(
     ctx.fill();
     
     ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1.0;
+    ctx.globalAlpha = inheritedAlpha;
     ctx.restore();
     
     // Inner glow for ethereal effect
@@ -359,7 +360,7 @@ export function drawMobArt(
     
     // Draw transparent wings first (behind body)
     ctx.save();
-    ctx.globalAlpha = 0.3; // Transparent wings
+    ctx.globalAlpha *= 0.3; // Transparent wings
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = 1.5;
