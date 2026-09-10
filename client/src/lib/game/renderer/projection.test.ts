@@ -13,7 +13,7 @@ function close(a: number, b: number): void { assert.ok(Math.abs(a - b) < 1e-8, `
 test('near tiles and sprites are visibly larger than distant ones', () => {
   const near = tileCenter({ x: 20, y: 24 });
   const far = tileCenter({ x: 20, y: 16 });
-  assert.ok(perspectiveScale(camera, near)! > perspectiveScale(camera, far)! * 1.5);
+  assert.ok(perspectiveScale(camera, near)! > perspectiveScale(camera, far)! * 1.4);
   const n = projectedTileCorners(camera, { x: 20, y: 24 })!;
   const f = projectedTileCorners(camera, { x: 20, y: 16 })!;
   assert.ok(n[1].x - n[0].x > f[1].x - f[0].x);
@@ -102,11 +102,11 @@ test('invalid rays, clipped geometry and nonfinite inputs never produce bogus pi
   for (const y of [camera.focus.y + 100, camera.focus.y - 100]) {
     assert.equal(worldToScreen(camera, { x: 20, y }), null);
   }
-  assert.equal(projectedTileCorners(camera, { x: 20, y: 32 }), null);
+  assert.equal(projectedTileCorners(camera, { x: 20, y: camera.focus.y + (camera.distance - camera.near) / camera.cosPitch }), null);
   assert.equal(worldToScreen(camera, { x: NaN, y: 20 }), null);
   assert.equal(screenToGround(camera, { x: Infinity, y: 20 }), null);
   assert.throws(() => createPerspectiveCamera({ ...input, settings: { pitchDegrees: 90 } }), RangeError);
-  assert.throws(() => createPerspectiveCamera({ ...input, settings: { nearDepthTiles: 9 } }), RangeError);
+  assert.throws(() => createPerspectiveCamera({ ...input, settings: { nearDepthTiles: camera.distance + 1 } }), RangeError);
 });
 
 test('client picks account for canvas offsets and CSS scaling independently of DPR', () => {
@@ -122,7 +122,7 @@ test('client picks account for canvas offsets and CSS scaling independently of D
 test('focal length and camera distance control framing without moving the anchor', () => {
   const zoomed = createPerspectiveCamera({ ...input, settings: { focalLengthTiles: 24 } });
   close(perspectiveScale(zoomed, zoomed.focus)!, 2 * perspectiveScale(camera, camera.focus)!);
-  const closer = createPerspectiveCamera({ ...input, settings: { distanceTiles: 4 } });
+  const closer = createPerspectiveCamera({ ...input, settings: { distanceTiles: camera.distance / 2 } });
   close(perspectiveScale(closer, closer.focus)!, 2 * perspectiveScale(camera, camera.focus)!);
   assert.deepEqual(worldToScreen(closer, closer.focus), camera.anchor);
 });

@@ -5,6 +5,23 @@ The choice persists across reloads and save-code export/import. Legacy presentat
 
 ## Integration and validation
 
+- Prop/framing follow-up: pickups retain cached category/rarity icons on shallow
+  voxel bases; portals have raised faceted rims and rising particles; unactivated
+  light switches have raised housings. All use the shared projection/depth queue.
+  Generic contact shadows are high-quality only; core geometry remains at low.
+  Exit PNG, tinting, orientation and ground-decal rendering are unchanged.
+- Camera distance is now 10 tiles (was 8): focal-point scale is 20% smaller,
+  with the same 60° pitch and stable player anchor. View radio buttons now use
+  the same 40 px minimum width and foreground label styling as other settings.
+- Follow-up validation: 24 desktop/mobile browser tests passed, including prop
+  captures at high/low quality, activation/pooling, item occlusion, portal tapping,
+  pickup/stair completion, Settings and responsive camera/picking; 28 renderer
+  unit tests passed. Production build passed; typecheck retains the 15 existing
+  diagnostics. Inspected prop, exit, Settings and phone captures. Previous head
+  `1863952` completed full GitHub CI successfully; new-head CI is tracked on PR #75.
+- Changed: perspectiveProps (shared clipped box/ring buffers), Items, Landmarks,
+  Effects, projection/constants tests, Game settings styling and focused e2e tests.
+
 - Settings follow-up: 10 desktop/mobile tests passed (Settings selection, legacy
   URL ignored, reload persistence, save-code round trip, and camera/picking through
   resize/follow). `npm run check` still reports the same 15 existing diagnostics.
@@ -56,7 +73,7 @@ The choice persists across reloads and save-code export/import. Legacy presentat
 
 - `projection.ts`: tile units / integer corners, `tileCenter(pos)` for feet; CSS
   screen coordinates; +X right, +Y toward camera. One-point perspective, zero yaw,
-  60° pitch. Camera constants: focal length 12 × TILE_SIZE (384 px), distance 8,
+  60° pitch. Camera constants: focal length 12 × TILE_SIZE (384 px), distance 10,
   near/far 2/48, anchor X .5, desktop/mobile Y .5/.43, stable viewport height and
   48 px bottom margin. Existing interpolated player position drives camera focus.
 - `voxelWorld.ts`, `worldGeometry.ts`, `projectedPolygon.ts`: projected floors,
@@ -75,10 +92,10 @@ The choice persists across reloads and save-code export/import. Legacy presentat
 - `perspectiveProjectiles.ts`: pooled normal/boss/shadow shots, true fractional
   tile-center positions, projected direction, generic glow tier, shared wall order.
 - `perspectiveItems.ts`: four existing item icon categories, cached image loading
-  and fallback, upright icons bottom-anchored to their projected ground positions.
+  and fallback, upright icons seated on shallow rarity-tinted voxel bases.
 - `groundImage.ts`, `perspectiveLandmarks.ts`: 5×5 projected lattice / 32 affine
   texture triangles. Cached portal glow/ring with game-clock pulse; cached tinted
-  stair PNG variants and loading fallback. Both draw on the floor before walls.
+  stair PNG variants and loading fallback. Stairs remain floor decals; portals add raised geometry in the depth queue.
   Every exit tile is handled, including boss-created exits. Exit discovery currently
   scans the tile array; optimize only if profiling demonstrates material cost.
 - `GameCanvas` combines all adapters and reads `settings.gameplayView`. URL selection

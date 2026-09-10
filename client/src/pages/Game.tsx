@@ -1378,12 +1378,12 @@ export default function Game() {
                         data-testid="gameplay-view-settings"
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="top-down" id="view-top-down" data-testid="gameplay-view-top-down" />
-                          <label htmlFor="view-top-down" className="text-sm font-mono cursor-pointer">Top-down</label>
+                          <RadioGroupItem value="top-down" id="view-top-down" data-testid="gameplay-view-top-down" style={{ minWidth: '40px' }} />
+                          <label htmlFor="view-top-down" className="text-sm font-mono text-foreground cursor-pointer">Top-down</label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="perspective" id="view-perspective" data-testid="gameplay-view-perspective" />
-                          <label htmlFor="view-perspective" className="text-sm font-mono cursor-pointer">Perspective (3D)</label>
+                          <RadioGroupItem value="perspective" id="view-perspective" data-testid="gameplay-view-perspective" style={{ minWidth: '40px' }} />
+                          <label htmlFor="view-perspective" className="text-sm font-mono text-foreground cursor-pointer">Perspective (3D)</label>
                         </div>
                       </RadioGroup>
                     </div>

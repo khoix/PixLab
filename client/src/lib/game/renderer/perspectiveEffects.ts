@@ -10,7 +10,7 @@ const FOOT = [-0.175, -0.06, 0.08, -0.1, 0.175, -0.075, 0.175, 0.075, -0.175, 0.
 
 class Effect implements WorldDrawable {
   x = 0; y = 0; orderId = 0;
-  alpha = 1; color = ''; size = 0; angle = 0; foot = false; ground = true;
+  elevation = 0; alpha = 1; color = ''; size = 0; angle = 0; foot = false; ground = true;
   quality: EffectiveRenderQuality = 'high';
   drawGround(ctx: CanvasRenderingContext2D, camera: PerspectiveCamera): void {
     if (this.ground) this.paint(ctx, camera);
@@ -32,7 +32,7 @@ class Effect implements WorldDrawable {
       }
       ctx.closePath(); ctx.fill();
     } else {
-      const p = worldToScreen(camera, this), scale = perspectiveScale(camera, this);
+      const p = worldToScreen(camera, this, this.elevation), scale = perspectiveScale(camera, this, this.elevation);
       if (p && scale !== null) {
         setShadowTier('generic'); ctx.shadowColor = this.color;
         ctx.shadowBlur = this.quality === 'high' ? 6 : 0;
@@ -51,11 +51,11 @@ export class PerspectiveEffects {
   private count = 0;
   private quality: EffectiveRenderQuality = 'high';
   private add(x: number, y: number, color: string, size: number, alpha: number,
-    ground = true, angle = 0, foot = false): void {
+    ground = true, angle = 0, foot = false, elevation = 0): void {
     if (alpha <= 0) return;
     const index = this.count++, e = this.pool[index] ?? (this.pool[index] = new Effect());
     e.x = x; e.y = y; e.color = color; e.size = size; e.alpha = alpha;
-    e.ground = ground; e.angle = angle; e.foot = foot; e.quality = this.quality;
+    e.elevation = elevation; e.ground = ground; e.angle = angle; e.foot = foot; e.quality = this.quality;
     e.orderId = 6_000_000 + index; this.active.push(e);
   }
   prepare(level: Level, now: number, quality: EffectiveRenderQuality, path: readonly Position[],
@@ -78,14 +78,10 @@ export class PerspectiveEffects {
     }
     for (let i = 0; i < Math.min(10, path.length); i++) this.add(path[i].x + 0.5, path[i].y + 0.5,
       '#05d9e8', 0.5, 0.28 + 0.14 * Math.sin(now / 260));
-    for (const light of level.lightswitches ?? []) if (!light.activated) {
-      this.add(light.pos.x + 0.5, light.pos.y + 0.5, '#ffd700', 0.6, 1);
-      this.add(light.pos.x + 0.5, light.pos.y + 0.5, '#ffffff', 0.25, 1);
-    }
     if (quality !== 'low') for (const portal of level.portals) for (let i = 0; i < (quality === 'high' ? 4 : 2); i++) {
       const age = (now / 900 + i * 0.25) % 1, angle = i * 2.4;
       this.add(portal.pos.x + 0.5 + Math.cos(angle) * (0.25 + age * 0.2),
-        portal.pos.y + 0.5 + Math.sin(angle) * (0.25 + age * 0.2), '#ffc8ff', 0.045, 1 - age, false);
+        portal.pos.y + 0.5 + Math.sin(angle) * (0.25 + age * 0.2), '#ffc8ff', 0.045, 1 - age, false, 0, false, 0.12 + age * 0.6);
     }
     return this.active;
   }

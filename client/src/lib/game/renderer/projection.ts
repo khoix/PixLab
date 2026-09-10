@@ -9,7 +9,7 @@ export interface GroundPoint { x: number; y: number }
 export const PERSPECTIVE_CAMERA = Object.freeze({
   pitchDegrees: 60,
   focalLengthTiles: 12,
-  distanceTiles: 8,
+  distanceTiles: 10,
   nearDepthTiles: 2,
   farDepthTiles: 48,
   anchorX: 0.5,
