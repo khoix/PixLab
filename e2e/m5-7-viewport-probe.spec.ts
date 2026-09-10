@@ -199,6 +199,62 @@ test.describe('M5.7 — viewport probe', () => {
     expect(summary!.lastVvOffsetTop).toBe(0);
   });
 
+  test('a dialog must not strip the safe-area padding off body', async ({ page }) => {
+    // The device trace, in two numbers: `Top: 47px (shift 0)` before opening
+    // the in-run menu, `Top: 0px (shift -47)` after — with `Scroll: 0` and
+    // `VV: 0/0` throughout, and the height never moving off 763px. Not a
+    // scroll, not an iOS viewport offset: body's `padding-top` was zeroed.
+    //
+    // `react-remove-scroll-bar`, which Radix Dialog pulls in, injects
+    // `body[data-scroll-locked] { padding-top: <body's margin-top>px }` when a
+    // dialog opens. Tailwind's preflight zeroes body's margin, so it writes
+    // 0px over the safe-area inset — and at (0,1,1) it outspecifies the
+    // `body { padding-top: var(--safe-top) }` rule at (0,0,1).
+    //
+    // Mobile-only by construction: body's safe-area padding, and the
+    // `--safe-*` variables themselves, are declared inside
+    // `@media (max-width: 767px)`. Above that there is no padding to strip, so
+    // there is nothing here to regress.
+    test.skip(
+      (page.viewportSize()?.width ?? 0) >= 768,
+      'body only carries safe-area padding below 768px (mobile.css media query)',
+    );
+
+    // `env()` cannot be emulated, so drive the variables the same way
+    // mobile.css consumes them.
+    await page.goto('/?perf=1');
+    await page.addStyleTag({
+      content: ':root { --safe-top: 47px !important; --safe-bottom: 34px !important; }',
+    });
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+
+    const readTop = () =>
+      page.evaluate(() => ({
+        runTop: Math.round(document.querySelector('.run-screen')!.getBoundingClientRect().top),
+        bodyPadTop: getComputedStyle(document.body).paddingTop,
+        bodyPadBottom: getComputedStyle(document.body).paddingBottom,
+        locked: document.body.getAttribute('data-scroll-locked'),
+      }));
+
+    const before = await readTop();
+    console.log(`[m5.7] before menu: ${JSON.stringify(before)}`);
+    expect(before.runTop).toBe(47);
+
+    await page.getByTestId('game-menu-button').click();
+    await page.waitForTimeout(500);
+    const during = await readTop();
+    console.log(`[m5.7] menu open:   ${JSON.stringify(during)}`);
+
+    // The whole bug in one assertion: the run screen must not slide up when a
+    // dialog takes the scroll lock.
+    expect(during.bodyPadTop).toBe('47px');
+    expect(during.bodyPadBottom).toBe('34px');
+    expect(during.runTop).toBe(47);
+  });
+
   test('the overlay shows the drift on screen, since the device is a phone', async ({ page }) => {
     await page.goto('/?perf=1');
     await page.getByTestId('start-run-button').click();

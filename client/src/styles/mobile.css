@@ -206,6 +206,36 @@
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
   }
+
+  /* Radix Dialog pulls in `react-remove-scroll-bar`, which injects this the
+     moment any dialog, popover or sheet opens:
+
+       body[data-scroll-locked] {
+         padding-left:  <body's margin-left>px;
+         padding-top:   <body's margin-top>px;
+         padding-right: <body's margin-right>px;
+       }
+
+     It reads body's *margin* and writes it back as body's *padding* (its
+     default gapMode is 'margin'), and Tailwind's preflight zeroes body margin
+     — so it writes `padding-top: 0px` over the safe-area inset. At (0,1,1) it
+     outspecifies the `body` rule above at (0,0,1), so the inset simply loses.
+
+     The device trace: `Top: 47px` before opening the in-run menu, `Top: 0px
+     (shift -47)` after, with `Scroll: 0` and `VV: 0/0` and the run screen's
+     height never moving. The run screen slid up by exactly the top inset, and
+     since `padding-bottom` is absent from that rule and survives, the vacated
+     strip opened up as a black band along the bottom.
+
+     Restore the insets at (0,1,2) so they outrank it. Only the paddings are
+     restored — the scrollbar gap it compensates for is applied as
+     `margin-right`, which is left alone. */
+  html body[data-scroll-locked] {
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
   
   /* Body is border-box, so its safe-area padding comes out of its height. A
      root sized to the full viewport therefore overflows body by exactly the
