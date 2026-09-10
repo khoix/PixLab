@@ -236,6 +236,40 @@
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
   }
+
+  /* M5.8 — the run is full-bleed.
+     Body pads itself by the insets so ordinary pages keep clear of the notch
+     and the home indicator. A run is not an ordinary page: the canvas should
+     paint the whole screen, and every HUD element inside it already carries
+     its own `env()` offset (`.safe-area-top` on the stats row,
+     `--mobile-quick-actions-bottom`, `.mobile-sector-timer`). With body
+     padding *and* those offsets both applying, each of them was inset twice —
+     and the canvas lost the inset total off its height for nothing.
+
+     Drop body's vertical padding while a run is on screen and let those
+     offsets be the single source of the inset. The two selectors are one rule:
+     the second outranks `html body[data-scroll-locked]` above at (0,2,2), so a
+     dialog opening during a run cannot put the padding back and shift the
+     screen the other way — which is exactly the M5.7 bug in reverse. */
+  html.run-active body,
+  html.run-active body[data-scroll-locked] {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Two run-screen children position off its edges with no `env()` of their
+     own. They were correct only because the run screen used to start below
+     the notch; full-bleed leaves the menu button under the status bar and the
+     sector badge over the home indicator, so give them the inset explicitly.
+     `.run-screen ...` is (0,2,0) and beats the Tailwind utility at (0,1,0). */
+  .run-screen [data-testid='game-menu-button'] {
+    top: calc(var(--safe-top, 0px) + 1rem);
+    right: max(1rem, var(--safe-right, 0px));
+  }
+
+  .run-screen .mobile-hud-sector-badge {
+    bottom: calc(var(--safe-bottom, 0px) + 100px);
+  }
   
   /* Body is border-box, so its safe-area padding comes out of its height. A
      root sized to the full viewport therefore overflows body by exactly the
@@ -817,12 +851,12 @@
   /* M5 — Mobile run controls & HUD layout (375×667 safe) */
   .relative.w-full.h-screen,
   .relative.w-full.h-full {
-    --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    --mobile-quick-actions-bottom: calc(var(--safe-bottom, 0px) + 6.5rem);
     --mobile-quick-heal-height: 3.5rem;
     --mobile-left-timer-bottom: calc(
       var(--mobile-quick-actions-bottom) + var(--mobile-quick-heal-height)
     );
-    --mobile-left-timer-top: calc(env(safe-area-inset-top, 0px) + 7.75rem);
+    --mobile-left-timer-top: calc(var(--safe-top, 0px) + 7.75rem);
   }
 
   .mobile-hud-stats,
@@ -846,9 +880,9 @@
 
   .mobile-sector-timer {
     position: fixed;
-    right: max(0.25rem, env(safe-area-inset-right, 0px));
-    top: calc(env(safe-area-inset-top, 0px) + 3.5rem);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+    right: max(0.25rem, var(--safe-right, 0px));
+    top: calc(var(--safe-top, 0px) + 3.5rem);
+    bottom: calc(var(--safe-bottom, 0px) + 6rem);
     z-index: 30;
     display: flex;
     flex-direction: column;
@@ -862,13 +896,13 @@
   .mobile-sector-timer--left {
     position: absolute;
     right: auto;
-    left: max(0.75rem, env(safe-area-inset-left, 0px));
+    left: max(0.75rem, var(--safe-left, 0px));
     transform-origin: bottom left;
     flex-direction: column-reverse;
     top: var(--mobile-left-timer-top);
     bottom: var(
       --mobile-left-timer-bottom,
-      calc(env(safe-area-inset-bottom, 0px) + 10rem)
+      calc(var(--safe-bottom, 0px) + 10rem)
     );
     width: 2.75rem;
     align-items: center;
@@ -921,9 +955,15 @@
     line-height: 1.35;
   }
 
+  /* Through `--safe-*` rather than `env()` directly: identical on a device,
+     since the variables are defined from `env()` a few rules up, but drivable
+     from a test — `env()` cannot be emulated, so an assertion on raw `env()`
+     offsets can only ever read 0 and proves nothing. Since M5.8 made the run
+     full-bleed, this padding is the only thing keeping the stats row clear of
+     the notch, so it needs to be the thing under test. */
   .safe-area-top {
-    padding-top: max(1rem, env(safe-area-inset-top));
-    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-top: max(1rem, var(--safe-top, 0px));
+    padding-left: max(1rem, var(--safe-left, 0px));
   }
 
   .mobile-dpad-control,
@@ -939,7 +979,7 @@
 
   .mobile-quick-actions {
     position: absolute;
-    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    right: max(0.75rem, var(--safe-right, 0px));
     bottom: var(--mobile-quick-actions-bottom);
     display: flex;
     flex-direction: column;
@@ -961,9 +1001,9 @@
   @media (max-height: 700px) {
     .relative.w-full.h-screen,
     .relative.w-full.h-full {
-      --mobile-quick-actions-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+      --mobile-quick-actions-bottom: calc(var(--safe-bottom, 0px) + 5.5rem);
       --mobile-quick-heal-height: 3rem;
-      --mobile-left-timer-top: calc(env(safe-area-inset-top, 0px) + 7rem);
+      --mobile-left-timer-top: calc(var(--safe-top, 0px) + 7rem);
     }
 
     .mobile-quick-actions {
@@ -982,7 +1022,7 @@
 
     .consumables-panel {
       top: auto !important;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
+      bottom: calc(var(--safe-bottom, 0px) + 4rem);
       transform: scale(var(--mobile-hud-scale, 1)) !important;
       transform-origin: bottom right !important;
     }

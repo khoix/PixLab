@@ -122,19 +122,31 @@
    the page to it — the whole screen "jumped up" on pause. Size the root to the
    dynamic viewport and lock document scrolling while a run is on screen. */
 .run-screen {
-  /* The viewport minus the safe-area padding body carries — see --run-height in
-     mobile.css. Sized to the full viewport, the run screen hung past the bottom
-     by the insets, and iOS scrolled that overhang away when the in-game menu
-     took focus, carrying the whole HUD up with it. That is the "screen jumps on
-     pause" report: it only reproduced installed to the home screen, because
-     that is the only place the insets are non-zero.
+  /* The full viewport. Body drops its safe-area padding for the duration of a
+     run (see `html.run-active body` in mobile.css), so this fills body's
+     content box exactly rather than overflowing it — the run is full-bleed and
+     the canvas paints under the notch and the home indicator, while each HUD
+     element keeps itself clear with its own `env()` offset.
+
+     This previously read `var(--run-height)`, the viewport minus the insets,
+     because body padded itself during a run too. That was correct as far as
+     overflow goes but inset everything twice: the HUD elements already carry
+     `env()` offsets, and the canvas gave up the inset total off its height for
+     bars it did not need.
+
+     The overflow constraint that shaped the original is still live, so keep
+     both halves of it. Sized *larger* than body's content box, the run screen
+     hangs past the bottom, and iOS scrolls that overhang away the moment the
+     in-game menu takes focus, carrying the whole HUD up with it — the "screen
+     jumps on pause" report, reproducible only installed to the home screen
+     where the insets are non-zero. Full-bleed height with unpadded body is the
+     one other combination that leaves nothing to scroll.
 
      A definite length, not a percentage: `height: 100%` needs a definite parent
      height and #root only sets `min-height`, so the run screen would collapse
      and the absolutely-positioned canvas would have no box at all. */
   height: 100vh;
   height: 100dvh;
-  height: var(--run-height, 100dvh);
 }
 
 html.run-active,
