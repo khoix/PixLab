@@ -12,6 +12,19 @@ import { Plus, Minus } from 'lucide-react';
 interface GameEventLogViewerProps {
   /** Maximum number of events to display (default: 200) */
   maxEntries?: number;
+  /**
+   * Lay out for a narrow container — the mobile drawer rather than the desktop
+   * split panel.
+   *
+   * Three things break at ~390px that are invisible at panel width. The
+   * font-size and Clear buttons are absolutely positioned over the top-right
+   * corner, so entries run underneath them. The timestamp and type columns are
+   * `flex-shrink-0` with a `min-w-[5rem]` on the type, and in Press Start 2P
+   * those two eat nearly the whole row, leaving the message a column one word
+   * wide. And the font size is shared with the desktop panel through
+   * localStorage, so a size chosen there arrives here far too large.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -24,7 +37,7 @@ interface GameEventLogViewerProps {
  * - Resizable panel integration
  * - Visible during game over for review
  */
-export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(({ maxEntries = 200 }) => {
+export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(({ maxEntries = 200, compact = false }) => {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef<boolean>(true);
@@ -35,6 +48,18 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
     const saved = localStorage.getItem('eventLogFontSize');
     return saved ? parseInt(saved, 10) : 14;
   });
+
+  // The stored size is shared with the desktop panel, where the range is
+  // 10-24px and 14 is the default. Press Start 2P at 14px is roughly a quarter
+  // of a 390px drawer per character, so the drawer scales it down rather than
+  // keeping a second preference the user would have to set twice.
+  //
+  // Scaled rather than capped: a flat cap at the 10px floor would leave the
+  // +/- buttons visibly dead in the drawer, since the stored size can never go
+  // below it. This keeps them working within a 7-15px range.
+  const effectiveFontSize = compact
+    ? Math.max(7, Math.round(fontSize * 0.62))
+    : fontSize;
 
   // Subscribe to events on mount
   useEffect(() => {
@@ -255,8 +280,23 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
   return (
     <div className="relative h-full w-full z-[201] pointer-events-auto" data-testid="event-log-console">
       <Card className="h-full bg-black/95 border-t border-primary/50 max-md:bg-black/98">
-        <CardContent className="p-2 h-full relative">
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+        <CardContent
+          className={
+            compact
+              ? 'p-2 h-full flex flex-col gap-1'
+              : 'p-2 h-full relative'
+          }
+        >
+          {/* Compact keeps these in normal flow. Absolutely positioned, they
+              sit on top of the first entries, which at drawer width is most of
+              what there is to read. */}
+          <div
+            className={
+              compact
+                ? 'flex items-center justify-end gap-1 shrink-0'
+                : 'absolute top-2 right-2 z-10 flex items-center gap-1'
+            }
+          >
             <div className="flex items-center gap-1 border border-primary/30 rounded">
               <Button 
                 variant="ghost" 
@@ -277,12 +317,20 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={clearLogs} className="h-7 px-3 text-base">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearLogs}
+              className={compact ? 'h-6 px-2 text-xs' : 'h-7 px-3 text-base'}
+            >
               Clear
             </Button>
           </div>
-          <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
-            <div className="space-y-0 font-pixel pr-4" style={{ fontSize: `${fontSize}px` }}>
+          <ScrollArea className={compact ? 'flex-1 min-h-0 w-full' : 'h-full w-full'} ref={scrollAreaRef}>
+            <div
+              className={compact ? 'space-y-1 font-pixel pr-2' : 'space-y-0 font-pixel pr-4'}
+              style={{ fontSize: `${effectiveFontSize}px` }}
+            >
               {events.length === 0 ? (
                 <div className="text-muted-foreground text-center py-4">
                   No events yet...
@@ -291,16 +339,29 @@ export const GameEventLogViewer: React.FC<GameEventLogViewerProps> = React.memo(
                 eventItems.map((event) => (
                   <div
                     key={event.id}
-                    className={`flex items-center gap-3 ${getEventColor(event.type)} transition-opacity hover:opacity-90`}
+                    className={`flex ${compact ? 'flex-wrap items-baseline gap-x-2' : 'items-center gap-3'} ${getEventColor(event.type)} transition-opacity hover:opacity-90`}
                     title={event.isTruncated ? event.message : undefined}
                   >
-                    <span className="text-muted-foreground flex-shrink-0" style={{ fontSize: `${fontSize * 0.85}px` }}>
+                    <span className="text-muted-foreground flex-shrink-0" style={{ fontSize: `${effectiveFontSize * 0.85}px` }}>
                       [{formatTime(event.timestamp)}]
                     </span>
-                    <span className="flex-shrink-0 min-w-[5rem] uppercase font-semibold" style={{ fontSize: `${fontSize * 0.85}px` }}>
+                    {/* `min-w-[5rem]` is a panel-width affordance: it lines the
+                        messages up in a column. In the drawer it is most of the
+                        row, so drop it and let the message take a line of its
+                        own underneath. */}
+                    <span
+                      className={`flex-shrink-0 uppercase font-semibold ${compact ? '' : 'min-w-[5rem]'}`}
+                      style={{ fontSize: `${effectiveFontSize * 0.85}px` }}
+                    >
                       {event.type}:
                     </span>
-                    <span className="flex-1 break-words whitespace-pre-wrap leading-relaxed">
+                    <span
+                      className={
+                        compact
+                          ? 'basis-full min-w-0 break-words whitespace-pre-wrap leading-snug'
+                          : 'flex-1 break-words whitespace-pre-wrap leading-relaxed'
+                      }
+                    >
                       {parseMessageWithItemColors(event.displayMessage, event.originalMessage || event.message, event)}
                     </span>
                   </div>

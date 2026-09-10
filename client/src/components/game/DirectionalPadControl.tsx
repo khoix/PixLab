@@ -131,7 +131,9 @@ export const DirectionalPadControl: React.FC<DirectionalPadControlProps> = ({ on
       ref={containerRef}
       data-testid="mobile-dpad-control"
       className={cn(
-        'md:hidden mobile-dpad-control absolute bottom-40 left-5 w-40 h-40 z-50 touch-none pointer-events-auto',
+        // No `md:hidden`: it hid this in landscape, where the phone is wider
+        // than the md breakpoint. The `isMobile` gate owns the decision.
+        'mobile-dpad-control absolute bottom-40 left-5 w-40 h-40 z-50 touch-none pointer-events-auto',
         className,
       )}
       onMouseDown={handleSwipeStart}

@@ -108,7 +108,12 @@ export const FloatingTouchControl: React.FC<FloatingTouchControlProps> = ({ onMo
       ref={layerRef}
       data-testid="mobile-floating-touch-control"
       className={cn(
-        'md:hidden absolute inset-0 z-[35] touch-none pointer-events-auto',
+        // `md:hidden` was here. It keys off viewport *width*, so a phone in
+        // landscape — 844px wide — set `display: none` on the joystick, the
+        // control that phone most needs. It was in the DOM the whole time,
+        // which is why a presence-only test missed it. `isMobile` gates this
+        // component and since M5.9 asks the question orientation-aware.
+        'absolute inset-0 z-[35] touch-none pointer-events-auto',
         'floating-touch-control',
         className,
       )}

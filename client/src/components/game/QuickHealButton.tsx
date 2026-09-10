@@ -21,7 +21,8 @@ export const QuickHealButton: React.FC<QuickHealButtonProps> = ({
       disabled={disabled || healAmount === null}
       onClick={onHeal}
       className={cn(
-        'md:hidden mobile-quick-heal pointer-events-auto',
+        // See FloatingTouchControl: width-based hiding breaks landscape.
+        'mobile-quick-heal pointer-events-auto',
         'flex flex-col items-center justify-center gap-1',
         'w-14 h-14 rounded-full border-2 border-primary/50 bg-black/70 backdrop-blur-sm',
         'transition-all active:scale-95',
