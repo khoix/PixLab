@@ -165,6 +165,40 @@ test.describe('M5.7 — viewport probe', () => {
     expect(await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.isActive())).toBe(false);
   });
 
+  test('opening the in-run menu must not move the run screen', async ({ page }) => {
+    // The first device trace: run-screen height sat at 763px with drift 0
+    // across a menu open, while every element inside it moved up together by
+    // ~47px — exactly that phone's top inset. So the box was translated, not
+    // resized, and a size-only check reads straight through it.
+    //
+    // The iOS focus-scroll behind that does not reproduce in Chromium, so this
+    // is a guard rather than the repro: if a CSS change ever lets the document
+    // scroll or the run screen leave the top of the viewport during a run,
+    // this fails here instead of on a phone.
+    await page.goto('/?perf=1');
+    await page.getByTestId('start-run-button').click();
+    await page.waitForURL('**/play**');
+    await page.getByTestId('enter-sector-button').click();
+    await page.locator('canvas.game-canvas').waitFor({ state: 'visible' });
+    await page.evaluate(() => {
+      window.__PIXLAB_VIEWPORT__!.reset();
+      window.__PIXLAB_VIEWPORT__!.sample();
+    });
+
+    await page.getByTestId('game-menu-button').click();
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.sample());
+
+    const summary = await page.evaluate(() => window.__PIXLAB_VIEWPORT__!.getSummary());
+    console.log(`[m5.7] menu open: ${JSON.stringify(summary)}`);
+
+    expect(summary!.topShiftPx).toBe(0);
+    expect(summary!.driftPx).toBe(0);
+    // `html.run-active` locks document scrolling for exactly this reason.
+    expect(summary!.maxScrollY).toBe(0);
+    expect(summary!.lastVvOffsetTop).toBe(0);
+  });
+
   test('the overlay shows the drift on screen, since the device is a phone', async ({ page }) => {
     await page.goto('/?perf=1');
     await page.getByTestId('start-run-button').click();
@@ -178,7 +212,13 @@ test.describe('M5.7 — viewport probe', () => {
     const block = page.getByTestId('perf-overlay-viewport');
     await expect(block).toBeVisible();
     await expect(page.getByTestId('perf-overlay-drift')).toContainText('Drift:');
-    // There is no console on a phone; the number has to be readable on screen.
+    // There is no console on a phone; the numbers have to be readable on screen.
     await expect(block).toContainText('Run screen:');
+    // Height alone missed the whole of the first device trace — the position
+    // and the two things that can change it without resizing the box have to
+    // be on screen as well.
+    await expect(page.getByTestId('perf-overlay-shift')).toContainText('Top:');
+    await expect(page.getByTestId('perf-overlay-scroll')).toContainText('Scroll:');
+    await expect(page.getByTestId('perf-overlay-scroll')).toContainText('VV:');
   });
 });

@@ -58,6 +58,26 @@ export interface ViewportSummary {
   maxRunScreenHeight: number;
   /** Negative means the run screen has shrunk since the first sample. */
   driftPx: number;
+
+  // The first device trace killed the "the run screen is getting shorter"
+  // theory outright: height sat at 763px with driftPx 0 across a menu open,
+  // while every element inside the run screen moved up together by ~47px —
+  // exactly that phone's top inset. A translation, not a resize. So the box's
+  // *position* has to be reported next to its size, or the overlay keeps
+  // reading "no drift" through the very thing being chased.
+  firstRunScreenTop: number;
+  lastRunScreenTop: number;
+  minRunScreenTop: number;
+  maxRunScreenTop: number;
+  /** Negative means the run screen has moved up since the first sample. */
+  topShiftPx: number;
+
+  /** The two things that can move it without resizing it. */
+  lastScrollY: number;
+  maxScrollY: number;
+  lastVvOffsetTop: number;
+  lastVvPageTop: number;
+
   elapsedMs: number;
 }
 
@@ -177,6 +197,10 @@ class ViewportProbe {
     const heights = runs.map((s) => s.runScreenHeight);
     const first = heights[0];
     const last = heights[heights.length - 1];
+    const tops = runs.map((s) => s.runScreenTop);
+    const firstTop = tops[0];
+    const lastTop = tops[tops.length - 1];
+    const latest = runs[runs.length - 1];
     return {
       samples: runs.length,
       firstRunScreenHeight: first,
@@ -184,7 +208,16 @@ class ViewportProbe {
       minRunScreenHeight: Math.min(...heights),
       maxRunScreenHeight: Math.max(...heights),
       driftPx: last - first,
-      elapsedMs: runs[runs.length - 1].t - runs[0].t,
+      firstRunScreenTop: firstTop,
+      lastRunScreenTop: lastTop,
+      minRunScreenTop: Math.min(...tops),
+      maxRunScreenTop: Math.max(...tops),
+      topShiftPx: lastTop - firstTop,
+      lastScrollY: latest.scrollY,
+      maxScrollY: Math.max(...runs.map((s) => s.scrollY)),
+      lastVvOffsetTop: latest.vvOffsetTop,
+      lastVvPageTop: latest.vvPageTop,
+      elapsedMs: latest.t - runs[0].t,
     };
   }
 
