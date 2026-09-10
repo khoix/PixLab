@@ -24,6 +24,8 @@ export interface MobArtOptions {
   quality: string;
   /** Ares lights up mid-charge, so it is part of the appearance, not an overlay. */
   charging: boolean;
+  /** Upright turret body: its aimed barrel is drawn live by the billboard pass. */
+  billboard?: boolean;
 }
 
 /** Stroke a glowing ring — the low-quality substitute for `shadowBlur`. */
@@ -115,7 +117,8 @@ export function drawMobArt(
     
     // Wispy, ethereal body - elongated oval shape
     ctx.save();
-    ctx.globalAlpha = 0.7; // Semi-transparent ghostly effect
+    const inheritedAlpha = ctx.globalAlpha;
+    ctx.globalAlpha *= 0.7; // Semi-transparent ghostly effect
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 15;
@@ -131,7 +134,7 @@ export function drawMobArt(
     ctx.fill();
     
     ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1.0;
+    ctx.globalAlpha = inheritedAlpha;
     ctx.restore();
     
     // Inner glow for ethereal effect
@@ -257,38 +260,40 @@ export function drawMobArt(
     );
     ctx.shadowBlur = 0;
     
-    // Gun barrel pointing left - shorter and same color as turret
-    const barrelLength = size * 0.35; // Shorter
-    const barrelWidth = size * 0.3;
-    const barrelX = centerX - turretSize / 2 - barrelLength;
-    const barrelY = centerY - barrelWidth / 2;
-    
-    // Main barrel body (same color as turret)
-    ctx.fillStyle = '#0d8f6a';
-    ctx.fillRect(barrelX, barrelY, barrelLength, barrelWidth);
-    
-    // Barrel outline for definition
-    ctx.strokeStyle = '#0d8f6a';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(barrelX, barrelY, barrelLength, barrelWidth);
-    
-    // Barrel tip (slightly darker turret color)
-    ctx.fillStyle = '#0a6b52';
-    ctx.fillRect(barrelX, barrelY, barrelLength * 0.2, barrelWidth);
-    
-    // Barrel connection to turret (mount)
-    ctx.fillStyle = '#0d8f6a';
-    ctx.fillRect(centerX - turretSize / 2 - 3, centerY - barrelWidth / 3, 3, barrelWidth * 0.67);
-    
-    // Barrel details (rings/segments)
-    ctx.strokeStyle = '#0a6b52';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 3; i++) {
-      const ringX = barrelX + (barrelLength * 0.33 * i);
-      ctx.beginPath();
-      ctx.moveTo(ringX, barrelY);
-      ctx.lineTo(ringX, barrelY + barrelWidth);
-      ctx.stroke();
+    if (!opts.billboard) {
+      // Legacy top-down barrel; the billboard variant aims in projected space.
+      const barrelLength = size * 0.35; // Shorter
+      const barrelWidth = size * 0.3;
+      const barrelX = centerX - turretSize / 2 - barrelLength;
+      const barrelY = centerY - barrelWidth / 2;
+
+      // Main barrel body (same color as turret)
+      ctx.fillStyle = '#0d8f6a';
+      ctx.fillRect(barrelX, barrelY, barrelLength, barrelWidth);
+
+      // Barrel outline for definition
+      ctx.strokeStyle = '#0d8f6a';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(barrelX, barrelY, barrelLength, barrelWidth);
+
+      // Barrel tip (slightly darker turret color)
+      ctx.fillStyle = '#0a6b52';
+      ctx.fillRect(barrelX, barrelY, barrelLength * 0.2, barrelWidth);
+
+      // Barrel connection to turret (mount)
+      ctx.fillStyle = '#0d8f6a';
+      ctx.fillRect(centerX - turretSize / 2 - 3, centerY - barrelWidth / 3, 3, barrelWidth * 0.67);
+
+      // Barrel details (rings/segments)
+      ctx.strokeStyle = '#0a6b52';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 3; i++) {
+        const ringX = barrelX + (barrelLength * 0.33 * i);
+        ctx.beginPath();
+        ctx.moveTo(ringX, barrelY);
+        ctx.lineTo(ringX, barrelY + barrelWidth);
+        ctx.stroke();
+      }
     }
   } else if (subtype === 'sniper') {
     // Apollo Sniper: Diamond shape with reticle
@@ -355,7 +360,7 @@ export function drawMobArt(
     
     // Draw transparent wings first (behind body)
     ctx.save();
-    ctx.globalAlpha = 0.3; // Transparent wings
+    ctx.globalAlpha *= 0.3; // Transparent wings
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = 1.5;
@@ -374,6 +379,7 @@ export function drawMobArt(
       Math.PI * 2
     );
     ctx.fill();
+    if (opts.billboard) { ctx.strokeStyle = '#a18bc7'; ctx.lineWidth = 0.8; ctx.stroke(); }
     
     // Right wing
     ctx.beginPath();
@@ -387,6 +393,7 @@ export function drawMobArt(
       Math.PI * 2
     );
     ctx.fill();
+    if (opts.billboard) { ctx.strokeStyle = '#a18bc7'; ctx.lineWidth = 0.8; ctx.stroke(); }
     
     ctx.shadowBlur = 0;
     ctx.restore();

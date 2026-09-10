@@ -1392,6 +1392,28 @@ export default function Game() {
                       </RadioGroup>
                     </div>
                     <div>
+                      <label className="text-lg font-pixel text-primary mb-2 block">GAMEPLAY VIEW</label>
+                      <RadioGroup
+                        aria-label="Gameplay view"
+                        value={state.settings.gameplayView ?? 'top-down'}
+                        onValueChange={(value) => dispatch({
+                          type: 'UPDATE_SETTINGS',
+                          payload: { gameplayView: value === 'perspective' ? 'perspective' : 'top-down' },
+                        })}
+                        className="flex flex-col gap-3"
+                        data-testid="gameplay-view-settings"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="top-down" id="view-top-down" data-testid="gameplay-view-top-down" style={{ minWidth: '40px' }} />
+                          <label htmlFor="view-top-down" className="text-sm font-mono text-foreground cursor-pointer">Top-down</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="perspective" id="view-perspective" data-testid="gameplay-view-perspective" style={{ minWidth: '40px' }} />
+                          <label htmlFor="view-perspective" className="text-sm font-mono text-foreground cursor-pointer">Perspective (3D)</label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
                       <label className="text-lg font-pixel text-primary mb-2 block">RENDER QUALITY</label>
                       <RadioGroup
                         value={(state.settings.renderQuality || 'auto') as 'auto' | 'high' | 'medium' | 'low'}

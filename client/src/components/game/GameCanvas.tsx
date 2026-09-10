@@ -58,6 +58,13 @@ import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../.
 import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
+import { drawPerspectiveSenses } from '../../lib/game/renderer/perspectiveSenses';
+import { PerspectiveFog } from '../../lib/game/renderer/perspectiveFog';
+import { PerspectiveEffects } from '../../lib/game/renderer/perspectiveEffects';
+import { PerspectiveLandmarks } from '../../lib/game/renderer/perspectiveLandmarks';
+import { PerspectiveItems } from '../../lib/game/renderer/perspectiveItems';
+import { PerspectiveProjectiles } from '../../lib/game/renderer/perspectiveProjectiles';
+import { PerspectiveEntities } from '../../lib/game/renderer/perspectiveEntities';
 import { mobSpriteCache } from '../../lib/game/renderer/mobSpriteCache';
 import { needsThreatMarker, markerStartDistance } from '../../lib/game/renderer/fogGradient';
 import {
@@ -97,6 +104,13 @@ import {
 import { applyCanvasDimensions, getCanvasDimensions } from '../../lib/game/renderer/canvasSizing';
 import { fogLayerCache, tileLayerCache } from '../../lib/game/renderer/cacheInstances';
 import { buildDrawFrameSnapshot, type DrawFrameSnapshot } from '../../lib/game/renderer/drawSnapshot';
+import {
+  clientToCanvas,
+  createPerspectiveCamera,
+  screenToTile as projectedScreenToTile,
+  type PerspectiveCamera,
+} from '../../lib/game/renderer/projection';
+import { VoxelWorldRenderer } from '../../lib/game/renderer/voxelWorld';
 import {
   trackStableViewport,
   type StableViewport,
@@ -251,6 +265,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // measured against it so a phone's URL bar sliding in and out — which shrinks
   // the `100dvh` run root — does not shift the world.
   const stableViewportRef = useRef<StableViewport | null>(null);
+  const [voxelWorld] = useState(() => new VoxelWorldRenderer());
+  const [perspectiveItems] = useState(() => new PerspectiveItems());
+  const [perspectiveProjectiles] = useState(() => new PerspectiveProjectiles());
+  const [perspectiveEntities] = useState(() => new PerspectiveEntities());
+  const [perspectiveFog] = useState(() => new PerspectiveFog());
+  const [perspectiveEffects] = useState(() => new PerspectiveEffects());
+  const [perspectiveLandmarks] = useState(() => new PerspectiveLandmarks());
+  // Picking must use the camera that produced the visible frame, including its
+  // interpolated focus, rather than a newer simulation position.
+  const renderedCameraRef = useRef<{
+    perspective: PerspectiveCamera;
+    perspectiveEnabled: boolean;
+    legacyOffset: Position;
+  } | null>(null);
   const moveStartPosRef = useRef<Position>({ x: 0, y: 0 }); // Position when movement started
   const moveProgressRef = useRef<number>(1); // 0 = start, 1 = complete
   const lastTimeRef = useRef<number>(0);
@@ -589,6 +617,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       loadoutRef.current
     );
     levelRef.current = level;
+    renderedCameraRef.current = null;
     tileLayerCache.invalidate();
     fogLayerCache.invalidate();
     mobSpriteCache.setDpr(canvasSizeRef.current.dpr);
@@ -695,6 +724,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   useEffect(() => {
     window.__PIXLAB_LEVEL__ = {
       getPlayerPos: () => ({ ...playerPosRef.current }),
+      getWorldRenderStats: () => voxelWorld.getStats(),
+      getRenderedPerspectiveCamera: () => {
+        const camera = renderedCameraRef.current?.perspective;
+        return camera ? { ...camera, focus: { ...camera.focus }, anchor: { ...camera.anchor } } : null;
+      },
+      getPerspectiveFogStats: () => perspectiveFog.getStats(),
       getPlayerHp: () => statsRef.current.hp,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
       getPressureStats: () => ({
@@ -785,6 +820,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         dpr: dims.dpr,
       };
       applyCanvasDimensions(canvas, dims);
+      renderedCameraRef.current = null;
+      frameSnapshotRef.current = null;
       fogLayerCache.invalidate();
       tileLayerCache.invalidate();
       // Sprites carry a DPR-sized backing store, so they go with the rest.
@@ -916,14 +953,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas || !levelRef.current) return null;
     const rect = canvas.getBoundingClientRect();
-    const frame = getFrameSnapshot();
-    // Inverse of the draw transform: world px = screen px + camera offset. All
-    // canvas drawing is in CSS pixels, so DPR cancels out.
-    const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
-    const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
+    const rendered = renderedCameraRef.current;
+    if (!rendered) return null;
+    const screen = clientToCanvas({ x: clientX, y: clientY }, rect, rendered.perspective);
+    if (!screen) return null;
+    if (rendered.perspectiveEnabled) return projectedScreenToTile(rendered.perspective, screen);
+    const { x: camX, y: camY } = rendered.legacyOffset;
     return {
-      x: Math.floor((clientX - rect.left + camX) / TILE_SIZE),
-      y: Math.floor((clientY - rect.top + camY) / TILE_SIZE),
+      x: Math.floor((screen.x + camX) / TILE_SIZE),
+      y: Math.floor((screen.y + camY) / TILE_SIZE),
     };
   };
 
@@ -2977,6 +3015,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // pinned to the screen anchor (centred horizontally; lifted above centre on mobile).
     const camX = visualPosRef.current.x * TILE_SIZE - frame.playerScreenX + TILE_SIZE / 2;
     const camY = visualPosRef.current.y * TILE_SIZE - frame.playerScreenY + TILE_SIZE / 2;
+
+    const perspective = createPerspectiveCamera({
+      player: visualPosRef.current,
+      width: logicalWidth,
+      height: logicalHeight,
+      stableHeight: stableViewportRef.current?.height,
+      isMobile: frame.isMobileViewport,
+      tileSize: TILE_SIZE,
+    });
+    renderedCameraRef.current = { perspective, perspectiveEnabled: settingsRef.current.gameplayView === 'perspective', legacyOffset: { x: camX, y: camY } };
+    if (settingsRef.current.gameplayView === 'perspective') {
+      const drawNow = getGameNow();
+      const visibility = perspectiveFog.prepare(perspective, frame.fogRadius / TILE_SIZE, effectiveQuality);
+      const entities = perspectiveEntities.prepare(levelRef.current, perspective, effectiveQuality,
+        drawNow, !!activeScrollEffectsRef.current.phasing?.active,
+        perspectiveEffects.prepare(levelRef.current, drawNow, effectiveQuality, exitPathHintRef.current,
+          perspectiveLandmarks.prepare(levelRef.current, theme.floor, stairsImageCache.img, drawNow)));
+      voxelWorld.draw(ctx, perspective, levelRef.current, theme, effectiveQuality,
+        perspectiveProjectiles.prepare(levelRef.current.projectiles, effectiveQuality,
+          perspectiveItems.prepare(levelRef.current.items, entities)), visibility);
+      perspectiveEntities.drawDamageNumbers(ctx, perspective, levelRef.current, drawNow, visibility);
+      drawPerspectiveSenses(ctx, perspective, levelRef.current, frame.visionRadiusPx / TILE_SIZE,
+        !!activeScrollEffectsRef.current.threatSense, !!activeScrollEffectsRef.current.lootSense,
+        drawNow, effectiveQuality);
+      if (perfMonitor.isActive()) perfMonitor.recordDrawnEntities(perspectiveEntities.drawnEntities);
+      if (isGamePaused()) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+      }
+      return;
+    }
 
     ctx.save();
     ctx.translate(-camX, -camY);

@@ -208,6 +208,7 @@ export interface GameState {
     sfxVolume: number;
     joystickPosition: 'left' | 'right';
     mobileControlType?: MobileControlType;
+    gameplayView?: 'top-down' | 'perspective';
     renderQuality?: 'auto' | 'high' | 'medium' | 'low';
     controlOpacity?: number;
     controlSize?: number;

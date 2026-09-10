@@ -38,6 +38,7 @@ export interface MobSpriteKey {
   size: number;
   quality: EffectiveRenderQuality;
   charging: boolean;
+  billboard?: boolean;
 }
 
 export function spriteKeyOf(key: MobSpriteKey): string {
@@ -48,7 +49,7 @@ export function spriteKeyOf(key: MobSpriteKey): string {
     key.size,
     key.quality,
     key.charging ? 'charging' : 'idle',
-  ].join('|');
+  ].join('|') + (key.billboard ? '|billboard' : '');
 }
 
 export interface MobSpriteStats {
@@ -226,6 +227,7 @@ export class MobSpriteCache {
       size: key.size,
       quality: key.quality,
       charging: key.charging,
+      billboard: key.billboard,
     };
     try {
       drawMobArt(ctx, opts, makeStrokeGlowCircle(key.quality));
