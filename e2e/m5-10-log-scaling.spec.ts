@@ -135,4 +135,56 @@ test.describe('M5.10 — controls, pause and log scale', () => {
       );
     }
   });
+
+  test("the sheet's close button clears the log card, in both orientations", async ({ page }) => {
+    test.slow();
+    // Measured at 16x16px of overlap before the fix: the sheet's own close is
+    // `top-4` with a 40px box, spanning 16-56px, while the card began at the
+    // drawer's 40px top padding — so the X sat on the card's top-right corner.
+    // It was also a 16px-wide hit target, which is small for a thumb.
+    await page.goto('/?perf=1');
+    await enterRun(page);
+
+    for (const vp of [PORTRAIT, LANDSCAPE]) {
+      await page.setViewportSize(vp);
+      await page.waitForTimeout(400);
+      await page.getByTestId('game-menu-button').click();
+      await page.getByTestId('menu-event-log').click();
+      await expect(page.getByTestId('event-log-drawer')).toBeVisible();
+      await page.waitForTimeout(700);
+
+      const m = await page.evaluate(() => {
+        const drawer = document.querySelector('[data-testid="event-log-drawer"]') as HTMLElement;
+        // SheetPrimitive.Close renders as the content's first child.
+        const close = drawer.querySelector('button') as HTMLElement;
+        const card = drawer.querySelector('[data-testid="event-log-console"]') as HTMLElement;
+        const box = (el: HTMLElement) => {
+          const r = el.getBoundingClientRect();
+          return {
+            top: Math.round(r.top), bottom: Math.round(r.bottom),
+            left: Math.round(r.left), right: Math.round(r.right),
+            width: Math.round(r.width),
+          };
+        };
+        const c = box(close);
+        const k = box(card);
+        return {
+          close: c,
+          card: k,
+          overlapX: Math.max(0, Math.min(c.right, k.right) - Math.max(c.left, k.left)),
+          overlapY: Math.max(0, Math.min(c.bottom, k.bottom) - Math.max(c.top, k.top)),
+        };
+      });
+      console.log(`[m5.10] close ${vp.width}x${vp.height}: ${JSON.stringify(m)}`);
+
+      // A collision needs both axes; the buttons share a column by design.
+      expect(m.overlapY, `${vp.width}x${vp.height}: close overlaps the card`).toBe(0);
+      expect(m.close.bottom).toBeLessThanOrEqual(m.card.top);
+      // And it has to stay a usable target on a phone.
+      expect(m.close.width).toBeGreaterThanOrEqual(32);
+
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(400);
+    }
+  });
 });

@@ -36,11 +36,20 @@ export const EventLogDrawer: React.FC<EventLogDrawerProps> = ({
       side={landscape ? 'right' : 'bottom'}
       // `p-6` from the sheet's own variant would spend a quarter of the height
       // on padding in landscape; the log brings its own chrome.
-      className={
-        landscape
-          ? 'w-[min(24rem,60vw)] sm:max-w-none p-3 pt-10 bg-card/95 border-primary/30 flex flex-col z-[260]'
-          : 'h-[45vh] p-3 pt-10 bg-card/95 border-primary/30 flex flex-col z-[260]'
-      }
+      //
+      // The `[&>button]` rules restyle the sheet's own close control, which is
+      // its first child. Left alone it is `top-4` with a 40px box, so it spans
+      // 16-56px while the log card starts at the 40px top padding — a measured
+      // 16x16px overlap in both orientations, with the X sitting on the card's
+      // corner. It is also a 16px-wide hit target, which is small for a thumb.
+      // Moved up and grown to 36px, with the padding opened to 48px so the card
+      // clears it by 8px.
+      className={[
+        'p-3 pt-12 bg-card/95 border-primary/30 flex flex-col z-[260]',
+        '[&>button]:top-1 [&>button]:right-2 [&>button]:h-9 [&>button]:w-9',
+        '[&>button]:grid [&>button]:place-items-center [&>button]:opacity-100',
+        landscape ? 'w-[min(24rem,60vw)] sm:max-w-none' : 'h-[45vh]',
+      ].join(' ')}
       data-testid="event-log-drawer"
     >
       <SheetHeader className="sr-only">
