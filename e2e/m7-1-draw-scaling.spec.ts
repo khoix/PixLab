@@ -28,10 +28,13 @@ const ROUND_MS = 1200;
 /**
  * How far over the direct path the cached one may measure before this fails.
  *
- * Deliberately coarse. A shared CI runner moves this reading by more than the
- * effect being watched for: consecutive measurements of identical code have
- * come back 13.9 points apart on desktop and 24.2 on mobile, against the 10%
- * this once allowed, so it failed on noise alone.
+ * Deliberately coarse, because this reading moves more than the effect it
+ * watches for. The two cached readings are taken on identical code either side
+ * of `direct`, so the gap between them is this test measuring its own noise: it
+ * came back 6.9%, 7.3%, 17.6% and 24.7% of the mean over four local runs, and
+ * CI swung 13.9 points on desktop and 24.2 on mobile between a failure and its
+ * own retry. The 10% this once allowed sat under that floor, so it failed on
+ * chance — masked by `retries: 2`, which is why it read as a flake.
  *
  * Widening it costs nothing real, because the stopwatch was never what caught
  * the regression this test exists for. The untrimmed 112x112 blit made the
