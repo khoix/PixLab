@@ -272,9 +272,22 @@ test.describe('M6.3 — portal destination odds', () => {
 
     // Old behaviour: a sub-0.30 roll fell through into the near-exit branch when
     // the level had no items, making this ~0.35.
-    expect(stats.withoutItems).toBeGreaterThan(0.02);
-    expect(stats.withoutItems).toBeLessThan(0.09);
-    expect(stats.withItems).toBeGreaterThan(0.02);
-    expect(stats.withItems).toBeLessThan(0.09);
+    //
+    // The band is set from what this actually measures, which is not the 5%
+    // branch on its own. `rollPortalDestination` falls back to a uniform pick
+    // over every candidate tile, and 16 of the 440 here are themselves within
+    // Manhattan 3 of the exit at (1,1) — so 3.6% of the 95% fallback share
+    // lands "near exit" too, with nothing wrong. The true rate is
+    // 0.05 + 0.95 * 0.0364 = 0.0846, not 0.05.
+    //
+    // The old ceiling of 0.09 sat 1.24 sigma above that (sigma = 0.0044 at
+    // 4000 trials), so it failed ~12% of runs — masked by `retries: 2` and
+    // showing up as a flake. These bounds sit ~8 sigma either side of the true
+    // rate, and the regression they exist for is nowhere near them: the
+    // pre-M6.3 behaviour measures 0.376.
+    expect(stats.withoutItems).toBeGreaterThan(0.05);
+    expect(stats.withoutItems).toBeLessThan(0.12);
+    expect(stats.withItems).toBeGreaterThan(0.05);
+    expect(stats.withItems).toBeLessThan(0.12);
   });
 });
