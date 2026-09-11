@@ -12,6 +12,7 @@
     "test:projection": "node --import tsx --test client/src/lib/game/renderer/projection.test.ts",
     "test:entities": "node --import tsx --test client/src/lib/game/renderer/entityBillboard.test.ts",
     "test:world": "node --import tsx --test client/src/lib/game/renderer/worldGeometry.test.ts",
+    "test:item-glow": "node --import tsx --test client/src/lib/game/renderer/itemGlow.test.ts",
     "db:push": "drizzle-kit push",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
