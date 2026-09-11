@@ -13,19 +13,23 @@
 // have no imports at all, so they can be tested directly.
 
 /**
- * Icon edge before perspective scaling — double the 20px native bitmap.
+ * Icon edge before perspective scaling: 1.35x the 20px native bitmap.
  *
- * This was raised 20 -> 26 once already with no visible effect, because
- * `drawIcon` ignored the size it was given and blitted the bitmap at its native
- * 20x20. With that fixed, the value reaches the artwork and the drop is drawn
- * at twice the width it has actually been rendering at, the icon's own aspect
- * ratio preserved by the fit in `drawIcon`.
+ * Set by eye on a device, in two steps. It sat at a flat 20px for a long time
+ * without anyone choosing that — `drawIcon` ignored the size it was given and
+ * blitted the bitmap at its native 20x20, which is also why raising this to 26
+ * once changed nothing at all. With that fixed the value finally reached the
+ * artwork, and 40 (double the old render) overshot: a drop came out wider than
+ * the wall block beside it. 27 is two thirds of that.
  *
- * It is an edge in legacy-sprite units, the same units as TILE_SIZE, and the
- * perspective pass multiplies it by the projected scale — so a drop now also
- * shrinks with distance instead of holding a flat 20px at every depth.
+ * It is an edge in legacy-sprite units, the same units as TILE_SIZE, so the
+ * ratio to a one-tile voxel is just ICON_SIZE / 32 — a drop now reads a little
+ * under a block wide at any distance. The perspective pass multiplies it by the
+ * projected scale, so drops shrink with depth rather than holding one size.
+ *
+ * `GLOW_RADIUS` is a multiple of this, so the rarity pool follows the icon.
  */
-export const ICON_SIZE = 40;
+export const ICON_SIZE = 27;
 
 /**
  * How high the icon sits above the floor. It was 0.18 to clear the voxel
