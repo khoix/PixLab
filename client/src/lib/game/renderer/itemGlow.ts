@@ -12,8 +12,20 @@
 // `import.meta.env`, and that cannot be imported outside Vite. These values
 // have no imports at all, so they can be tested directly.
 
-/** Icon edge before perspective scaling. Raised from 20 — drops read small. */
-export const ICON_SIZE = 26;
+/**
+ * Icon edge before perspective scaling — double the 20px native bitmap.
+ *
+ * This was raised 20 -> 26 once already with no visible effect, because
+ * `drawIcon` ignored the size it was given and blitted the bitmap at its native
+ * 20x20. With that fixed, the value reaches the artwork and the drop is drawn
+ * at twice the width it has actually been rendering at, the icon's own aspect
+ * ratio preserved by the fit in `drawIcon`.
+ *
+ * It is an edge in legacy-sprite units, the same units as TILE_SIZE, and the
+ * perspective pass multiplies it by the projected scale — so a drop now also
+ * shrinks with distance instead of holding a flat 20px at every depth.
+ */
+export const ICON_SIZE = 40;
 
 /**
  * How high the icon sits above the floor. It was 0.18 to clear the voxel
@@ -56,4 +68,29 @@ export const GLOW_STOPS: ReadonlyArray<readonly [number, number]> = [
 export function withAlpha(hex: string, alpha: number): string {
   const value = parseInt(hex.slice(1), 16);
   return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
+/** Where a bitmap of `imageWidth` x `imageHeight` lands inside a `size` box. */
+export interface IconFit { dx: number; dy: number; width: number; height: number }
+
+/**
+ * Fit an icon bitmap into a square box without distorting it.
+ *
+ * The drawing code used to blit the bitmap at its native size and ignore the
+ * box entirely. That was invisible while the only caller asked for 20 and the
+ * icons are 20x20, but it meant the perspective drop and the loot-sense marker
+ * were pinned to a flat 20px at every depth, and that raising the icon size
+ * changed nothing at all.
+ *
+ * Scaling by the longer edge keeps a non-square asset inside the box instead of
+ * stretching it to fill; the remainder is split so the artwork stays centred.
+ * Every icon shipped today is square, so this fills the box exactly — the
+ * aspect ratio is held for the assets, not just assumed of them.
+ */
+export function fitIconBox(imageWidth: number, imageHeight: number, size: number): IconFit {
+  const longest = Math.max(imageWidth, imageHeight);
+  if (!(longest > 0) || !Number.isFinite(size)) return { dx: 0, dy: 0, width: 0, height: 0 };
+  const fit = size / longest;
+  const width = imageWidth * fit, height = imageHeight * fit;
+  return { dx: (size - width) / 2, dy: (size - height) / 2, width, height };
 }
