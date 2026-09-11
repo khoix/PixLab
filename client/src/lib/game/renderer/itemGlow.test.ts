@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
-import { GLOW_RADIUS, GLOW_STOPS, ICON_SIZE, withAlpha } from './itemGlow';
+import { fitIconBox, GLOW_RADIUS, GLOW_STOPS, ICON_SIZE, withAlpha } from './itemGlow';
 
 /**
  * A dropped item used to sit on a voxel slab whose top face was filled with the
@@ -47,4 +47,32 @@ test('stops keep the rarity hue while fading, including at zero', () => {
   assert.equal(withAlpha('#ffd700', 0), 'rgba(255, 215, 0, 0)');
   assert.equal(withAlpha('#2196f3', 0.24), 'rgba(33, 150, 243, 0.24)');
   assert.equal(withAlpha('#9e9e9e', 1), 'rgba(158, 158, 158, 1)');
+});
+
+test('an icon is fitted to the box it is given, never stretched', () => {
+  // The bug this replaces: the box was ignored and the bitmap blitted at its
+  // native size, so every perspective drop was a flat 20px whatever its depth
+  // and raising ICON_SIZE did nothing visible.
+  const square = fitIconBox(20, 20, 40);
+  assert.equal(square.width, 40, 'a square icon should fill the box');
+  assert.equal(square.height, 40);
+  assert.equal(square.dx, 0, 'and need no centring offset');
+  assert.equal(square.dy, 0);
+
+  // The property that has to hold for any asset, which is what "maintain the
+  // aspect ratio" means: width/height out equals width/height in.
+  for (const [w, h] of [[20, 20], [20, 10], [10, 20], [32, 24]] as const) {
+    const fit = fitIconBox(w, h, 40);
+    assert.ok(Math.abs(fit.width / fit.height - w / h) < 1e-9, `${w}x${h} was distorted`);
+    assert.ok(fit.width <= 40 + 1e-9 && fit.height <= 40 + 1e-9, `${w}x${h} escaped the box`);
+    // Centred, so a non-square icon sits in the middle rather than the corner.
+    assert.ok(Math.abs((40 - fit.width) / 2 - fit.dx) < 1e-9);
+    assert.ok(Math.abs((40 - fit.height) / 2 - fit.dy) < 1e-9);
+  }
+
+  // Doubling the box doubles the drawn edge — the request this change answers.
+  assert.equal(fitIconBox(20, 20, 40).width, fitIconBox(20, 20, 20).width * 2);
+
+  // A missing or zero-sized bitmap must not produce NaN geometry.
+  assert.deepEqual(fitIconBox(0, 0, 40), { dx: 0, dy: 0, width: 0, height: 0 });
 });

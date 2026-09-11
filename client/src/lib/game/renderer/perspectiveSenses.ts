@@ -2,6 +2,7 @@ import type { Level } from '../types';
 import type { EffectiveRenderQuality } from '../renderQuality';
 import { drawWeaponIcon, drawArmorIcon, drawUtilityIcon, drawConsumableIcon } from '../itemIcons';
 import { needsThreatMarker } from './fogGradient';
+import { ICON_SIZE } from './itemGlow';
 import { perspectiveScale, worldToScreen, type PerspectiveCamera } from './projection';
 
 /** Sense scrolls intentionally reveal markers above fog/walls. Their positions
@@ -36,7 +37,11 @@ export function drawPerspectiveSenses(ctx: CanvasRenderingContext2D, camera: Per
     if (!p || scale === null) continue;
     ctx.save(); ctx.shadowBlur = 0; ctx.globalAlpha = outside ? 0.6 : 1;
     ctx.filter = outside && quality === 'high' ? 'blur(3px)' : 'none';
-    const size = 20 * scale, x = p.x - size / 2, y = p.y - size;
+    // Same constant as the drop itself. These are two views of one object —
+    // the marker is the icon seen through fog — so a literal 20 here would now
+    // draw it at half the size of the pickup it is pointing at. They matched
+    // only because `drawIcon` used to ignore the size it was handed.
+    const size = ICON_SIZE * scale, x = p.x - size / 2, y = p.y - size;
     if (item.type === 'weapon') drawWeaponIcon(ctx, x, y, size, item);
     else if (item.type === 'armor') drawArmorIcon(ctx, x, y, size, item);
     else if (item.type === 'utility') drawUtilityIcon(ctx, x, y, size, item);
