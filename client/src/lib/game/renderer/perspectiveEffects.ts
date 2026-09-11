@@ -4,6 +4,55 @@ import { setShadowTier, type EffectiveRenderQuality } from '../renderQuality';
 import { perspectiveScale, worldToScreen, type PerspectiveCamera } from './projection';
 import type { WorldDrawable } from './worldGeometry';
 
+/**
+ * Portal sparks, on the top-down view's terms.
+ *
+ * That pass emits one spark per portal on 30% of frames, each with a random
+ * angle, a speed of 0.5-1.0 px/frame and a 1000-1500ms life. At 60fps that is
+ * ~18 a second against a mean life of 1.25s, so about 22 are alight at once,
+ * and each covers 30-90px before it fades — 0.94 to 2.81 tiles.
+ *
+ * The perspective pass had 4 of them crossing 0.2 tiles, which is why a portal
+ * read as inert here and busy there.
+ *
+ * It cannot emit to match: rendering must not append to or advance the
+ * simulation's particle array, which the "never mutate simulation" test pins.
+ * So the same distribution is reproduced analytically instead — a fixed set of
+ * sparks, each given its own angle, distance and period from its index, with
+ * staggered phases so they retire and relight independently rather than
+ * pulsing together.
+ */
+const PORTAL_SPARKS_HIGH = 22;
+const PORTAL_SPARKS_MEDIUM = 11;
+/** Tiles from the portal centre where a spark appears — the rim, as before. */
+const PORTAL_SPARK_RIM = 0.25;
+/** Tiles covered before fading: 30px and 90px over TILE_SIZE. */
+const PORTAL_SPARK_TRAVEL_MIN = 0.94;
+const PORTAL_SPARK_TRAVEL_MAX = 2.81;
+const PORTAL_SPARK_LIFE_MIN_MS = 1000;
+const PORTAL_SPARK_LIFE_MAX_MS = 1500;
+
+/**
+ * Golden angle. Successive multiples never repeat a bearing and fill the circle
+ * evenly at any count, which is what the previous `i * 2.4` was doing.
+ *
+ * Kept rather than replaced by the hash below: 22 hashed bearings clump badly —
+ * measured over the octants, one drew 6 sparks while two drew 1 — and a portal
+ * spitting sparks mostly to its upper left is a worse artefact than the sparsity
+ * this change set out to fix.
+ */
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+/**
+ * A stable [0, 1) per spark, so each keeps the same distance and period on
+ * every frame without any of it being stored between them. Used where spread
+ * matters more than even coverage; bearings use the golden angle instead.
+ */
+function sparkNoise(index: number, salt: number): number {
+  const n = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+  return n - Math.floor(n);
+}
+
 const SQUARE = [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5];
 // Heel, instep and wider toe. Rotated in world space before projection.
 const FOOT = [-0.175, -0.06, 0.08, -0.1, 0.175, -0.075, 0.175, 0.075, -0.175, 0.06];
@@ -78,10 +127,22 @@ export class PerspectiveEffects {
     }
     for (let i = 0; i < Math.min(10, path.length); i++) this.add(path[i].x + 0.5, path[i].y + 0.5,
       '#05d9e8', 0.5, 0.28 + 0.14 * Math.sin(now / 260));
-    if (quality !== 'low') for (const portal of level.portals) for (let i = 0; i < (quality === 'high' ? 4 : 2); i++) {
-      const age = (now / 900 + i * 0.25) % 1, angle = i * 2.4;
-      this.add(portal.pos.x + 0.5 + Math.cos(angle) * (0.25 + age * 0.2),
-        portal.pos.y + 0.5 + Math.sin(angle) * (0.25 + age * 0.2), '#ffc8ff', 0.045, 1 - age, false, 0, false, 0.12 + age * 0.6);
+    if (quality !== 'low') {
+      const sparks = quality === 'high' ? PORTAL_SPARKS_HIGH : PORTAL_SPARKS_MEDIUM;
+      for (const portal of level.portals) for (let i = 0; i < sparks; i++) {
+        const angle = i * GOLDEN_ANGLE;
+        const travel = PORTAL_SPARK_TRAVEL_MIN
+          + sparkNoise(i, 2) * (PORTAL_SPARK_TRAVEL_MAX - PORTAL_SPARK_TRAVEL_MIN);
+        const life = PORTAL_SPARK_LIFE_MIN_MS
+          + sparkNoise(i, 3) * (PORTAL_SPARK_LIFE_MAX_MS - PORTAL_SPARK_LIFE_MIN_MS);
+        // Each spark runs on its own period, offset so the set does not blink
+        // in unison the way a single shared clock made it.
+        const age = (now / life + sparkNoise(i, 4)) % 1;
+        const radius = PORTAL_SPARK_RIM + age * travel;
+        this.add(portal.pos.x + 0.5 + Math.cos(angle) * radius,
+          portal.pos.y + 0.5 + Math.sin(angle) * radius, '#ffc8ff', 0.045, 1 - age,
+          false, 0, false, 0.12 + age * 0.6);
+      }
     }
     return this.active;
   }
