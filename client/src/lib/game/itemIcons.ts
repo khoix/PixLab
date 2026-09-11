@@ -11,6 +11,7 @@
 
 import { Item } from './types';
 import { RARITY_COLORS } from './constants';
+import { fitIconBox } from './renderer/itemGlow';
 
 const BASE_URL = import.meta.env.BASE_URL || '/';
 
@@ -233,8 +234,17 @@ function drawIcon(
 ): void {
   const img = requestItemIcon(getItemIconPath(item));
   if (img) {
-    // Draw at native 20x20 size without scaling
-    ctx.drawImage(img, x, y, img.width, img.height);
+    // Fit the bitmap to the caller's `size` box, preserving its aspect ratio.
+    //
+    // This used to draw at `img.width`/`img.height` and ignore `size` entirely.
+    // That was invisible while every caller happened to ask for 20 — the icons
+    // are 20x20 — but it silently pinned two call sites that do not: the
+    // perspective drop and the loot-sense marker both scale with distance, and
+    // got a flat 20px at every depth instead. It also meant raising the
+    // perspective icon size changed nothing, because the only code path that
+    // read `size` was the not-yet-loaded placeholder.
+    const { dx, dy, width, height } = fitIconBox(img.width, img.height, size);
+    ctx.drawImage(img, x + dx, y + dy, width, height);
   } else {
     drawPlaceholder(ctx, x, y, size, item, shape);
   }
