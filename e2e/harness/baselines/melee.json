@@ -1,0 +1,542 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999971
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 67,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 182,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 46,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999929
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 67,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 182,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 46,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 2,
+      "hp": 999901
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 47,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 162,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 26,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999867
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 37,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 152,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 16,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 3,
+      "hp": 999833
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 27,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 142,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 6,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 360,
+    "virtualMs": 5760,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999812
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 17,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 132,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 420,
+    "virtualMs": 6720,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 2,
+      "hp": 999784
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 7,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 2,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "world": {
+      "mazeHash": "b2b79bc5",
+      "floorCount": 410,
+      "exit": "27,27",
+      "rosterHash": "39033c04"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999749
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 112,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 1,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 5,
+        "y": 15,
+        "name": "Dagger of the Storm"
+      },
+      {
+        "x": 6,
+        "y": 11,
+        "name": "Gauntlets of Battle"
+      },
+      {
+        "x": 18,
+        "y": 1,
+        "name": "Scope of Insight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  }
+]

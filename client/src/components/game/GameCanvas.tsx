@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
+import { shuffleInPlace } from '../../lib/game/shuffle';
 import {
   TILE_SIZE,
   COLORS,
@@ -1438,7 +1439,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   if (remainingNonBossEnemies.length === 0 && !bonusSelectionRef.current) {
                     // Generate 2 random bonus options
                     const allBonuses = ['restore_health', 'double_coins', 'skip_shop', 'skip_boss', 'mystery_box'];
-                    const shuffled = [...allBonuses].sort(() => Math.random() - 0.5);
+                    const shuffled = shuffleInPlace([...allBonuses]);
                     const selectedOptions = shuffled.slice(0, 2);
                     bonusSelectionRef.current = { options: selectedOptions };
                     setShowBonusSelection(true);

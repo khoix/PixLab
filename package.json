@@ -14,7 +14,7 @@
     "test:world": "node --import tsx --test client/src/lib/game/renderer/worldGeometry.test.ts",
     "test:item-glow": "node --import tsx --test client/src/lib/game/renderer/itemGlow.test.ts",
     "db:push": "drizzle-kit push",
-    "test:unit": "node --import tsx --test client/src/lib/game/renderer/*.test.ts",
+    "test:unit": "node --import tsx --test client/src/lib/game/renderer/*.test.ts client/src/lib/game/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
