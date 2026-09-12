@@ -44,6 +44,15 @@ export interface Scenario {
   /** Leave the generated roster in place instead of clearing it. */
   keepGeneratedRoster?: boolean;
   /**
+   * Move the player next to the largest generated entity before driving.
+   *
+   * Without this the boss scenario recorded `bossPhase: null` for its whole
+   * run: a boss arena is large, the boss spawns across it, and the patrol never
+   * closed the distance — so the telegraph/execute/recover cycle that is the
+   * entire point of the scenario never fired once.
+   */
+  approachBoss?: boolean;
+  /**
    * Scripted player input, cycled for the length of the run.
    *
    * The first recording left the player standing still, and the baselines were
@@ -199,6 +208,7 @@ export const SCENARIOS: Scenario[] = [
     // shows up directly — which is the M8.6 risk.
     mobs: [],
     keepGeneratedRoster: true,
+    approachBoss: true,
   },
 ];
 
@@ -252,6 +262,29 @@ export async function applyScenario(page: Page, scenario: Scenario): Promise<num
       if (!pos) continue;
       if (level.spawnMob(m.subtype, pos)) placed++;
     }
+
+    if (s.approachBoss) {
+      // Highest hp is the boss: arenas also spawn adds, and picking by hp
+      // avoids depending on the subtype naming holding still.
+      const entities = level.getEntities();
+      const boss = entities.reduce<(typeof entities)[number] | null>(
+        (best, e) => (best === null || e.hp > best.hp ? e : best),
+        null,
+      );
+      if (boss) {
+        // Two tiles off, not adjacent: the player should walk the last step
+        // under its own input so the approach is part of what is recorded.
+        const bx = Math.round(boss.pos.x);
+        const by = Math.round(boss.pos.y);
+        const spot = [
+          { x: bx + 2, y: by }, { x: bx - 2, y: by },
+          { x: bx, y: by + 2 }, { x: bx, y: by - 2 },
+          { x: bx + 1, y: by + 1 }, { x: bx - 1, y: by - 1 },
+        ].find((c) => level.isFloor(c.x, c.y));
+        if (spot) level.setPlayerPos(spot);
+      }
+    }
+
     return placed;
   }, scenario as unknown as Scenario);
 }
