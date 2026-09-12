@@ -44,6 +44,21 @@ export interface Scenario {
   /** Leave the generated roster in place instead of clearing it. */
   keepGeneratedRoster?: boolean;
   /**
+   * Scripted player input, cycled for the length of the run.
+   *
+   * The first recording left the player standing still, and the baselines were
+   * nearly inert: mob hp never changed in any scenario, 11 of 12 mobs in
+   * `crowd` never moved, and the boss never entered a single attack phase. A
+   * characterization of a game where nothing happens cannot catch a refactor
+   * that changes how things happen.
+   *
+   * Attacks are automatic — `GameCanvas.tsx:1258` fires whenever a mob is in
+   * range and the cooldown has elapsed — so movement is the only input needed
+   * to drive combat. Walking the player also pulls mobs into aggro and
+   * exercises collision, which is M8.4's whole surface.
+   */
+  input?: Array<{ frames: number; dir: { x: number; y: number } }>;
+  /**
    * Mobs to place, given as a desired ring distance from the player in tiles
    * rather than a fixed offset.
    *
@@ -77,6 +92,14 @@ export const SCENARIOS: Scenario[] = [
   {
     name: 'pursuit',
     seed: 0x5eed0002,
+    input: [
+      { frames: 24, dir: { x: 1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: 1 } },
+      { frames: 24, dir: { x: -1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: -1 } },
+      { frames: 16, dir: { x: 1, y: 1 } },
+      { frames: 16, dir: { x: 0, y: 0 } },
+    ],
     sector: 5,
     frames: 420,
     stepMs: STEP_MS,
@@ -92,6 +115,14 @@ export const SCENARIOS: Scenario[] = [
   {
     name: 'melee',
     seed: 0x5eed0003,
+    input: [
+      { frames: 24, dir: { x: 1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: 1 } },
+      { frames: 24, dir: { x: -1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: -1 } },
+      { frames: 16, dir: { x: 1, y: 1 } },
+      { frames: 16, dir: { x: 0, y: 0 } },
+    ],
     sector: 7,
     frames: 480,
     stepMs: STEP_MS,
@@ -105,6 +136,14 @@ export const SCENARIOS: Scenario[] = [
   {
     name: 'ranged',
     seed: 0x5eed0005,
+    input: [
+      { frames: 24, dir: { x: 1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: 1 } },
+      { frames: 24, dir: { x: -1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: -1 } },
+      { frames: 16, dir: { x: 1, y: 1 } },
+      { frames: 16, dir: { x: 0, y: 0 } },
+    ],
     sector: 11,
     frames: 480,
     stepMs: STEP_MS,
@@ -120,6 +159,14 @@ export const SCENARIOS: Scenario[] = [
   {
     name: 'crowd',
     seed: 0x5eed0004,
+    input: [
+      { frames: 24, dir: { x: 1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: 1 } },
+      { frames: 24, dir: { x: -1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: -1 } },
+      { frames: 16, dir: { x: 1, y: 1 } },
+      { frames: 16, dir: { x: 0, y: 0 } },
+    ],
     sector: 21,
     frames: 480,
     stepMs: STEP_MS,
@@ -134,6 +181,14 @@ export const SCENARIOS: Scenario[] = [
   {
     name: 'boss',
     seed: 0x5eed0006,
+    input: [
+      { frames: 24, dir: { x: 1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: 1 } },
+      { frames: 24, dir: { x: -1, y: 0 } },
+      { frames: 24, dir: { x: 0, y: -1 } },
+      { frames: 16, dir: { x: 1, y: 1 } },
+      { frames: 16, dir: { x: 0, y: 0 } },
+    ],
     sector: 8,
     frames: 600,
     stepMs: STEP_MS,

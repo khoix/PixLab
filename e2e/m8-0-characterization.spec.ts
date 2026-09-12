@@ -84,13 +84,39 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   let driven = 0;
   while (driven < scenario.frames) {
     const batch = Math.min(scenario.sampleEvery, scenario.frames - driven);
+    // The input track is driven inside the page, frame by frame, so a
+    // direction change lands on an exact frame rather than on a batch
+    // boundary. Batching the whole segment would quantize the player's path to
+    // the sample interval and make the baseline depend on `sampleEvery`.
     await page.evaluate(
-      ([frames, step]) => window.__PIXLAB_REPLAY__!.tick(frames, step),
-      [batch, scenario.stepMs] as const,
+      ([frames, step, startFrame, track]) => {
+        const replay = window.__PIXLAB_REPLAY__!;
+        const input = window.__PIXLAB_GAME_INPUT__;
+        const segments = track as Array<{ frames: number; dir: { x: number; y: number } }>;
+        const cycle = segments.reduce((sum, seg) => sum + seg.frames, 0);
+        for (let i = 0; i < (frames as number); i++) {
+          if (input && cycle > 0) {
+            let at = ((startFrame as number) + i) % cycle;
+            for (const seg of segments) {
+              if (at < seg.frames) {
+                input.setDirection(seg.dir);
+                break;
+              }
+              at -= seg.frames;
+            }
+          }
+          replay.tick(1, step as number);
+        }
+      },
+      [batch, scenario.stepMs, driven, scenario.input ?? []] as const,
     );
     driven += batch;
     snapshots.push(await captureSnapshot(page, driven));
   }
+
+  // Stop the player before the digest settles, so a trailing direction cannot
+  // leak into the next scenario through shared input state.
+  await page.evaluate(() => window.__PIXLAB_GAME_INPUT__?.clear());
 
   const actuallyDriven = await page.evaluate(() => window.__PIXLAB_REPLAY__!.framesDriven());
   expect(actuallyDriven, 'harness did not drive the frames it was asked to').toBe(scenario.frames);
