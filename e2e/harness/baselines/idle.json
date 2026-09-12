@@ -1,0 +1,147 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 1,
+        "name": "Amplifier of the Seer"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 1670,
+      "leftSec": 118,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 1,
+        "name": "Amplifier of the Seer"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 2630,
+      "leftSec": 117,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 1,
+        "name": "Amplifier of the Seer"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 3590,
+      "leftSec": 116,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 1,
+        "name": "Amplifier of the Seer"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 4550,
+      "leftSec": 115,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 1,
+        "name": "Amplifier of the Seer"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 5510,
+      "leftSec": 114,
+      "paused": false
+    }
+  }
+]

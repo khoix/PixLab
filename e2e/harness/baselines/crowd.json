@@ -1,0 +1,1236 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 5,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 4,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 1,
+        "y": 3,
+        "name": "Shield of Resilience"
+      },
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 1660,
+      "leftSec": 118,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999966
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 5,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 1,
+      "cap": 4,
+      "holders": 1,
+      "peakUsed": 1
+    },
+    "items": [
+      {
+        "x": 1,
+        "y": 3,
+        "name": "Shield of Resilience"
+      },
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 2620,
+      "leftSec": 117,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "player": {
+      "x": 1,
+      "y": 3,
+      "hp": 999822
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 892,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 162,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 4,
+      "holders": 3,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 3580,
+      "leftSec": 116,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999818
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 882,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 152,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 412,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 4,
+      "holders": 3,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 4540,
+      "leftSec": 115,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "player": {
+      "x": 1,
+      "y": 3,
+      "hp": 999799
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 872,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 142,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 402,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 5500,
+      "leftSec": 115,
+      "paused": false
+    }
+  },
+  {
+    "frame": 360,
+    "virtualMs": 5760,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999781
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 862,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 421,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 132,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 392,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 4,
+      "holders": 3,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 6460,
+      "leftSec": 114,
+      "paused": false
+    }
+  },
+  {
+    "frame": 420,
+    "virtualMs": 6720,
+    "player": {
+      "x": 1,
+      "y": 2,
+      "hp": 999762
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 852,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 411,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 122,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 382,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 4,
+      "holders": 3,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 7420,
+      "leftSec": 113,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999744
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 1,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 842,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 3,
+        "hp": 401,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 112,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 372,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 7,
+        "name": "Armor of Resilience"
+      },
+      {
+        "x": 15,
+        "y": 3,
+        "name": "Shield of Guarding"
+      },
+      {
+        "x": 21,
+        "y": 23,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 27,
+        "y": 7,
+        "name": "Scope of Awareness"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "elapsedMs": 8380,
+      "leftSec": 112,
+      "paused": false
+    }
+  }
+]
