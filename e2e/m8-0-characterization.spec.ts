@@ -108,19 +108,41 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas').waitFor({ state: 'visible' });
 
-  const placed = await applyScenario(page, scenario);
-  expect(placed, `scenario ${scenario.name} placed no mobs`).toBe(scenario.mobs.length);
-
+  // Close world setup and read what generation produced, *before* the scenario
+  // replaces the roster with its own mobs. Everything below this line is the
+  // scenario's doing; everything above it is `generateLevel`'s, and this is the
+  // only chance to record it.
+  //
   // The anchor recognizes a generation by finding `generateLevel` in the stack.
   // If that ever stops matching — a minified build, a rename — the harness
   // would go quietly back to recording whichever world the render count
   // happened to produce, and the baselines would become a description of this
   // machine again without anything turning red. Fail loudly instead.
-  const seededGenerations = await page.evaluate(() => window.__PIXLAB_REPLAY__!.endWorldSetup());
+  const generated = await page.evaluate(() => {
+    const setup = window.__PIXLAB_REPLAY__!.endWorldSetup();
+    const level = window.__PIXLAB_LEVEL__!;
+    const exit = level.getExitPos();
+    let h = 2166136261;
+    for (const e of level.getEntities()) {
+      for (const ch of `${e.mobSubtype}@${e.pos.x},${e.pos.y}:${e.hp}|`) {
+        h ^= ch.charCodeAt(0);
+        h = Math.imul(h, 16777619);
+      }
+    }
+    return {
+      generations: setup.generations,
+      generationDraws: setup.drawsInLastGeneration,
+      rosterHash: (h >>> 0).toString(16),
+      exit: exit ? `${exit.x},${exit.y}` : 'none',
+    };
+  });
   expect(
-    seededGenerations,
+    generated.generations,
     'world-setup anchor never fired — level generation was not seeded',
   ).toBeGreaterThan(0);
+
+  const placed = await applyScenario(page, scenario);
+  expect(placed, `scenario ${scenario.name} placed no mobs`).toBe(scenario.mobs.length);
 
   // A scenario that keeps the generated roster asserts nothing above — `placed`
   // is 0 by design — so check the world is actually populated. Otherwise an
@@ -144,7 +166,7 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   //
   // With no awaits mid-run there are no gaps for a timer to land in.
   const raws = (await page.evaluate(
-    ([frames, step, sampleEvery, track, seed]) => {
+    ([frames, step, sampleEvery, track, seed, generatedWorld]) => {
       const replay = window.__PIXLAB_REPLAY__!;
       // Restart the stream here, with no await between this and the last tick,
       // so a real timer firing during setup cannot offset the simulation's
@@ -175,7 +197,14 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
             h = Math.imul(h, 16777619);
           }
         }
-        return { mazeHash: (h >>> 0).toString(16), floorCount: floors };
+        const extra = generatedWorld as { rosterHash: string; exit: string; generationDraws: number };
+        return {
+          mazeHash: (h >>> 0).toString(16),
+          floorCount: floors,
+          exit: extra.exit,
+          rosterHash: extra.rosterHash,
+          generationDraws: extra.generationDraws,
+        };
       };
 
       const read = (frame: number): RawSnapshot => ({
@@ -216,7 +245,14 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
       input?.clear();
       return out;
     },
-    [scenario.frames, scenario.stepMs, scenario.sampleEvery, scenario.input ?? [], scenario.seed] as const,
+    [
+      scenario.frames,
+      scenario.stepMs,
+      scenario.sampleEvery,
+      scenario.input ?? [],
+      scenario.seed,
+      generated,
+    ] as const,
   )) as RawSnapshot[];
 
   const snapshots: RunSnapshot[] = [];
@@ -316,14 +352,18 @@ test.describe('M8.0 — pre-split characterization', () => {
           }
         return (x >>> 0).toString(16);
       };
+      // Stats and loadout are passed because `engine.ts:250` gates a whole
+      // branch on them — `useEconomyIndex: !!(playerStats && loadout)` — and a
+      // bare `gen(5, 30, 30)` never reaches it. A self-check that exercises a
+      // narrower path than the real call is a self-check with a hole in it.
+      const stats = { hp: 1e6, maxHp: 1e6, damage: 10, defense: 0, speed: 1, vision: 5, coins: 0, level: 1 };
+      const loadout = { weapon: null, armor: null, utility: null };
+      const once = () => hashLevel(gen(5, 30, 30, stats as never, loadout as never) as never);
       h3.beginWorldSetup(777);
-      const backToBack = [
-        hashLevel(gen(5, 30, 30) as never),
-        hashLevel(gen(5, 30, 30) as never),
-      ];
+      const backToBack = [once(), once()];
       Math.random(); // a foreign draw between calls, the case that used to hide the bug
-      backToBack.push(hashLevel(gen(5, 30, 30) as never));
-      const anchored = h3.endWorldSetup();
+      backToBack.push(once());
+      const anchored = h3.endWorldSetup().generations;
       h3.release();
 
       return {

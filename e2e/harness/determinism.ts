@@ -104,8 +104,12 @@ export interface HarnessApi {
    */
   beginWorldSetup: (seed: number) => void;
   /**
-   * Return to one continuous stream, and report how many `generateLevel` calls
-   * were anchored.
+   * Return to one continuous stream, and report what world setup did.
+   *
+   * `drawsInLastGeneration` is diagnostic and load-bearing: if two machines
+   * generate different worlds from one seed, this says immediately whether
+   * they took the same path through `generateLevel` and diverged on a value,
+   * or took different branches entirely.
    *
    * The count is asserted by the spec. The anchor recognizes a generation by
    * finding `generateLevel` in the stack, so if that name ever stops appearing
@@ -115,7 +119,7 @@ export interface HarnessApi {
    * quietly re-record. The exact number is not asserted: it is the render count,
    * which is the very thing being made not to matter.
    */
-  endWorldSetup: () => number;
+  endWorldSetup: () => { generations: number; drawsInLastGeneration: number };
   /** Hand control back to the browser; restores every patched global. */
   release: () => void;
 }
@@ -202,6 +206,7 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
   // line for a normal sector, the arena's first draw for a boss one.
   let entrySite: string | null = null;
   let previousSite = '';
+  let drawsSinceAnchor = 0;
   const realStackLimit = Error.stackTraceLimit;
   Math.random = () => {
     if (worldSetup) {
@@ -249,12 +254,14 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
           if (entrySite === null) entrySite = site;
           a = worldSeed;
           generationsSeeded++;
+          drawsSinceAnchor = 0;
         }
         previousSite = site;
       } else {
         previousSite = '';
       }
       insideGeneration = inGeneration;
+      drawsSinceAnchor++;
     }
     return draw();
   };
@@ -337,17 +344,18 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       burstOpen = false;
       insideGeneration = false;
       generationsSeeded = 0;
+      drawsSinceAnchor = 0;
       entrySite = null;
       previousSite = '';
     },
-    endWorldSetup(): number {
+    endWorldSetup(): { generations: number; drawsInLastGeneration: number } {
       worldSetup = false;
       burstOpen = false;
       insideGeneration = false;
       entrySite = null;
       previousSite = '';
       Error.stackTraceLimit = realStackLimit;
-      return generationsSeeded;
+      return { generations: generationsSeeded, drawsInLastGeneration: drawsSinceAnchor };
     },
     now: () => virtualNow - clockOrigin,
     framesDriven: () => framesDriven,

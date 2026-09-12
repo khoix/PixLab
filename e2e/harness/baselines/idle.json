@@ -4,7 +4,10 @@
     "virtualMs": 960,
     "world": {
       "mazeHash": "64938661",
-      "floorCount": 412
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b",
+      "generationDraws": 4184
     },
     "player": {
       "x": 1,
@@ -36,7 +39,10 @@
     "virtualMs": 1920,
     "world": {
       "mazeHash": "64938661",
-      "floorCount": 412
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b",
+      "generationDraws": 4184
     },
     "player": {
       "x": 1,
@@ -68,7 +74,10 @@
     "virtualMs": 2880,
     "world": {
       "mazeHash": "64938661",
-      "floorCount": 412
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b",
+      "generationDraws": 4184
     },
     "player": {
       "x": 1,
@@ -100,7 +109,10 @@
     "virtualMs": 3840,
     "world": {
       "mazeHash": "64938661",
-      "floorCount": 412
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b",
+      "generationDraws": 4184
     },
     "player": {
       "x": 1,
@@ -132,7 +144,10 @@
     "virtualMs": 4800,
     "world": {
       "mazeHash": "64938661",
-      "floorCount": 412
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b",
+      "generationDraws": 4184
     },
     "player": {
       "x": 1,

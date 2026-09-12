@@ -4,7 +4,10 @@
     "virtualMs": 960,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,
@@ -69,7 +72,10 @@
     "virtualMs": 1920,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,
@@ -134,7 +140,10 @@
     "virtualMs": 2880,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 2,
@@ -199,7 +208,10 @@
     "virtualMs": 3840,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,
@@ -264,7 +276,10 @@
     "virtualMs": 4800,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 3,
@@ -329,7 +344,10 @@
     "virtualMs": 5760,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,
@@ -394,7 +412,10 @@
     "virtualMs": 6720,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 3,
@@ -450,7 +471,10 @@
     "virtualMs": 7680,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,
@@ -497,7 +521,10 @@
     "virtualMs": 8640,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 3,
@@ -534,7 +561,10 @@
     "virtualMs": 9600,
     "world": {
       "mazeHash": "b669fce0",
-      "floorCount": 411
+      "floorCount": 411,
+      "exit": "27,27",
+      "rosterHash": "648e9cac",
+      "generationDraws": 7065
     },
     "player": {
       "x": 1,

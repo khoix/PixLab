@@ -4,7 +4,10 @@
     "virtualMs": 960,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 1,
@@ -79,7 +82,10 @@
     "virtualMs": 1920,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 1,
@@ -154,7 +160,10 @@
     "virtualMs": 2880,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 2,
@@ -229,7 +238,10 @@
     "virtualMs": 3840,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 1,
@@ -304,7 +316,10 @@
     "virtualMs": 4800,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 3,
@@ -379,7 +394,10 @@
     "virtualMs": 5760,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 1,
@@ -454,7 +472,10 @@
     "virtualMs": 6720,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 3,
@@ -529,7 +550,10 @@
     "virtualMs": 7680,
     "world": {
       "mazeHash": "ba0ac2e7",
-      "floorCount": 408
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da",
+      "generationDraws": 6992
     },
     "player": {
       "x": 1,

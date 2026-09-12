@@ -73,6 +73,28 @@ export interface WorldDigest {
   /** FNV-1a over the wall/floor grid — a whole maze in one comparable token. */
   mazeHash: string;
   floorCount: number;
+  /** The exit tile, which is excluded from item placement and so steers it. */
+  exit: string;
+  /**
+   * The roster `generateLevel` produced, hashed before the scenario clears it.
+   *
+   * Without this the entity list in a snapshot says nothing about generation:
+   * every scenario but the two boss ones replaces the roster with its own
+   * mobs, so a run could generate a completely different population and the
+   * digest would not move. That is not hypothetical — it hid a cross-machine
+   * divergence for a round, where the maze matched, the scenario's own mobs
+   * matched, and only the items gave it away.
+   */
+  rosterHash: string;
+  /**
+   * `Math.random` draws consumed by the generation call that produced this
+   * level.
+   *
+   * Diagnostic, and the fastest way to read a divergence: an equal count with
+   * a different world means the same path through `generateLevel` taking a
+   * different value somewhere, a different count means a different branch.
+   */
+  generationDraws: number;
 }
 
 export interface RunSnapshot {
