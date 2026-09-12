@@ -14,11 +14,26 @@
  *   - player position and hp
  *   - every entity's id, subtype, position, hp and boss phase
  *   - attack-pressure occupancy (the M6.4b scheduler's observable state)
- *   - item and portal positions
- *   - sector timer elapsed and remaining
+ *   - portal positions
+ *   - sector timer advance
  *
  * Not recorded: frame timings, draw counts, canvas pixels, fog state, camera —
  * all legitimately different after M8.3 while the simulation is untouched.
+ *
+ * Generated items are not recorded either, and that one was learned on CI. The
+ * baselines reproduced locally but `idle` failed on the runner with the whole
+ * diff being one item: "Thruster of Agility" at (9,7) against "Armor of
+ * Resilience" at (15,3), with player, entities and timer all matching.
+ *
+ * Level generation runs after app startup, and startup draws a
+ * machine-dependent number of values from Math.random before it — so the item
+ * roll is not stable across machines however the simulation is seeded. The fix
+ * is to narrow the digest rather than re-record on CI: re-recording would have
+ * made the baseline a description of one runner.
+ *
+ * It costs nothing. A dropped item is static for the whole run — no scenario
+ * picks one up — so it could never have revealed an engine regression. It was
+ * generated-world noise sitting in a behaviour digest.
  *
  * Damage is captured as *hp over time* rather than an event stream. There is no
  * damage-event hook on `window` today, and adding one would make this harness a
@@ -70,7 +85,6 @@ export interface RawSnapshot {
   player: { x: number; y: number; hp: number };
   entities: EntityDigest[];
   pressure: { used: number; cap: number; holders: number; peakUsed: number };
-  items: Array<{ x: number; y: number; name: string }>;
   portals: Array<{ x: number; y: number }>;
   timerElapsedMs: number;
   timerPaused: boolean;
@@ -104,9 +118,6 @@ export function normalizeSnapshot(raw: RawSnapshot, previousElapsedMs?: number):
       .map((e) => ({ ...e, x: q(e.x), y: q(e.y) }))
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
     pressure: raw.pressure,
-    items: raw.items
-      .map((i) => ({ ...i, x: q(i.x), y: q(i.y) }))
-      .sort((a, b) => a.x - b.x || a.y - b.y || (a.name < b.name ? -1 : 1)),
     portals: raw.portals.map((p) => ({ x: q(p.x), y: q(p.y) })).sort((a, b) => a.x - b.x || a.y - b.y),
     timer: {
       // Quantized to 10ms: a sub-frame sampling offset is not a regression.
