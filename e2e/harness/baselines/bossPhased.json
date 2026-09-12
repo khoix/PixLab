@@ -2,6 +2,10 @@
   {
     "frame": 75,
     "virtualMs": 1200,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 17,
       "y": 15,
@@ -34,6 +38,10 @@
   {
     "frame": 150,
     "virtualMs": 2400,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 17,
       "y": 15,
@@ -66,6 +74,10 @@
   {
     "frame": 225,
     "virtualMs": 3600,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 18,
       "y": 15,
@@ -98,6 +110,10 @@
   {
     "frame": 300,
     "virtualMs": 4800,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 18,
       "y": 13,
@@ -130,6 +146,10 @@
   {
     "frame": 375,
     "virtualMs": 6000,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 17,
       "y": 13,
@@ -162,6 +182,10 @@
   {
     "frame": 450,
     "virtualMs": 7200,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 19,
       "y": 15,
@@ -194,6 +218,10 @@
   {
     "frame": 525,
     "virtualMs": 8400,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 17,
       "y": 15,
@@ -226,6 +254,10 @@
   {
     "frame": 600,
     "virtualMs": 9600,
+    "world": {
+      "mazeHash": "63f07caf",
+      "floorCount": 700
+    },
     "player": {
       "x": 17,
       "y": 14,

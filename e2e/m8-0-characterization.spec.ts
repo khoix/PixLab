@@ -92,10 +92,17 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   // seeding and entry with no pause and 18,227 with an 800ms one, giving two
   // different mazes from one seed.
   //
-  // Burst mode restarts the stream at each synchronous run of draws, so
-  // `generateLevel` returns the same level whichever render calls it and the
-  // render count stops mattering. Verified by re-running that probe across
-  // 0/800/2500ms pauses: identical maze hash, roster, items and next value.
+  // World-setup mode restarts the stream at the first draw of every
+  // `generateLevel` call, so each one returns the identical level and it stops
+  // mattering how many ran or which the canvas kept.
+  //
+  // Anchoring on the synchronous burst was tried first and was too coarse — it
+  // got six scenarios reproducing on CI but still failed `idle`. A probe then
+  // located both generation calls exactly: entering immediately puts them in
+  // two bursts (the second starting at offset 0 of burst 2), while an 800ms
+  // pause puts them in one (the second starting at offset 11,232). React's
+  // render phase and its scheduled passive-effect flush share a task or do not,
+  // depending on timing. Per-call anchoring has no such seam.
   await page.evaluate((seed) => window.__PIXLAB_REPLAY__!.beginWorldSetup(seed), scenario.seed);
 
   await page.getByTestId('enter-sector-button').click();
@@ -103,6 +110,17 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
 
   const placed = await applyScenario(page, scenario);
   expect(placed, `scenario ${scenario.name} placed no mobs`).toBe(scenario.mobs.length);
+
+  // The anchor recognizes a generation by finding `generateLevel` in the stack.
+  // If that ever stops matching — a minified build, a rename — the harness
+  // would go quietly back to recording whichever world the render count
+  // happened to produce, and the baselines would become a description of this
+  // machine again without anything turning red. Fail loudly instead.
+  const seededGenerations = await page.evaluate(() => window.__PIXLAB_REPLAY__!.endWorldSetup());
+  expect(
+    seededGenerations,
+    'world-setup anchor never fired — level generation was not seeded',
+  ).toBeGreaterThan(0);
 
   // A scenario that keeps the generated roster asserts nothing above — `placed`
   // is 0 by design — so check the world is actually populated. Otherwise an
@@ -132,19 +150,38 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
       // so a real timer firing during setup cannot offset the simulation's
       // draws. The harness itself was installed earlier, to stop the clock.
       //
-      // `reseed` also leaves burst mode. The simulation wants one continuous
-      // stream — re-seeding every frame would make every frame draw the same
-      // values and the run would stop being a run.
+      // `reseed` also leaves world-setup mode, in case a scenario skipped the
+      // explicit `endWorldSetup`. The simulation wants one continuous stream —
+      // re-anchoring mid-run would make frames repeat each other's values and
+      // the run would stop being a run.
       replay.reseed(seed as number);
       const level = window.__PIXLAB_LEVEL__!;
       const input = window.__PIXLAB_GAME_INPUT__;
+
       const segments = track as Array<{ frames: number; dir: { x: number; y: number } }>;
       const cycle = segments.reduce((sum, seg) => sum + seg.frames, 0);
       const out: RawSnapshot[] = [];
 
+      // FNV-1a over the 30x30 grid. Computed in the page because `isWall` is
+      // the only tile accessor the test hooks expose.
+      const mazeDigest = () => {
+        let h = 2166136261;
+        let floors = 0;
+        for (let y = 0; y < 30; y++) {
+          for (let x = 0; x < 30; x++) {
+            const wall = level.isWall(x, y);
+            if (!wall) floors++;
+            h ^= wall ? 49 : 48;
+            h = Math.imul(h, 16777619);
+          }
+        }
+        return { mazeHash: (h >>> 0).toString(16), floorCount: floors };
+      };
+
       const read = (frame: number): RawSnapshot => ({
         frame,
         virtualMs: replay.now(),
+        world: mazeDigest(),
         player: { ...level.getPlayerPos(), hp: level.getPlayerHp() },
         entities: level.getEntities().map((e) => ({
           id: e.id,
@@ -197,7 +234,12 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
 }
 
 test.describe('M8.0 — pre-split characterization', () => {
-  test.describe.configure({ mode: 'serial' });
+  // Not `serial`. It was, and that cost a CI cycle: when `idle` failed, the
+  // other seven scenarios on each project were skipped rather than run, so a
+  // 21-minute round reported one data point instead of fourteen. Nothing here
+  // needs serial — each test opens its own page and seeds itself, and the
+  // determinism no longer depends on the machine being unloaded.
+  test.describe.configure({ mode: 'default' });
 
   for (const scenario of SCENARIOS) {
     test(`${scenario.name} reproduces its baseline`, async ({ page }) => {

@@ -15,6 +15,7 @@
  *   - every entity's id, subtype, position, hp and boss phase
  *   - attack-pressure occupancy (the M6.4b scheduler's observable state)
  *   - generated item drops (position and name)
+ *   - a hash of the maze itself, and its floor count
  *   - portal positions
  *   - sector timer advance
  *
@@ -35,12 +36,21 @@
  * — and throws the result away. The stream position when the canvas generates
  * the level the player actually plays therefore depends on how many times React
  * happened to render first, which is wall-clock dependent. `beginWorldSetup` in
- * `determinism.ts` fixes it at the source by restarting the stream per
- * synchronous burst, so `generateLevel` is a pure function of the seed again.
+ * `determinism.ts` fixes it at the source by restarting the stream at the first
+ * draw of every `generateLevel` call, so each one returns the identical level
+ * and it stops mattering how many ran or which the canvas kept.
  *
  * With that fixed the items are stable and worth keeping: item generation is
  * M8.6's scope, and a digest that quietly omitted it would let that stage
  * change the drop table with nothing to notice.
+ *
+ * The maze is hashed into the digest for the same reason, and because of how
+ * long it took to see the problem above. `idle` places no mobs, pins the
+ * player, clears portals and takes no damage — so the *only* field in its
+ * digest that could ever reveal a different world was the item, and when that
+ * was removed the scenario would have gone green on any maze at all. Recording
+ * the grid means a world divergence is legible everywhere instead of showing up
+ * as one unexplained item, and maze generation is M8.6's scope besides.
  *
  * Damage is captured as *hp over time* rather than an event stream. There is no
  * damage-event hook on `window` today, and adding one would make this harness a
@@ -59,9 +69,16 @@ export interface EntityDigest {
   bossPhase: string | null;
 }
 
+export interface WorldDigest {
+  /** FNV-1a over the wall/floor grid — a whole maze in one comparable token. */
+  mazeHash: string;
+  floorCount: number;
+}
+
 export interface RunSnapshot {
   frame: number;
   virtualMs: number;
+  world: WorldDigest;
   player: { x: number; y: number; hp: number };
   entities: EntityDigest[];
   pressure: { used: number; cap: number; holders: number; peakUsed: number };
@@ -89,6 +106,7 @@ export interface RunSnapshot {
 export interface RawSnapshot {
   frame: number;
   virtualMs: number;
+  world: WorldDigest;
   player: { x: number; y: number; hp: number };
   entities: EntityDigest[];
   pressure: { used: number; cap: number; holders: number; peakUsed: number };
@@ -121,6 +139,10 @@ export function normalizeSnapshot(raw: RawSnapshot, previousElapsedMs?: number):
   return {
     frame: raw.frame,
     virtualMs: raw.virtualMs,
+    // Per sample rather than once per run: the level never regenerates
+    // mid-sector, so a hash that changed between samples would itself be the
+    // finding.
+    world: raw.world,
     player: { x: q(raw.player.x), y: q(raw.player.y), hp: raw.player.hp },
     entities: raw.entities
       .map((e) => ({ ...e, x: q(e.x), y: q(e.y) }))

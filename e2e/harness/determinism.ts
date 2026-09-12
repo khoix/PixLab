@@ -74,18 +74,35 @@ export interface HarnessApi {
    * world. Re-seeding once before entry cannot fix it — the offset accrues
    * *after* the seed.
    *
-   * In this mode each synchronous burst starts from the same seed instead, so
-   * `generateLevel` produces the same level on its first call and its fifth.
-   * The render count stops mattering. A burst is delimited by the microtask
-   * checkpoint, which is exactly the boundary React's render phase and its
-   * scheduled passive-effect flush fall either side of.
+   * In this mode the stream is restarted at the first draw of every
+   * `generateLevel` call, so all of them return the identical level and the
+   * render count stops mattering.
+   *
+   * Anchoring on the synchronous burst instead was tried first and was too
+   * coarse. A probe located the two generation calls precisely: entering
+   * immediately puts them in two bursts (the second at offset 0 of burst 2),
+   * while an 800ms pause puts them in one (the second at offset 11,232) —
+   * React's render phase and its scheduled passive-effect flush share a task
+   * or do not, depending on timing. Two bursts, two different worlds, same
+   * seed. Per-call anchoring has no such seam.
    *
    * Only for world setup. Leaving it on during the driven frames would restart
    * the stream every frame and the simulation would repeat itself.
    */
   beginWorldSetup: (seed: number) => void;
-  /** Return to one continuous stream. */
-  endWorldSetup: () => void;
+  /**
+   * Return to one continuous stream, and report how many `generateLevel` calls
+   * were anchored.
+   *
+   * The count is asserted by the spec. The anchor recognizes a generation by
+   * finding `generateLevel` in the stack, so if that name ever stops appearing
+   * — a minified build, a rename — the harness would silently go back to
+   * recording whichever world the render count happened to produce. A count of
+   * zero is the signal that it has, and it should fail the run rather than
+   * quietly re-record. The exact number is not asserted: it is the render count,
+   * which is the very thing being made not to matter.
+   */
+  endWorldSetup: () => number;
   /** Hand control back to the browser; restores every patched global. */
   release: () => void;
 }
@@ -161,20 +178,48 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  // Burst re-seeding — off unless `beginWorldSetup` turns it on. See the note
-  // on `beginWorldSetup` for why level generation needs it.
+  // World-setup anchoring — off unless `beginWorldSetup` turns it on. See the
+  // note on `beginWorldSetup` for why level generation needs it.
   let worldSetup = false;
   let worldSeed = seed >>> 0;
   let burstOpen = false;
+  let insideGeneration = false;
+  let generationsSeeded = 0;
+  const realStackLimit = Error.stackTraceLimit;
   Math.random = () => {
-    if (worldSetup && !burstOpen) {
-      burstOpen = true;
-      a = worldSeed;
-      // Closes when the JS stack empties, so one synchronous `generateLevel`
-      // is one burst no matter how many values it draws.
-      queueMicrotask(() => {
-        burstOpen = false;
-      });
+    if (worldSetup) {
+      if (!burstOpen) {
+        burstOpen = true;
+        insideGeneration = false;
+        a = worldSeed;
+        // Closes when the JS stack empties.
+        queueMicrotask(() => {
+          burstOpen = false;
+          insideGeneration = false;
+        });
+      }
+      // The precise anchor: the first draw of each `generateLevel` call.
+      //
+      // Burst boundaries alone are not enough, and a probe showed why. The two
+      // `generateLevel` calls that run between seeding and sector entry land in
+      // two bursts when entry is immediate (second call at offset 0 of burst 2)
+      // and in ONE burst after an 800ms pause (second call at offset 11,232 of
+      // burst 1). React's render phase and its scheduled passive-effect flush
+      // share a task or do not, depending on timing — so a per-burst reseed
+      // gives two different worlds for the same seed, which is the divergence
+      // that survived the first fix and still failed `idle` on CI.
+      //
+      // Anchoring per call makes every `generateLevel` start from the same
+      // seed, so all of them return the identical level and it no longer
+      // matters which one the canvas keeps or how many ran first.
+      Error.stackTraceLimit = 30;
+      const inGeneration = (new Error().stack ?? '').includes('generateLevel');
+      Error.stackTraceLimit = realStackLimit;
+      if (inGeneration && !insideGeneration) {
+        a = worldSeed;
+        generationsSeeded++;
+      }
+      insideGeneration = inGeneration;
     }
     return draw();
   };
@@ -244,6 +289,8 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
     reseed(seed: number): void {
       worldSetup = false;
       burstOpen = false;
+      insideGeneration = false;
+      Error.stackTraceLimit = realStackLimit;
       a = seed >>> 0;
     },
     beginWorldSetup(seed: number): void {
@@ -251,14 +298,20 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       a = worldSeed;
       worldSetup = true;
       burstOpen = false;
+      insideGeneration = false;
+      generationsSeeded = 0;
     },
-    endWorldSetup(): void {
+    endWorldSetup(): number {
       worldSetup = false;
       burstOpen = false;
+      insideGeneration = false;
+      Error.stackTraceLimit = realStackLimit;
+      return generationsSeeded;
     },
     now: () => virtualNow - clockOrigin,
     framesDriven: () => framesDriven,
     release(): void {
+      Error.stackTraceLimit = realStackLimit;
       Math.random = realRandom;
       Date.now = realDateNow;
       performance.now = realPerfNow;
