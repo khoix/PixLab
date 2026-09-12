@@ -78,13 +78,26 @@ export interface HarnessApi {
    * `generateLevel` call, so all of them return the identical level and the
    * render count stops mattering.
    *
-   * Anchoring on the synchronous burst instead was tried first and was too
-   * coarse. A probe located the two generation calls precisely: entering
-   * immediately puts them in two bursts (the second at offset 0 of burst 2),
-   * while an 800ms pause puts them in one (the second at offset 11,232) —
-   * React's render phase and its scheduled passive-effect flush share a task
-   * or do not, depending on timing. Two bursts, two different worlds, same
-   * seed. Per-call anchoring has no such seam.
+   * Two coarser anchors were tried first and both cost a CI round.
+   *
+   * Per *burst* was the first. A probe located the two generation calls
+   * exactly: entering immediately puts them in two bursts (the second at
+   * offset 0 of burst 2), an 800ms pause puts them in one (the second at
+   * offset 11,232). React's render phase and its scheduled passive-effect
+   * flush share a task or do not, depending on timing — two worlds, one seed.
+   *
+   * Per *entry into* `generateLevel` was the second, detected as a draw with
+   * it on the stack following one without. That is only a boundary when
+   * something else draws in between, and whether anything does is itself
+   * timing-dependent. Called back to back the two generations hashed
+   * 83b9b02d and 1c9ec8c9 — different worlds, one anchor fired for the pair.
+   *
+   * So the boundary is the entry *draw site*: the first `Math.random` of a
+   * generation always comes from the same source line (the maze-carve loop,
+   * or the arena's first draw on a boss sector), and that line's draws are
+   * contiguous. Arriving there from anywhere else is a new call, whether or
+   * not anything drew in between. `installDeterminism`'s self-check asserts
+   * two back-to-back generations come out identical.
    *
    * Only for world setup. Leaving it on during the driven frames would restart
    * the stream every frame and the simulation would repeat itself.
@@ -185,6 +198,10 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
   let burstOpen = false;
   let insideGeneration = false;
   let generationsSeeded = 0;
+  // The source location of the first draw of a generation — the maze-carve
+  // line for a normal sector, the arena's first draw for a boss one.
+  let entrySite: string | null = null;
+  let previousSite = '';
   const realStackLimit = Error.stackTraceLimit;
   Math.random = () => {
     if (worldSetup) {
@@ -213,11 +230,29 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       // seed, so all of them return the identical level and it no longer
       // matters which one the canvas keeps or how many ran first.
       Error.stackTraceLimit = 30;
-      const inGeneration = (new Error().stack ?? '').includes('generateLevel');
+      const stack = new Error().stack ?? '';
       Error.stackTraceLimit = realStackLimit;
-      if (inGeneration && !insideGeneration) {
-        a = worldSeed;
-        generationsSeeded++;
+      const inGeneration = stack.includes('generateLevel');
+      if (inGeneration) {
+        // The frame directly below this shim: "    at generateLevel (…:38:48)".
+        // Line 0 is "Error", line 1 is the shim itself.
+        const shim = stack.indexOf('\n');
+        const callerStart = stack.indexOf('\n', shim + 1);
+        const callerEnd = stack.indexOf('\n', callerStart + 1);
+        const site =
+          callerStart < 0 ? '' : stack.slice(callerStart + 1, callerEnd < 0 ? undefined : callerEnd);
+        // Entering `generateLevel` from outside is the obvious boundary; the
+        // one that matters is arriving back at the *entry* draw site with the
+        // previous draw somewhere else, which is what two back-to-back calls
+        // look like when nothing else draws in between.
+        if (entrySite === null || !insideGeneration || (site === entrySite && previousSite !== entrySite)) {
+          if (entrySite === null) entrySite = site;
+          a = worldSeed;
+          generationsSeeded++;
+        }
+        previousSite = site;
+      } else {
+        previousSite = '';
       }
       insideGeneration = inGeneration;
     }
@@ -290,6 +325,8 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       worldSetup = false;
       burstOpen = false;
       insideGeneration = false;
+      entrySite = null;
+      previousSite = '';
       Error.stackTraceLimit = realStackLimit;
       a = seed >>> 0;
     },
@@ -300,11 +337,15 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       burstOpen = false;
       insideGeneration = false;
       generationsSeeded = 0;
+      entrySite = null;
+      previousSite = '';
     },
     endWorldSetup(): number {
       worldSetup = false;
       burstOpen = false;
       insideGeneration = false;
+      entrySite = null;
+      previousSite = '';
       Error.stackTraceLimit = realStackLimit;
       return generationsSeeded;
     },

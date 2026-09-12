@@ -296,10 +296,55 @@ test.describe('M8.0 — pre-split characterization', () => {
       const frames = h2.framesDriven();
       h2.release();
 
-      return { idleWait, first, second, advanced, frames, afterRelease: !window.__PIXLAB_REPLAY__ };
+      // The property every baseline rests on: `generateLevel` must be a pure
+      // function of the seed, however many times it runs and whatever runs
+      // between the calls. Two coarser anchors passed the checks above and
+      // still recorded a machine-specific world — the second of them because
+      // back-to-back calls with nothing drawing in between look like one long
+      // call. Assert it directly rather than discovering it on a runner: with
+      // the entry-site anchor these three hash the same, with the previous
+      // rule the second differs from the first.
+      (window as unknown as { __install: (s: number, e?: number) => void }).__install(1234);
+      const h3 = window.__PIXLAB_REPLAY__!;
+      const gen = window.__PIXLAB_ENGINE__!.generateLevel;
+      const hashLevel = (lvl: { tiles: string[][] }) => {
+        let x = 2166136261;
+        for (const row of lvl.tiles)
+          for (const t of row) {
+            x ^= t.charCodeAt(0);
+            x = Math.imul(x, 16777619);
+          }
+        return (x >>> 0).toString(16);
+      };
+      h3.beginWorldSetup(777);
+      const backToBack = [
+        hashLevel(gen(5, 30, 30) as never),
+        hashLevel(gen(5, 30, 30) as never),
+      ];
+      Math.random(); // a foreign draw between calls, the case that used to hide the bug
+      backToBack.push(hashLevel(gen(5, 30, 30) as never));
+      const anchored = h3.endWorldSetup();
+      h3.release();
+
+      return {
+        idleWait,
+        first,
+        second,
+        advanced,
+        frames,
+        backToBack,
+        anchored,
+        afterRelease: !window.__PIXLAB_REPLAY__,
+      };
     });
 
     expect(probe.idleWait, 'wall clock leaked into the virtual clock').toBe(0);
+    expect(probe.backToBack, 'two generations from one seed disagreed').toEqual([
+      probe.backToBack[0],
+      probe.backToBack[0],
+      probe.backToBack[0],
+    ]);
+    expect(probe.anchored, 'world-setup anchored fewer calls than were made').toBe(3);
     expect(probe.second, 'same seed produced a different stream').toEqual(probe.first);
     expect(probe.advanced, '10 frames of 16ms should be exactly 160ms').toBe(160);
     expect(probe.frames).toBe(10);

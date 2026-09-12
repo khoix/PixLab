@@ -3,8 +3,8 @@
     "frame": 60,
     "virtualMs": 960,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
@@ -25,7 +25,7 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 67,
         "bossPhase": null
@@ -49,13 +49,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -68,8 +68,8 @@
     "frame": 120,
     "virtualMs": 1920,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
@@ -90,8 +90,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
-        "y": 3,
+        "x": 1,
+        "y": 2,
         "hp": 67,
         "bossPhase": null
       },
@@ -114,13 +114,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -133,8 +133,8 @@
     "frame": 180,
     "virtualMs": 2880,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 2,
@@ -155,9 +155,9 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
+        "x": 1,
+        "y": 2,
+        "hp": 47,
         "bossPhase": null
       },
       {
@@ -179,13 +179,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -198,8 +198,8 @@
     "frame": 240,
     "virtualMs": 3840,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
@@ -220,9 +220,9 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
+        "x": 1,
+        "y": 1,
+        "hp": 47,
         "bossPhase": null
       },
       {
@@ -244,13 +244,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -263,8 +263,8 @@
     "frame": 300,
     "virtualMs": 4800,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 3,
@@ -286,8 +286,8 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 3,
-        "hp": 67,
+        "y": 1,
+        "hp": 37,
         "bossPhase": null
       },
       {
@@ -309,13 +309,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -328,8 +328,8 @@
     "frame": 360,
     "virtualMs": 5760,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
@@ -350,9 +350,9 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
+        "x": 1,
+        "y": 1,
+        "hp": 27,
         "bossPhase": null
       },
       {
@@ -374,13 +374,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -393,13 +393,13 @@
     "frame": 420,
     "virtualMs": 6720,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 3,
       "y": 1,
-      "hp": 999887
+      "hp": 999871
     },
     "entities": [
       {
@@ -407,8 +407,8 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 3,
-        "hp": 67,
+        "y": 1,
+        "hp": 17,
         "bossPhase": null
       },
       {
@@ -422,21 +422,21 @@
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
+      "holders": 2,
       "peakUsed": 2
     },
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -449,41 +449,41 @@
     "frame": 480,
     "virtualMs": 7680,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999883
+      "hp": 999851
     },
     "entities": [
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
+        "x": 1,
+        "y": 1,
+        "hp": 7,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
+      "holders": 1,
       "peakUsed": 2
     },
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -496,25 +496,15 @@
     "frame": 540,
     "virtualMs": 8640,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 3,
       "y": 1,
-      "hp": 999883
+      "hp": 999835
     },
-    "entities": [
-      {
-        "id": "demo-enemy-1",
-        "subtype": "charger",
-        "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
-        "bossPhase": null
-      }
-    ],
+    "entities": [],
     "pressure": {
       "used": 0,
       "cap": 2,
@@ -524,13 +514,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],
@@ -543,25 +533,15 @@
     "frame": 600,
     "virtualMs": 9600,
     "world": {
-      "mazeHash": "c8c33bdf",
-      "floorCount": 406
+      "mazeHash": "b669fce0",
+      "floorCount": 411
     },
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999883
+      "hp": 999835
     },
-    "entities": [
-      {
-        "id": "demo-enemy-1",
-        "subtype": "charger",
-        "type": "enemy",
-        "x": 3,
-        "y": 3,
-        "hp": 67,
-        "bossPhase": null
-      }
-    ],
+    "entities": [],
     "pressure": {
       "used": 0,
       "cap": 2,
@@ -571,13 +551,13 @@
     "items": [
       {
         "x": 15,
-        "y": 5,
-        "name": "Axe of Might"
+        "y": 17,
+        "name": "Mace of Wrath"
       },
       {
-        "x": 19,
-        "y": 7,
-        "name": "Elixir of Renewal"
+        "x": 18,
+        "y": 1,
+        "name": "Gauntlets of the Guardian"
       }
     ],
     "portals": [],

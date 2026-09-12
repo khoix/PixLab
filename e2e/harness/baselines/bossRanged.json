@@ -3,8 +3,8 @@
     "frame": 75,
     "virtualMs": 1200,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
       "x": 17,
@@ -39,20 +39,20 @@
     "frame": 150,
     "virtualMs": 2400,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 19,
+      "x": 17,
       "y": 15,
-      "hp": 999930
+      "hp": 999861
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
@@ -75,20 +75,20 @@
     "frame": 225,
     "virtualMs": 3600,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
       "x": 18,
-      "y": 14,
-      "hp": 999930
+      "y": 15,
+      "hp": 999861
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
@@ -111,29 +111,29 @@
     "frame": 300,
     "virtualMs": 4800,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 20,
-      "y": 14,
-      "hp": 999861
+      "x": 18,
+      "y": 13,
+      "hp": 999792
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 15,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 2,
-      "holders": 0,
+      "holders": 1,
       "peakUsed": 2
     },
     "items": [],
@@ -147,20 +147,20 @@
     "frame": 375,
     "virtualMs": 6000,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 19,
-      "y": 14,
-      "hp": 999861
+      "x": 17,
+      "y": 13,
+      "hp": 999792
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 15,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
@@ -183,29 +183,29 @@
     "frame": 450,
     "virtualMs": 7200,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 21,
-      "y": 14,
-      "hp": 999792
+      "x": 19,
+      "y": 15,
+      "hp": 999723
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 16,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 0,
       "cap": 2,
-      "holders": 1,
+      "holders": 0,
       "peakUsed": 2
     },
     "items": [],
@@ -219,20 +219,20 @@
     "frame": 525,
     "virtualMs": 8400,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 21,
-      "y": 14,
-      "hp": 999723
+      "x": 17,
+      "y": 15,
+      "hp": 999654
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 16,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null
@@ -255,20 +255,20 @@
     "frame": 600,
     "virtualMs": 9600,
     "world": {
-      "mazeHash": "8dcfa1b0",
-      "floorCount": 665
+      "mazeHash": "15749be5",
+      "floorCount": 780
     },
     "player": {
-      "x": 21,
+      "x": 17,
       "y": 14,
-      "hp": 999723
+      "hp": 999585
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_zeus",
         "type": "boss_enemy",
-        "x": 16,
+        "x": 13,
         "y": 15,
         "hp": 634,
         "bossPhase": null

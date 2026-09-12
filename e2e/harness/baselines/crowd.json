@@ -3,22 +3,22 @@
     "frame": 60,
     "virtualMs": 960,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
       "x": 1,
-      "y": 3,
-      "hp": 999916
+      "y": 1,
+      "hp": 999965
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 411,
         "bossPhase": null
       },
       {
@@ -26,7 +26,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 4,
-        "y": 1,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -61,17 +61,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 2,
-        "hp": 892,
+        "hp": 882,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -80,7 +80,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -88,7 +88,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -97,9 +97,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 5,
         "y": 3,
-        "hp": 892,
+        "hp": 902,
         "bossPhase": null
       },
       {
@@ -107,7 +107,7 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 4,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -116,42 +116,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 1,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -164,22 +164,22 @@
     "frame": 120,
     "virtualMs": 1920,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999850
+      "hp": 999931
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 411,
         "bossPhase": null
       },
       {
@@ -187,7 +187,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 4,
-        "y": 1,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -222,8 +222,8 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 1,
+        "x": 3,
+        "y": 2,
         "hp": 882,
         "bossPhase": null
       },
@@ -231,8 +231,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -241,7 +241,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -249,7 +249,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -258,9 +258,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 882,
+        "x": 5,
+        "y": 3,
+        "hp": 902,
         "bossPhase": null
       },
       {
@@ -268,8 +268,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 421,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -277,42 +277,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 4,
-      "holders": 2,
-      "peakUsed": 3
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -325,31 +325,31 @@
     "frame": 180,
     "virtualMs": 2880,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
-      "y": 3,
-      "hp": 999734
+      "x": 3,
+      "y": 2,
+      "hp": 999781
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 391,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 412,
         "bossPhase": null
       },
       {
@@ -383,17 +383,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 872,
+        "hp": 862,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -402,7 +402,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -410,7 +410,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -419,9 +419,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 872,
+        "x": 4,
+        "y": 3,
+        "hp": 892,
         "bossPhase": null
       },
       {
@@ -429,8 +429,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 411,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -438,42 +438,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 412,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -486,31 +486,31 @@
     "frame": 240,
     "virtualMs": 3840,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 999634
+      "hp": 999664
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 381,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 402,
         "bossPhase": null
       },
       {
@@ -544,17 +544,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 862,
+        "hp": 852,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -563,7 +563,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -571,7 +571,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -580,9 +580,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 862,
+        "x": 4,
+        "y": 3,
+        "hp": 882,
         "bossPhase": null
       },
       {
@@ -590,8 +590,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 401,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -599,42 +599,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 402,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -647,31 +647,31 @@
     "frame": 300,
     "virtualMs": 4800,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 3,
-      "hp": 999551
+      "hp": 999481
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 371,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 392,
         "bossPhase": null
       },
       {
@@ -705,17 +705,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 852,
+        "hp": 842,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -724,7 +724,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -732,7 +732,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -741,9 +741,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 852,
+        "x": 4,
+        "y": 3,
+        "hp": 872,
         "bossPhase": null
       },
       {
@@ -751,8 +751,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 391,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -760,42 +760,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 392,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -808,31 +808,31 @@
     "frame": 360,
     "virtualMs": 5760,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 999484
+      "hp": 999315
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 361,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 382,
         "bossPhase": null
       },
       {
@@ -866,17 +866,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 842,
+        "hp": 832,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -885,7 +885,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -893,7 +893,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -902,9 +902,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 842,
+        "x": 4,
+        "y": 3,
+        "hp": 862,
         "bossPhase": null
       },
       {
@@ -912,8 +912,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 381,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -921,42 +921,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 382,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -969,31 +969,31 @@
     "frame": 420,
     "virtualMs": 6720,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 2,
-      "hp": 999434
+      "hp": 999165
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 351,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 372,
         "bossPhase": null
       },
       {
@@ -1027,17 +1027,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 832,
+        "hp": 822,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -1046,7 +1046,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -1054,7 +1054,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -1063,9 +1063,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 832,
+        "x": 4,
+        "y": 3,
+        "hp": 852,
         "bossPhase": null
       },
       {
@@ -1073,8 +1073,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 371,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -1082,42 +1082,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 372,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
@@ -1130,31 +1130,31 @@
     "frame": 480,
     "virtualMs": 7680,
     "world": {
-      "mazeHash": "56b8f59e",
-      "floorCount": 407
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408
     },
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 999301
+      "hp": 998999
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 431,
+        "hp": 341,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
-        "hp": 422,
+        "x": 3,
+        "y": 3,
+        "hp": 362,
         "bossPhase": null
       },
       {
@@ -1188,17 +1188,17 @@
         "id": "demo-enemy-3",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
+        "x": 3,
         "y": 1,
-        "hp": 822,
+        "hp": 812,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 431,
         "bossPhase": null
       },
@@ -1207,7 +1207,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 3,
+        "y": 2,
         "hp": 422,
         "bossPhase": null
       },
@@ -1215,7 +1215,7 @@
         "id": "demo-enemy-6",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 3,
         "hp": 172,
         "bossPhase": null
@@ -1224,9 +1224,9 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 822,
+        "x": 4,
+        "y": 3,
+        "hp": 842,
         "bossPhase": null
       },
       {
@@ -1234,8 +1234,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 3,
-        "hp": 361,
+        "y": 5,
+        "hp": 431,
         "bossPhase": null
       },
       {
@@ -1243,42 +1243,42 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 3,
-        "y": 4,
-        "hp": 422,
+        "y": 2,
+        "hp": 362,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 4,
       "cap": 4,
-      "holders": 3,
-      "peakUsed": 3
+      "holders": 4,
+      "peakUsed": 4
     },
     "items": [
       {
         "x": 1,
-        "y": 19,
-        "name": "Dagger of the Storm"
-      },
-      {
-        "x": 7,
-        "y": 21,
-        "name": "Potion of Light"
-      },
-      {
-        "x": 21,
-        "y": 19,
-        "name": "Armor of Warding"
-      },
-      {
-        "x": 21,
-        "y": 27,
+        "y": 6,
         "name": "Stim of Haste"
       },
       {
-        "x": 25,
-        "y": 19,
-        "name": "Scroll of Loot-sense"
+        "x": 7,
+        "y": 1,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 11,
+        "y": 9,
+        "name": "Scope of Awareness"
+      },
+      {
+        "x": 12,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Mace of Destruction"
       }
     ],
     "portals": [],
