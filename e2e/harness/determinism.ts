@@ -207,6 +207,7 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
   let entrySite: string | null = null;
   let previousSite = '';
   let drawsSinceAnchor = 0;
+  let lastGenerationDraws = 0;
   const realStackLimit = Error.stackTraceLimit;
   Math.random = () => {
     if (worldSetup) {
@@ -260,8 +261,27 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       } else {
         previousSite = '';
       }
+      // Count only draws made *inside* the generation, and freeze the total
+      // when it returns.
+      //
+      // The first cut counted every draw from the anchor through to
+      // `endWorldSetup`, which swept in whatever React and the app did after
+      // `generateLevel` returned — timing-dependent work with nothing to do
+      // with generation. It reported 6120 here against 5993 on CI for a level
+      // whose maze, floor count, exit and roster all matched exactly, and
+      // turned ten failing scenarios into fourteen. A diagnostic noisier than
+      // the thing it measures is worse than none.
+      //
+      // It is the *first* completed generation that is recorded, not the last.
+      // Every call returns the identical level, so every call draws the same
+      // number of values — which makes the first one stable whatever runs
+      // afterwards, while "the last" depends on how many the page happened to
+      // make. If this number ever disagrees across machines now, the anchor
+      // itself misfired, and that is worth knowing.
+      if (insideGeneration && !inGeneration && lastGenerationDraws === 0)
+        lastGenerationDraws = drawsSinceAnchor;
+      if (inGeneration) drawsSinceAnchor++;
       insideGeneration = inGeneration;
-      drawsSinceAnchor++;
     }
     return draw();
   };
@@ -345,6 +365,7 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       insideGeneration = false;
       generationsSeeded = 0;
       drawsSinceAnchor = 0;
+      lastGenerationDraws = 0;
       entrySite = null;
       previousSite = '';
     },
@@ -355,7 +376,12 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       entrySite = null;
       previousSite = '';
       Error.stackTraceLimit = realStackLimit;
-      return { generations: generationsSeeded, drawsInLastGeneration: drawsSinceAnchor };
+      // If nothing drew after the last generation there was no transition to
+      // freeze the count on, and the running total is already it.
+      return {
+        generations: generationsSeeded,
+        drawsInLastGeneration: lastGenerationDraws > 0 ? lastGenerationDraws : drawsSinceAnchor,
+      };
     },
     now: () => virtualNow - clockOrigin,
     framesDriven: () => framesDriven,
