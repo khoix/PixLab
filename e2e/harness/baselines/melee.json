@@ -5,7 +5,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999992
+      "hp": 999971
     },
     "entities": [
       {
@@ -13,17 +13,17 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 2,
-        "hp": 87,
+        "y": 1,
+        "hp": 67,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 202,
+        "hp": 182,
         "bossPhase": null
       },
       {
@@ -32,31 +32,31 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 46,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -71,7 +71,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999992
+      "hp": 999929
     },
     "entities": [
       {
@@ -79,17 +79,17 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 1,
-        "y": 2,
-        "hp": 87,
+        "y": 1,
+        "hp": 67,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 202,
+        "hp": 182,
         "bossPhase": null
       },
       {
@@ -98,31 +98,31 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 46,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -135,18 +135,18 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999992
+      "x": 3,
+      "y": 2,
+      "hp": 999901
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 47,
         "bossPhase": null
       },
       {
@@ -155,7 +155,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 202,
+        "hp": 162,
         "bossPhase": null
       },
       {
@@ -164,31 +164,31 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 26,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -201,18 +201,18 @@
     "frame": 240,
     "virtualMs": 3840,
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 999992
+      "hp": 999867
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 37,
         "bossPhase": null
       },
       {
@@ -221,7 +221,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 202,
+        "hp": 152,
         "bossPhase": null
       },
       {
@@ -230,31 +230,31 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 16,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -267,18 +267,18 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999992
+      "x": 3,
+      "y": 3,
+      "hp": 999833
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 27,
         "bossPhase": null
       },
       {
@@ -287,7 +287,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 202,
+        "hp": 142,
         "bossPhase": null
       },
       {
@@ -296,31 +296,31 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 6,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -333,18 +333,18 @@
     "frame": 360,
     "virtualMs": 5760,
     "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999992
+      "x": 2,
+      "y": 3,
+      "hp": 999833
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 27,
         "bossPhase": null
       },
       {
@@ -352,41 +352,32 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 1,
-        "hp": 202,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "tracker",
-        "type": "enemy",
-        "x": 3,
         "y": 2,
-        "hp": 66,
+        "hp": 142,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 0,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 0,
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -399,18 +390,18 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999992
+      "x": 3,
+      "y": 3,
+      "hp": 999819
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 17,
         "bossPhase": null
       },
       {
@@ -418,17 +409,8 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 1,
-        "hp": 202,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "tracker",
-        "type": "enemy",
-        "x": 3,
-        "y": 2,
-        "hp": 66,
+        "y": 3,
+        "hp": 132,
         "bossPhase": null
       }
     ],
@@ -436,23 +418,23 @@
       "used": 1,
       "cap": 2,
       "holders": 1,
-      "peakUsed": 1
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
@@ -466,35 +448,26 @@
     "virtualMs": 7680,
     "player": {
       "x": 1,
-      "y": 1,
-      "hp": 999992
+      "y": 3,
+      "hp": 999805
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 87,
+        "x": 2,
+        "y": 1,
+        "hp": 17,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 3,
-        "y": 1,
-        "hp": 202,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "tracker",
-        "type": "enemy",
-        "x": 3,
-        "y": 2,
-        "hp": 66,
+        "x": 1,
+        "y": 3,
+        "hp": 122,
         "bossPhase": null
       }
     ],
@@ -502,23 +475,23 @@
       "used": 1,
       "cap": 2,
       "holders": 1,
-      "peakUsed": 1
+      "peakUsed": 2
     },
     "items": [
       {
-        "x": 10,
-        "y": 13,
-        "name": "Stim of Velocity"
+        "x": 17,
+        "y": 24,
+        "name": "Amplifier of Precise Strike"
       },
       {
         "x": 21,
-        "y": 18,
-        "name": "Dagger of Lightning"
+        "y": 17,
+        "name": "Scroll of Loot-sense"
       },
       {
-        "x": 24,
-        "y": 3,
-        "name": "Scanner of Foresight"
+        "x": 25,
+        "y": 17,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],

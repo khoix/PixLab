@@ -4,7 +4,7 @@
     "virtualMs": 960,
     "player": {
       "x": 1,
-      "y": 1,
+      "y": 3,
       "hp": 1000000
     },
     "entities": [
@@ -12,7 +12,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 4,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -44,14 +44,14 @@
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -73,7 +73,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -83,7 +83,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 7,
-        "y": 3,
+        "y": 5,
         "hp": 67,
         "bossPhase": null
       },
@@ -105,14 +105,14 @@
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -126,7 +126,7 @@
     "virtualMs": 2880,
     "player": {
       "x": 1,
-      "y": 1,
+      "y": 3,
       "hp": 1000000
     },
     "entities": [
@@ -134,7 +134,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -144,7 +144,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 7,
-        "y": 3,
+        "y": 5,
         "hp": 67,
         "bossPhase": null
       },
@@ -152,7 +152,7 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
+        "x": 6,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -166,14 +166,14 @@
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -195,7 +195,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -204,8 +204,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 3,
+        "x": 6,
+        "y": 1,
         "hp": 67,
         "bossPhase": null
       },
@@ -213,7 +213,7 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -227,14 +227,14 @@
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -248,15 +248,15 @@
     "virtualMs": 4800,
     "player": {
       "x": 1,
-      "y": 1,
-      "hp": 1000000
+      "y": 3,
+      "hp": 999995
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -265,8 +265,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 3,
+        "x": 4,
+        "y": 1,
         "hp": 67,
         "bossPhase": null
       },
@@ -274,28 +274,28 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
-        "y": 1,
-        "hp": 66,
+        "x": 1,
+        "y": 2,
+        "hp": 56,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -310,14 +310,14 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999991
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -326,8 +326,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 3,
+        "x": 4,
+        "y": 1,
         "hp": 67,
         "bossPhase": null
       },
@@ -335,28 +335,28 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 46,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],
@@ -370,15 +370,15 @@
     "virtualMs": 6720,
     "player": {
       "x": 1,
-      "y": 1,
-      "hp": 1000000
+      "y": 2,
+      "hp": 999983
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -387,8 +387,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 3,
+        "x": 4,
+        "y": 1,
         "hp": 67,
         "bossPhase": null
       },
@@ -396,28 +396,28 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
-        "y": 1,
-        "hp": 66,
+        "x": 1,
+        "y": 2,
+        "hp": 36,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 15,
-        "y": 4,
-        "name": "Armor of Warding"
+        "x": 5,
+        "y": 6,
+        "name": "Thruster of Haste"
       },
       {
-        "x": 27,
-        "y": 7,
-        "name": "Scanner of Precise Strike"
+        "x": 11,
+        "y": 27,
+        "name": "Boots of the Fleet"
       }
     ],
     "portals": [],

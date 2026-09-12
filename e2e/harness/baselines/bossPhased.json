@@ -3,8 +3,8 @@
     "frame": 75,
     "virtualMs": 1200,
     "player": {
-      "x": 15,
-      "y": 14,
+      "x": 13,
+      "y": 17,
       "hp": 999848
     },
     "entities": [
@@ -12,10 +12,10 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 15,
-        "y": 14,
+        "x": 12,
+        "y": 16,
         "hp": 1317,
-        "bossPhase": "recover"
+        "bossPhase": "execute"
       }
     ],
     "pressure": {
@@ -35,8 +35,8 @@
     "frame": 150,
     "virtualMs": 2400,
     "player": {
-      "x": 15,
-      "y": 14,
+      "x": 13,
+      "y": 17,
       "hp": 999848
     },
     "entities": [
@@ -44,10 +44,10 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 16,
-        "y": 15,
+        "x": 13,
+        "y": 17,
         "hp": 1297,
-        "bossPhase": "telegraph"
+        "bossPhase": "ready"
       }
     ],
     "pressure": {
@@ -67,19 +67,19 @@
     "frame": 225,
     "virtualMs": 3600,
     "player": {
-      "x": 17,
-      "y": 15,
-      "hp": 999848
+      "x": 14,
+      "y": 17,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 14,
+        "x": 13,
+        "y": 17,
         "hp": 1267,
-        "bossPhase": "ready"
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
@@ -99,19 +99,19 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 17,
-      "y": 13,
-      "hp": 999697
+      "x": 14,
+      "y": 15,
+      "hp": 999546
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 14,
+        "x": 14,
+        "y": 16,
         "hp": 1247,
-        "bossPhase": "recover"
+        "bossPhase": "execute"
       }
     ],
     "pressure": {
@@ -131,19 +131,19 @@
     "frame": 375,
     "virtualMs": 6000,
     "player": {
-      "x": 16,
-      "y": 13,
-      "hp": 999697
+      "x": 14,
+      "y": 17,
+      "hp": 999546
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 18,
-        "y": 14,
+        "x": 13,
+        "y": 17,
         "hp": 1227,
-        "bossPhase": "telegraph"
+        "bossPhase": "ready"
       }
     ],
     "pressure": {
@@ -163,19 +163,19 @@
     "frame": 450,
     "virtualMs": 7200,
     "player": {
-      "x": 18,
-      "y": 13,
-      "hp": 999697
+      "x": 14,
+      "y": 16,
+      "hp": 999395
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 13,
+        "x": 13,
+        "y": 17,
         "hp": 1207,
-        "bossPhase": "ready"
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
@@ -195,19 +195,19 @@
     "frame": 525,
     "virtualMs": 8400,
     "player": {
-      "x": 16,
-      "y": 13,
-      "hp": 999546
+      "x": 14,
+      "y": 16,
+      "hp": 999244
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 13,
+        "x": 14,
+        "y": 17,
         "hp": 1187,
-        "bossPhase": "recover"
+        "bossPhase": "execute"
       }
     ],
     "pressure": {
@@ -227,19 +227,19 @@
     "frame": 600,
     "virtualMs": 9600,
     "player": {
-      "x": 17,
-      "y": 13,
-      "hp": 999395
+      "x": 14,
+      "y": 16,
+      "hp": 999244
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 14,
+        "x": 14,
+        "y": 16,
         "hp": 1167,
-        "bossPhase": "execute"
+        "bossPhase": "ready"
       }
     ],
     "pressure": {

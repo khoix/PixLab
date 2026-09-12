@@ -5,7 +5,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999978
     },
     "entities": [
       {
@@ -22,7 +22,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -30,38 +30,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 4,
+        "y": 5,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -76,7 +76,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999935
     },
     "entities": [
       {
@@ -93,7 +93,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -101,38 +101,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 1.998,
+        "y": 3.292,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -145,9 +145,9 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 1,
+      "x": 2,
       "y": 1,
-      "hp": 1000000
+      "hp": 999892
     },
     "entities": [
       {
@@ -164,7 +164,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -172,38 +172,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 1.432,
+        "y": 3.435,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -218,7 +218,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999892
     },
     "entities": [
       {
@@ -235,7 +235,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -243,38 +243,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 3.384,
+        "y": 1.752,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -287,9 +287,9 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 1000000
+      "hp": 999806
     },
     "entities": [
       {
@@ -306,7 +306,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -314,38 +314,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 3.518,
+        "y": 3.446,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -360,7 +360,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999806
     },
     "entities": [
       {
@@ -377,7 +377,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -385,38 +385,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 3.406,
+        "y": 1.677,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -429,9 +429,9 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 1000000
+      "hp": 999806
     },
     "entities": [
       {
@@ -448,7 +448,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -456,38 +456,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 3.593,
+        "y": 3.429,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],
@@ -502,7 +502,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999763
     },
     "entities": [
       {
@@ -519,7 +519,7 @@
         "subtype": "turret",
         "type": "enemy",
         "x": 6,
-        "y": 5,
+        "y": 4,
         "hp": 154,
         "bossPhase": null
       },
@@ -527,38 +527,38 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 1,
+        "x": 1.799,
+        "y": 3.492,
         "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
-        "x": 10,
-        "y": 9,
-        "name": "Potion of Healing"
+        "x": 3,
+        "y": 3,
+        "name": "Amplifier of Precise Strike"
       },
       {
-        "x": 10,
-        "y": 21,
-        "name": "Thruster of Quickness"
+        "x": 16,
+        "y": 1,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 13,
-        "y": 20,
-        "name": "Mace of Power"
+        "x": 25,
+        "y": 19,
+        "name": "Dagger of the Wind"
       },
       {
         "x": 26,
-        "y": 9,
-        "name": "Potion of Rejuvenation"
+        "y": 3,
+        "name": "Dagger of Lightning"
       }
     ],
     "portals": [],

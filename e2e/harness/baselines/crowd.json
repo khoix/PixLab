@@ -5,33 +5,33 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999915
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 411,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 402,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -39,7 +39,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -48,7 +48,7 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 172,
         "bossPhase": null
@@ -66,8 +66,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -76,7 +76,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -93,8 +93,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -102,8 +102,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -118,36 +118,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -162,33 +162,33 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999831
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 411,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 402,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -196,7 +196,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -205,7 +205,7 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 172,
         "bossPhase": null
@@ -223,8 +223,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -233,7 +233,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -250,8 +250,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -259,8 +259,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -275,36 +275,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -317,35 +317,35 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 1,
+      "x": 2,
       "y": 1,
-      "hp": 1000000
+      "hp": 999705
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 391,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 382,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -353,7 +353,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -362,9 +362,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 152,
         "bossPhase": null
       },
       {
@@ -380,8 +380,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -390,7 +390,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -407,8 +407,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -416,8 +416,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -432,36 +432,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 3,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -476,33 +476,33 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999624
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 391,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 382,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -510,7 +510,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -519,9 +519,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 152,
         "bossPhase": null
       },
       {
@@ -537,8 +537,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -547,7 +547,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -564,8 +564,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -573,8 +573,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -589,36 +589,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -631,35 +631,35 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 1000000
+      "hp": 999498
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 381,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 372,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -667,7 +667,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -676,9 +676,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 142,
         "bossPhase": null
       },
       {
@@ -694,8 +694,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -704,7 +704,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -721,8 +721,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -730,8 +730,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -746,36 +746,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 3,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -790,33 +790,33 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999350
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 371,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 362,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -824,7 +824,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -833,9 +833,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 132,
         "bossPhase": null
       },
       {
@@ -851,8 +851,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -861,7 +861,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -878,8 +878,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -887,8 +887,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -903,36 +903,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -945,35 +945,35 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 1,
+      "x": 3,
       "y": 1,
-      "hp": 1000000
+      "hp": 999238
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 361,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 352,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -981,7 +981,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -990,9 +990,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 122,
         "bossPhase": null
       },
       {
@@ -1008,8 +1008,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -1018,7 +1018,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -1035,8 +1035,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -1044,8 +1044,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -1060,36 +1060,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 3,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 3,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
@@ -1104,33 +1104,33 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999126
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 431,
+        "hp": 351,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
+        "x": 2,
         "y": 1,
-        "hp": 422,
+        "hp": 342,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-10",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 1,
-        "y": 5,
+        "x": 3,
+        "y": 4,
         "hp": 172,
         "bossPhase": null
       },
@@ -1138,7 +1138,7 @@
         "id": "demo-enemy-11",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 5,
         "hp": 902,
         "bossPhase": null
@@ -1147,9 +1147,9 @@
         "id": "demo-enemy-2",
         "subtype": "swarm",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 112,
         "bossPhase": null
       },
       {
@@ -1165,8 +1165,8 @@
         "id": "demo-enemy-4",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
-        "y": 4,
+        "x": 4,
+        "y": 3,
         "hp": 431,
         "bossPhase": null
       },
@@ -1175,7 +1175,7 @@
         "subtype": "charger",
         "type": "enemy",
         "x": 5,
-        "y": 2,
+        "y": 3,
         "hp": 422,
         "bossPhase": null
       },
@@ -1192,8 +1192,8 @@
         "id": "demo-enemy-7",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 1,
+        "y": 4,
         "hp": 902,
         "bossPhase": null
       },
@@ -1201,8 +1201,8 @@
         "id": "demo-enemy-8",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
-        "y": 4,
+        "x": 1,
+        "y": 5,
         "hp": 431,
         "bossPhase": null
       },
@@ -1217,36 +1217,36 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 4,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 3
     },
     "items": [
       {
+        "x": 4,
+        "y": 5,
+        "name": "Scanner of Foresight"
+      },
+      {
+        "x": 4,
+        "y": 19,
+        "name": "Dagger of the Wind"
+      },
+      {
         "x": 13,
-        "y": 12,
-        "name": "Potion of Light"
+        "y": 17,
+        "name": "Armor of Resilience"
       },
       {
-        "x": 18,
-        "y": 13,
-        "name": "Elixir of Restoration"
+        "x": 16,
+        "y": 19,
+        "name": "Elixir of Rejuvenation"
       },
       {
-        "x": 22,
-        "y": 9,
-        "name": "Scanner of the Seer"
-      },
-      {
-        "x": 22,
-        "y": 11,
-        "name": "Shield of Warding"
-      },
-      {
-        "x": 27,
-        "y": 14,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 17,
+        "name": "Scope of Awareness"
       }
     ],
     "portals": [],
