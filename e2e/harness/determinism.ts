@@ -47,6 +47,16 @@ export interface HarnessApi {
   now: () => number;
   /** Frames actually driven, for asserting the loop was really running. */
   framesDriven: () => number;
+  /**
+   * Restart the RNG stream from a seed, without touching the clock or queue.
+   *
+   * The harness has to be installed early — the moment the canvas exists — so
+   * the game stops advancing on real rAF while the scenario is being set up.
+   * But re-seeding must happen with no await between it and the first tick, or
+   * a real timer draws in the gap. Those two requirements pull apart, so
+   * seeding is separable from installing.
+   */
+  reseed: (seed: number) => void;
   /** Hand control back to the browser; restores every patched global. */
   release: () => void;
 }
@@ -184,6 +194,16 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
         }
         framesDriven++;
       }
+    },
+    reseed(seed: number): void {
+      let r = seed >>> 0;
+      Math.random = () => {
+        r = (r + 0x6d2b79f5) >>> 0;
+        let t = r;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
     },
     now: () => virtualNow - clockOrigin,
     framesDriven: () => framesDriven,

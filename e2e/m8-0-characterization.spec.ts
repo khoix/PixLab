@@ -60,10 +60,25 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
     // still shows up in the hp series — it just cannot end the run early.
     window.__PIXLAB_TEST__?.updateStats({ hp: 1_000_000, maxHp: 1_000_000 });
   }, scenario.sector);
+  // Freeze BEFORE the sector goes live, while still in the lobby.
+  //
+  // Freezing after entry was not enough. Between the canvas appearing and the
+  // harness taking the frame queue, the game ran at real speed — and clearing
+  // mobs afterwards does not undo what that window left behind: attack
+  // cooldowns, particles, projectiles and timer stamps all persist in refs the
+  // test hooks cannot reach. `melee` reproduced two runs in four, because its
+  // mobs start adjacent and a few stray live frames are several points of hp.
+  //
+  // With the queue taken first, entering the sector still generates the level
+  // (React and generation are synchronous, neither needs rAF) but the loop
+  // cannot advance a single frame until the driver says so. There is no live
+  // window at all.
+  await page.evaluate((seed) => {
+    (window as unknown as { __install: typeof installDeterminism }).__install(seed);
+  }, scenario.seed);
+
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas').waitFor({ state: 'visible' });
-  // Let the level settle on real rAF before the queue is taken.
-  await page.waitForTimeout(600);
 
   const placed = await applyScenario(page, scenario);
   expect(placed, `scenario ${scenario.name} placed no mobs`).toBe(scenario.mobs.length);
@@ -78,13 +93,6 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
     expect(population, `${scenario.name} roster does not match its placements`).toBe(placed);
   }
 
-  await page.evaluate((seed) => {
-    // Inlined into the page; see installDeterminism on why it is self-contained.
-    // No epoch is passed: the virtual clock continues from the real one so the
-    // stamps taken during level generation stay valid.
-    (window as unknown as { __install: typeof installDeterminism }).__install(seed);
-  }, scenario.seed);
-
   // Every frame and every sample is taken inside ONE synchronous page call.
   //
   // The previous driver ticked a batch, awaited a snapshot, ticked again. Each
@@ -97,8 +105,12 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   //
   // With no awaits mid-run there are no gaps for a timer to land in.
   const raws = (await page.evaluate(
-    ([frames, step, sampleEvery, track]) => {
+    ([frames, step, sampleEvery, track, seed]) => {
       const replay = window.__PIXLAB_REPLAY__!;
+      // Restart the stream here, with no await between this and the last tick,
+      // so a real timer firing during setup cannot offset the simulation's
+      // draws. The harness itself was installed earlier, to stop the clock.
+      replay.reseed(seed as number);
       const level = window.__PIXLAB_LEVEL__!;
       const input = window.__PIXLAB_GAME_INPUT__;
       const segments = track as Array<{ frames: number; dir: { x: number; y: number } }>;
@@ -142,7 +154,7 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
       input?.clear();
       return out;
     },
-    [scenario.frames, scenario.stepMs, scenario.sampleEvery, scenario.input ?? []] as const,
+    [scenario.frames, scenario.stepMs, scenario.sampleEvery, scenario.input ?? [], scenario.seed] as const,
   )) as RawSnapshot[];
 
   const snapshots: RunSnapshot[] = [];

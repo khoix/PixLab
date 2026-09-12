@@ -247,6 +247,14 @@ export async function applyScenario(page: Page, scenario: Scenario): Promise<num
     if (!s.keepGeneratedRoster) level.clearMobs();
     level.clearPortals();
 
+    // Pin the player before measuring rings. The game runs live between sector
+    // entry and the harness freezing it, so its position at setup time carries
+    // however long that took — which made mob placement, and therefore the
+    // whole run, depend on real wall-clock jitter.
+    const spawn = level.getPlayerPos();
+    const anchor = { x: Math.round(spawn.x), y: Math.round(spawn.y) };
+    if (level.isFloor(anchor.x, anchor.y)) level.setPlayerPos(anchor);
+
     const origin = level.getPlayerPos();
     const ox = Math.round(origin.x);
     const oy = Math.round(origin.y);
