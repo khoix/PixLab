@@ -5,7 +5,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -37,10 +37,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -62,7 +62,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 0,
-      "leftSec": 118,
       "paused": false
     }
   },
@@ -72,7 +71,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -104,10 +103,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -129,7 +128,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 117,
       "paused": false
     }
   },
@@ -139,7 +137,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -171,10 +169,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -196,7 +194,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 116,
       "paused": false
     }
   },
@@ -206,7 +203,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -238,10 +235,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -263,7 +260,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 115,
       "paused": false
     }
   },
@@ -273,7 +269,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -305,10 +301,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -330,7 +326,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 115,
       "paused": false
     }
   },
@@ -340,7 +335,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -372,10 +367,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -397,7 +392,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 114,
       "paused": false
     }
   },
@@ -407,7 +401,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -439,10 +433,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -464,7 +458,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 113,
       "paused": false
     }
   },
@@ -474,7 +467,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999992
     },
     "entities": [
       {
@@ -506,10 +499,10 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
@@ -531,7 +524,6 @@
     "portals": [],
     "timer": {
       "advancedMs": 960,
-      "leftSec": 112,
       "paused": false
     }
   }

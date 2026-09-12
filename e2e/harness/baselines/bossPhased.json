@@ -3,32 +3,31 @@
     "frame": 75,
     "virtualMs": 1200,
     "player": {
-      "x": 16,
+      "x": 15,
       "y": 14,
-      "hp": 1000000
+      "hp": 999848
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 15,
         "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "hp": 1317,
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 0,
-      "leftSec": 118,
       "paused": false
     }
   },
@@ -36,32 +35,31 @@
     "frame": 150,
     "virtualMs": 2400,
     "player": {
-      "x": 16,
+      "x": 15,
       "y": 14,
-      "hp": 1000000
+      "hp": 999848
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
-        "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "x": 16,
+        "y": 15,
+        "hp": 1297,
+        "bossPhase": "telegraph"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 117,
       "paused": false
     }
   },
@@ -69,32 +67,31 @@
     "frame": 225,
     "virtualMs": 3600,
     "player": {
-      "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "x": 17,
+      "y": 15,
+      "hp": 999848
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 17,
         "y": 14,
-        "hp": 1337,
+        "hp": 1267,
         "bossPhase": "ready"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 116,
       "paused": false
     }
   },
@@ -102,32 +99,31 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "x": 17,
+      "y": 13,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 17,
         "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "hp": 1247,
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 115,
       "paused": false
     }
   },
@@ -136,31 +132,30 @@
     "virtualMs": 6000,
     "player": {
       "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "y": 13,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 18,
         "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "hp": 1227,
+        "bossPhase": "telegraph"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 113,
       "paused": false
     }
   },
@@ -168,32 +163,31 @@
     "frame": 450,
     "virtualMs": 7200,
     "player": {
-      "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "x": 18,
+      "y": 13,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
-        "y": 14,
-        "hp": 1337,
+        "x": 17,
+        "y": 13,
+        "hp": 1207,
         "bossPhase": "ready"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 112,
       "paused": false
     }
   },
@@ -202,31 +196,30 @@
     "virtualMs": 8400,
     "player": {
       "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "y": 13,
+      "hp": 999546
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
-        "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "x": 17,
+        "y": 13,
+        "hp": 1187,
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 111,
       "paused": false
     }
   },
@@ -234,32 +227,31 @@
     "frame": 600,
     "virtualMs": 9600,
     "player": {
-      "x": 16,
-      "y": 14,
-      "hp": 1000000
+      "x": 17,
+      "y": 13,
+      "hp": 999395
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 17,
         "y": 14,
-        "hp": 1337,
-        "bossPhase": "ready"
+        "hp": 1167,
+        "bossPhase": "execute"
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 3,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 2
     },
     "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
-      "leftSec": 110,
       "paused": false
     }
   }
