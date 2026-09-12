@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { openLobby } from './helpers';
 import { installDeterminism, seedRandomOnly } from './harness/determinism';
-import { captureSnapshot, type RunSnapshot } from './harness/snapshot';
+import { normalizeSnapshot, type RawSnapshot, type RunSnapshot } from './harness/snapshot';
 import { SCENARIOS, applyScenario, type Scenario } from './harness/scenario';
 
 /**
@@ -85,46 +85,73 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
     (window as unknown as { __install: typeof installDeterminism }).__install(seed);
   }, scenario.seed);
 
-  const snapshots: RunSnapshot[] = [];
-  let rawElapsed: number | undefined;
-  let driven = 0;
-  while (driven < scenario.frames) {
-    const batch = Math.min(scenario.sampleEvery, scenario.frames - driven);
-    // The input track is driven inside the page, frame by frame, so a
-    // direction change lands on an exact frame rather than on a batch
-    // boundary. Batching the whole segment would quantize the player's path to
-    // the sample interval and make the baseline depend on `sampleEvery`.
-    await page.evaluate(
-      ([frames, step, startFrame, track]) => {
-        const replay = window.__PIXLAB_REPLAY__!;
-        const input = window.__PIXLAB_GAME_INPUT__;
-        const segments = track as Array<{ frames: number; dir: { x: number; y: number } }>;
-        const cycle = segments.reduce((sum, seg) => sum + seg.frames, 0);
-        for (let i = 0; i < (frames as number); i++) {
-          if (input && cycle > 0) {
-            let at = ((startFrame as number) + i) % cycle;
-            for (const seg of segments) {
-              if (at < seg.frames) {
-                input.setDirection(seg.dir);
-                break;
-              }
-              at -= seg.frames;
-            }
-          }
-          replay.tick(1, step as number);
-        }
-      },
-      [batch, scenario.stepMs, driven, scenario.input ?? []] as const,
-    );
-    driven += batch;
-    const captured = await captureSnapshot(page, driven, snapshots[snapshots.length - 1], rawElapsed);
-    rawElapsed = captured.rawElapsed;
-    snapshots.push(captured.snapshot);
-  }
+  // Every frame and every sample is taken inside ONE synchronous page call.
+  //
+  // The previous driver ticked a batch, awaited a snapshot, ticked again. Each
+  // await is a real round-trip during which the browser runs real timers — and
+  // rAF is virtualized here but setTimeout/setInterval are not. Something on a
+  // real timer draws from the shared Math.random in those gaps, so the stream
+  // was offset by a variable number of values and the same scenario produced
+  // different runs: draw counts came back [0,0,2,2,4,4,5] one run and
+  // [2,2,4,4,5,5,6] the next, and mob positions drifted with them.
+  //
+  // With no awaits mid-run there are no gaps for a timer to land in.
+  const raws = (await page.evaluate(
+    ([frames, step, sampleEvery, track]) => {
+      const replay = window.__PIXLAB_REPLAY__!;
+      const level = window.__PIXLAB_LEVEL__!;
+      const input = window.__PIXLAB_GAME_INPUT__;
+      const segments = track as Array<{ frames: number; dir: { x: number; y: number } }>;
+      const cycle = segments.reduce((sum, seg) => sum + seg.frames, 0);
+      const out: RawSnapshot[] = [];
 
-  // Stop the player before the digest settles, so a trailing direction cannot
-  // leak into the next scenario through shared input state.
-  await page.evaluate(() => window.__PIXLAB_GAME_INPUT__?.clear());
+      const read = (frame: number): RawSnapshot => ({
+        frame,
+        virtualMs: replay.now(),
+        player: { ...level.getPlayerPos(), hp: level.getPlayerHp() },
+        entities: level.getEntities().map((e) => ({
+          id: e.id,
+          subtype: e.mobSubtype,
+          type: e.type,
+          x: e.pos.x,
+          y: e.pos.y,
+          hp: e.hp,
+          bossPhase: e.bossPhase,
+        })),
+        pressure: level.getPressureStats(),
+        items: level.getItems().map((i) => ({ x: i.pos.x, y: i.pos.y, name: i.item.name })),
+        portals: level.getPortals().map((p) => ({ x: p.pos.x, y: p.pos.y })),
+        timerElapsedMs: window.__PIXLAB_TIMER__?.getElapsedMs() ?? -1,
+        timerLeftSec: window.__PIXLAB_TIMER__?.getTimeLeftSec([]) ?? -1,
+        timerPaused: window.__PIXLAB_TIMER__?.isPaused() ?? false,
+      });
+
+      for (let f = 0; f < (frames as number); f++) {
+        if (input && cycle > 0) {
+          let at = f % cycle;
+          for (const seg of segments) {
+            if (at < seg.frames) {
+              input.setDirection(seg.dir);
+              break;
+            }
+            at -= seg.frames;
+          }
+        }
+        replay.tick(1, step as number);
+        if ((f + 1) % (sampleEvery as number) === 0) out.push(read(f + 1));
+      }
+      input?.clear();
+      return out;
+    },
+    [scenario.frames, scenario.stepMs, scenario.sampleEvery, scenario.input ?? []] as const,
+  )) as RawSnapshot[];
+
+  const snapshots: RunSnapshot[] = [];
+  let previousElapsed: number | undefined;
+  for (const raw of raws) {
+    snapshots.push(normalizeSnapshot(raw, previousElapsed));
+    previousElapsed = raw.timerElapsedMs;
+  }
 
   const actuallyDriven = await page.evaluate(() => window.__PIXLAB_REPLAY__!.framesDriven());
   expect(actuallyDriven, 'harness did not drive the frames it was asked to').toBe(scenario.frames);
