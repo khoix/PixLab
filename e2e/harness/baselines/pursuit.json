@@ -42,18 +42,6 @@
       "holders": 0,
       "peakUsed": 0
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -103,18 +91,6 @@
       "holders": 0,
       "peakUsed": 0
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -164,18 +140,6 @@
       "holders": 0,
       "peakUsed": 0
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -225,18 +189,6 @@
       "holders": 0,
       "peakUsed": 0
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -286,18 +238,6 @@
       "holders": 1,
       "peakUsed": 1
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -347,18 +287,6 @@
       "holders": 1,
       "peakUsed": 1
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -408,18 +336,6 @@
       "holders": 1,
       "peakUsed": 1
     },
-    "items": [
-      {
-        "x": 5,
-        "y": 6,
-        "name": "Thruster of Haste"
-      },
-      {
-        "x": 11,
-        "y": 27,
-        "name": "Boots of the Fleet"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

@@ -123,33 +123,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -280,33 +253,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -437,33 +383,6 @@
       "holders": 3,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -594,33 +513,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -751,33 +643,6 @@
       "holders": 3,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -908,33 +773,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -1065,33 +903,6 @@
       "holders": 3,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -1222,33 +1033,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 4,
-        "y": 5,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 4,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 13,
-        "y": 17,
-        "name": "Armor of Resilience"
-      },
-      {
-        "x": 16,
-        "y": 19,
-        "name": "Elixir of Rejuvenation"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scope of Awareness"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

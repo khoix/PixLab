@@ -42,28 +42,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -113,28 +91,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -184,28 +140,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -255,28 +189,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -326,28 +238,6 @@
       "holders": 1,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -397,28 +287,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -468,28 +336,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -539,28 +385,6 @@
       "holders": 2,
       "peakUsed": 3
     },
-    "items": [
-      {
-        "x": 3,
-        "y": 3,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 16,
-        "y": 1,
-        "name": "Stim of Velocity"
-      },
-      {
-        "x": 25,
-        "y": 19,
-        "name": "Dagger of the Wind"
-      },
-      {
-        "x": 26,
-        "y": 3,
-        "name": "Dagger of Lightning"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

@@ -42,23 +42,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -108,23 +91,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -174,23 +140,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -240,23 +189,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -306,23 +238,6 @@
       "holders": 2,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -363,23 +278,6 @@
       "holders": 0,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -420,23 +318,6 @@
       "holders": 1,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -477,23 +358,6 @@
       "holders": 1,
       "peakUsed": 2
     },
-    "items": [
-      {
-        "x": 17,
-        "y": 24,
-        "name": "Amplifier of Precise Strike"
-      },
-      {
-        "x": 21,
-        "y": 17,
-        "name": "Scroll of Loot-sense"
-      },
-      {
-        "x": 25,
-        "y": 17,
-        "name": "Scanner of Precise Strike"
-      }
-    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
