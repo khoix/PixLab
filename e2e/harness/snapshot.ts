@@ -53,8 +53,14 @@ export interface RunSnapshot {
    * harness installed — it differed by 10ms between two runs of the same
    * scenario. The delta is what a timer regression would actually move: a
    * clock running at the wrong rate, or one that stops advancing.
+   *
+   * `leftSec` was recorded alongside it and removed for the same reason, one
+   * fix later than it should have been: remaining-seconds is the absolute
+   * elapsed rounded to a second, so it sits on a boundary and flipped 115/114
+   * between two runs of `bossRanged`. It also added no coverage the delta does
+   * not already give.
    */
-  timer: { advancedMs: number; leftSec: number; paused: boolean };
+  timer: { advancedMs: number; paused: boolean };
 }
 
 /** Exactly what the in-page driver returns per sample, before normalizing. */
@@ -67,7 +73,6 @@ export interface RawSnapshot {
   items: Array<{ x: number; y: number; name: string }>;
   portals: Array<{ x: number; y: number }>;
   timerElapsedMs: number;
-  timerLeftSec: number;
   timerPaused: boolean;
 }
 
@@ -106,7 +111,6 @@ export function normalizeSnapshot(raw: RawSnapshot, previousElapsedMs?: number):
     timer: {
       // Quantized to 10ms: a sub-frame sampling offset is not a regression.
       advancedMs: Math.round(advanced / 10) * 10,
-      leftSec: Math.round(raw.timerLeftSec),
       paused: raw.timerPaused,
     },
   };

@@ -122,7 +122,6 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
         items: level.getItems().map((i) => ({ x: i.pos.x, y: i.pos.y, name: i.item.name })),
         portals: level.getPortals().map((p) => ({ x: p.pos.x, y: p.pos.y })),
         timerElapsedMs: window.__PIXLAB_TIMER__?.getElapsedMs() ?? -1,
-        timerLeftSec: window.__PIXLAB_TIMER__?.getTimeLeftSec([]) ?? -1,
         timerPaused: window.__PIXLAB_TIMER__?.isPaused() ?? false,
       });
 
