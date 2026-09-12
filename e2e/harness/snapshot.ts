@@ -15,7 +15,8 @@
  *   - every entity's id, subtype, position, hp and boss phase
  *   - attack-pressure occupancy (the M6.4b scheduler's observable state)
  *   - generated item drops (position and name)
- *   - a hash of the maze itself, and its floor count
+ *   - a hash of the maze itself, its floor count and its exit
+ *   - a hash of the roster generation produced, before a scenario clears it
  *   - portal positions
  *   - sector timer advance
  *
@@ -86,16 +87,23 @@ export interface WorldDigest {
    * matched, and only the items gave it away.
    */
   rosterHash: string;
-  /**
-   * `Math.random` draws consumed by the generation call that produced this
-   * level.
-   *
-   * Diagnostic, and the fastest way to read a divergence: an equal count with
-   * a different world means the same path through `generateLevel` taking a
-   * different value somewhere, a different count means a different branch.
-   */
-  generationDraws: number;
 }
+
+/*
+ * Why the generation draw-count is *not* a field here, having briefly been one.
+ *
+ * It was added to localize a cross-machine divergence and it did its job: on CI
+ * `bossPhased` matched on maze, floor count, exit and roster and differed only
+ * in the count. That said the world was reproducible and the harness's own
+ * detection of generation boundaries was not — which is a fact about the
+ * instrument, not about the game.
+ *
+ * A digest field that can go red while every behavioural field is identical is
+ * the brittleness this file's opening warns about, so the count now rides along
+ * as a test annotation instead. That is a different judgement from dropping the
+ * item field earlier, which was a real output of the engine removed to make a
+ * symptom go away.
+ */
 
 export interface RunSnapshot {
   frame: number;

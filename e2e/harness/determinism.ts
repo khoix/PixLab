@@ -245,13 +245,34 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
         const shim = stack.indexOf('\n');
         const callerStart = stack.indexOf('\n', shim + 1);
         const callerEnd = stack.indexOf('\n', callerStart + 1);
-        const site =
+        const raw =
           callerStart < 0 ? '' : stack.slice(callerStart + 1, callerEnd < 0 ? undefined : callerEnd);
-        // Entering `generateLevel` from outside is the obvious boundary; the
-        // one that matters is arriving back at the *entry* draw site with the
-        // previous draw somewhere else, which is what two back-to-back calls
-        // look like when nothing else draws in between.
-        if (entrySite === null || !insideGeneration || (site === entrySite && previousSite !== entrySite)) {
+        // Compare function name and line:col only. The raw frame carries the
+        // dev server's origin and, when Vite re-fetches a module, a `?t=`
+        // cache-buster — neither of which says anything about where in the
+        // code the draw came from, and either of which would silently stop the
+        // site comparison below from ever matching.
+        const site = raw.replace(/https?:\/\/[^/]+/g, '').replace(/\?[^):]*/g, '');
+
+        // The *only* boundary is arriving at the entry draw site from
+        // somewhere else. There used to be a second clause — anchor on any
+        // draw inside a generation that follows a draw outside one — and it
+        // was a liability rather than a belt: it fires whenever
+        // `generateLevel` momentarily fails to appear in the captured stack,
+        // and the next draw then re-seeds *mid-generation*.
+        //
+        // CI showed exactly that. `bossPhased` reported 5993 draws for its
+        // first completed generation against 6120 here, for a level whose
+        // maze, floor count, exit and roster all matched byte for byte — so
+        // generation was deterministic and the detection of its boundaries was
+        // not. On a boss sector the misfire lands in the item-free tail and
+        // the world survives it; on a normal sector it lands in the item loop,
+        // which is precisely where the five normal scenarios diverged.
+        //
+        // The entry site cannot recur inside a generation — the maze-carve
+        // loop, and the arena's first draw, each run once and contiguously —
+        // so this rule cannot misfire that way.
+        if (entrySite === null || (site === entrySite && previousSite !== entrySite)) {
           if (entrySite === null) entrySite = site;
           a = worldSeed;
           generationsSeeded++;
