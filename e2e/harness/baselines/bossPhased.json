@@ -1,0 +1,266 @@
+[
+  {
+    "frame": 75,
+    "virtualMs": 1200,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "leftSec": 118,
+      "paused": false
+    }
+  },
+  {
+    "frame": 150,
+    "virtualMs": 2400,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 117,
+      "paused": false
+    }
+  },
+  {
+    "frame": 225,
+    "virtualMs": 3600,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 116,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 115,
+      "paused": false
+    }
+  },
+  {
+    "frame": 375,
+    "virtualMs": 6000,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 113,
+      "paused": false
+    }
+  },
+  {
+    "frame": 450,
+    "virtualMs": 7200,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 112,
+      "paused": false
+    }
+  },
+  {
+    "frame": 525,
+    "virtualMs": 8400,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 111,
+      "paused": false
+    }
+  },
+  {
+    "frame": 600,
+    "virtualMs": 9600,
+    "player": {
+      "x": 16,
+      "y": 14,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 14,
+        "y": 14,
+        "hp": 1337,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 110,
+      "paused": false
+    }
+  }
+]
