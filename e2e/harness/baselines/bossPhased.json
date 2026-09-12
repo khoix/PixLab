@@ -3,8 +3,8 @@
     "frame": 75,
     "virtualMs": 1200,
     "player": {
-      "x": 13,
-      "y": 17,
+      "x": 17,
+      "y": 15,
       "hp": 999848
     },
     "entities": [
@@ -12,8 +12,8 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 12,
-        "y": 16,
+        "x": 16,
+        "y": 15,
         "hp": 1317,
         "bossPhase": "execute"
       }
@@ -24,6 +24,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -34,8 +35,8 @@
     "frame": 150,
     "virtualMs": 2400,
     "player": {
-      "x": 13,
-      "y": 17,
+      "x": 17,
+      "y": 15,
       "hp": 999848
     },
     "entities": [
@@ -43,10 +44,10 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 13,
-        "y": 17,
+        "x": 17,
+        "y": 15,
         "hp": 1297,
-        "bossPhase": "ready"
+        "bossPhase": "telegraph"
       }
     ],
     "pressure": {
@@ -55,6 +56,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -65,8 +67,8 @@
     "frame": 225,
     "virtualMs": 3600,
     "player": {
-      "x": 14,
-      "y": 17,
+      "x": 18,
+      "y": 15,
       "hp": 999697
     },
     "entities": [
@@ -74,8 +76,8 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 13,
-        "y": 17,
+        "x": 17,
+        "y": 15,
         "hp": 1267,
         "bossPhase": "recover"
       }
@@ -86,6 +88,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -96,19 +99,19 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 14,
-      "y": 15,
-      "hp": 999546
+      "x": 18,
+      "y": 13,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
-        "y": 16,
+        "x": 18,
+        "y": 15,
         "hp": 1247,
-        "bossPhase": "execute"
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
@@ -117,6 +120,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -127,19 +131,19 @@
     "frame": 375,
     "virtualMs": 6000,
     "player": {
-      "x": 14,
-      "y": 17,
-      "hp": 999546
+      "x": 17,
+      "y": 13,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 13,
-        "y": 17,
+        "x": 19,
+        "y": 14,
         "hp": 1227,
-        "bossPhase": "ready"
+        "bossPhase": "telegraph"
       }
     ],
     "pressure": {
@@ -148,6 +152,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -158,17 +163,17 @@
     "frame": 450,
     "virtualMs": 7200,
     "player": {
-      "x": 14,
-      "y": 16,
-      "hp": 999395
+      "x": 19,
+      "y": 15,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 13,
-        "y": 17,
+        "x": 19,
+        "y": 14,
         "hp": 1207,
         "bossPhase": "recover"
       }
@@ -179,6 +184,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -189,19 +195,19 @@
     "frame": 525,
     "virtualMs": 8400,
     "player": {
-      "x": 14,
-      "y": 16,
-      "hp": 999244
+      "x": 17,
+      "y": 15,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
-        "y": 17,
+        "x": 19,
+        "y": 15,
         "hp": 1187,
-        "bossPhase": "execute"
+        "bossPhase": "recover"
       }
     ],
     "pressure": {
@@ -210,6 +216,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,
@@ -220,19 +227,19 @@
     "frame": 600,
     "virtualMs": 9600,
     "player": {
-      "x": 14,
-      "y": 16,
-      "hp": 999244
+      "x": 17,
+      "y": 14,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 14,
+        "x": 18,
         "y": 16,
-        "hp": 1167,
-        "bossPhase": "ready"
+        "hp": 1157,
+        "bossPhase": "telegraph"
       }
     ],
     "pressure": {
@@ -241,6 +248,7 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [],
     "portals": [],
     "timer": {
       "advancedMs": 1200,

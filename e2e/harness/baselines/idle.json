@@ -14,6 +14,13 @@
       "holders": 0,
       "peakUsed": 0
     },
+    "items": [
+      {
+        "x": 22,
+        "y": 1,
+        "name": "Dagger of Lightning"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -35,6 +42,13 @@
       "holders": 0,
       "peakUsed": 0
     },
+    "items": [
+      {
+        "x": 22,
+        "y": 1,
+        "name": "Dagger of Lightning"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -56,6 +70,13 @@
       "holders": 0,
       "peakUsed": 0
     },
+    "items": [
+      {
+        "x": 22,
+        "y": 1,
+        "name": "Dagger of Lightning"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -77,6 +98,13 @@
       "holders": 0,
       "peakUsed": 0
     },
+    "items": [
+      {
+        "x": 22,
+        "y": 1,
+        "name": "Dagger of Lightning"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -98,6 +126,13 @@
       "holders": 0,
       "peakUsed": 0
     },
+    "items": [
+      {
+        "x": 22,
+        "y": 1,
+        "name": "Dagger of Lightning"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

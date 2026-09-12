@@ -4,16 +4,16 @@
     "virtualMs": 960,
     "player": {
       "x": 1,
-      "y": 1,
-      "hp": 999978
+      "y": 3,
+      "hp": 1000000
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -21,8 +21,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -30,18 +30,40 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 4,
-        "y": 5,
-        "hp": 79,
+        "x": 3.364,
+        "y": 2.188,
+        "hp": 69,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 1,
       "cap": 3,
-      "holders": 2,
-      "peakUsed": 3
+      "holders": 1,
+      "peakUsed": 1
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -54,15 +76,15 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999935
+      "hp": 1000000
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -70,8 +92,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -79,9 +101,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 1.998,
-        "y": 3.292,
-        "hp": 79,
+        "x": 3.374,
+        "y": 1.783,
+        "hp": 69,
         "bossPhase": null
       }
     ],
@@ -91,6 +113,28 @@
       "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -101,17 +145,17 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 2,
-      "y": 1,
-      "hp": 999892
+      "x": 1,
+      "y": 3,
+      "hp": 1000000
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -119,8 +163,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -128,9 +172,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 1.432,
-        "y": 3.435,
-        "hp": 79,
+        "x": 1.485,
+        "y": 5.453,
+        "hp": 59,
         "bossPhase": null
       }
     ],
@@ -140,6 +184,28 @@
       "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -152,15 +218,15 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999892
+      "hp": 999978
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -168,8 +234,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -177,9 +243,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.384,
-        "y": 1.752,
-        "hp": 79,
+        "x": 1.221,
+        "y": 5.49,
+        "hp": 59,
         "bossPhase": null
       }
     ],
@@ -189,6 +255,28 @@
       "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -199,17 +287,17 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999806
+      "x": 1,
+      "y": 3,
+      "hp": 999957
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -217,8 +305,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -226,18 +314,40 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.518,
-        "y": 3.446,
-        "hp": 79,
+        "x": 3.016,
+        "y": 4.478,
+        "hp": 49,
         "bossPhase": null
       }
     ],
     "pressure": {
       "used": 2,
       "cap": 3,
-      "holders": 1,
+      "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -250,15 +360,15 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999806
+      "hp": 999957
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -266,8 +376,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -275,18 +385,40 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.406,
-        "y": 1.677,
-        "hp": 79,
+        "x": 1.356,
+        "y": 3.474,
+        "hp": 49,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 3,
+      "used": 2,
       "cap": 3,
-      "holders": 2,
+      "holders": 1,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -297,17 +429,17 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999806
+      "x": 1,
+      "y": 2,
+      "hp": 999957
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -315,8 +447,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -324,9 +456,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.593,
-        "y": 3.429,
-        "hp": 79,
+        "x": 3.432,
+        "y": 2.578,
+        "hp": 49,
         "bossPhase": null
       }
     ],
@@ -336,6 +468,28 @@
       "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -348,15 +502,15 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999763
+      "hp": 999957
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 5,
+        "y": 5,
         "hp": 77,
         "bossPhase": null
       },
@@ -364,8 +518,8 @@
         "id": "demo-enemy-1",
         "subtype": "turret",
         "type": "enemy",
-        "x": 6,
-        "y": 4,
+        "x": 7,
+        "y": 1,
         "hp": 154,
         "bossPhase": null
       },
@@ -373,9 +527,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 1.799,
-        "y": 3.492,
-        "hp": 79,
+        "x": 1.192,
+        "y": 3.493,
+        "hp": 49,
         "bossPhase": null
       }
     ],
@@ -385,6 +539,28 @@
       "holders": 2,
       "peakUsed": 3
     },
+    "items": [
+      {
+        "x": 3,
+        "y": 20,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 5,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 13,
+        "y": 11,
+        "name": "Scroll of Phasing"
+      },
+      {
+        "x": 25,
+        "y": 23,
+        "name": "Spear of the Seer"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

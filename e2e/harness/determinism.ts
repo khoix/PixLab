@@ -57,6 +57,35 @@ export interface HarnessApi {
    * seeding is separable from installing.
    */
   reseed: (seed: number) => void;
+  /**
+   * Restart the stream at the start of every synchronous burst of draws.
+   *
+   * `Game.tsx:708` calls `generateLevel(state.currentLevel, 30, 30, ...)` in
+   * its **render body**, unconditionally — a full 30x30 maze carve, roster and
+   * item roll, ~18,500 `Math.random()` calls, thrown away on every render of
+   * the page. So the stream position when the canvas finally generates the
+   * real level depends on how many times React happened to render the lobby
+   * first, which is wall-clock dependent: a probe with an 800ms pause before
+   * entry consumed 18,227 draws where no pause consumed 36,753, and the two
+   * runs produced different mazes from the same seed.
+   *
+   * That is why the baselines recorded here did not reproduce on CI: a slower
+   * runner renders a different number of times and generates a different
+   * world. Re-seeding once before entry cannot fix it — the offset accrues
+   * *after* the seed.
+   *
+   * In this mode each synchronous burst starts from the same seed instead, so
+   * `generateLevel` produces the same level on its first call and its fifth.
+   * The render count stops mattering. A burst is delimited by the microtask
+   * checkpoint, which is exactly the boundary React's render phase and its
+   * scheduled passive-effect flush fall either side of.
+   *
+   * Only for world setup. Leaving it on during the driven frames would restart
+   * the stream every frame and the simulation would repeat itself.
+   */
+  beginWorldSetup: (seed: number) => void;
+  /** Return to one continuous stream. */
+  endWorldSetup: () => void;
   /** Hand control back to the browser; restores every patched global. */
   release: () => void;
 }
@@ -125,12 +154,29 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
   // M8.4-M8.6's job, not this milestone's.
   let a = seed >>> 0;
   const realRandom = Math.random;
-  Math.random = () => {
+  const draw = (): number => {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  // Burst re-seeding — off unless `beginWorldSetup` turns it on. See the note
+  // on `beginWorldSetup` for why level generation needs it.
+  let worldSetup = false;
+  let worldSeed = seed >>> 0;
+  let burstOpen = false;
+  Math.random = () => {
+    if (worldSetup && !burstOpen) {
+      burstOpen = true;
+      a = worldSeed;
+      // Closes when the JS stack empties, so one synchronous `generateLevel`
+      // is one burst no matter how many values it draws.
+      queueMicrotask(() => {
+        burstOpen = false;
+      });
+    }
+    return draw();
   };
 
   // --- virtual clock ------------------------------------------------------
@@ -196,14 +242,19 @@ export function installDeterminism(seed: number, startEpochMs?: number): void {
       }
     },
     reseed(seed: number): void {
-      let r = seed >>> 0;
-      Math.random = () => {
-        r = (r + 0x6d2b79f5) >>> 0;
-        let t = r;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
+      worldSetup = false;
+      burstOpen = false;
+      a = seed >>> 0;
+    },
+    beginWorldSetup(seed: number): void {
+      worldSeed = seed >>> 0;
+      a = worldSeed;
+      worldSetup = true;
+      burstOpen = false;
+    },
+    endWorldSetup(): void {
+      worldSetup = false;
+      burstOpen = false;
     },
     now: () => virtualNow - clockOrigin,
     framesDriven: () => framesDriven,

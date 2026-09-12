@@ -77,6 +77,27 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
     (window as unknown as { __install: typeof installDeterminism }).__install(seed);
   }, scenario.seed);
 
+  // Re-seeding once here is not enough, and the first CI run proved it: the
+  // baselines reproduced perfectly on this machine and generated a different
+  // *world* on the runner — different items, then, once `idle` stopped failing
+  // early and the rest actually ran, a different maze, which is why `pursuit`
+  // showed mobs that never reached the player.
+  //
+  // `Game.tsx:708` calls `generateLevel(state.currentLevel, 30, 30, ...)` in
+  // its render body. Every render of the page carves a 30x30 maze, rolls a
+  // roster and rolls items — about 18,500 `Math.random()` draws — and discards
+  // all of it. So the stream position at the moment the canvas generates the
+  // real level is a function of how many times React happened to render first,
+  // and that is wall-clock dependent: a probe measured 36,753 draws between
+  // seeding and entry with no pause and 18,227 with an 800ms one, giving two
+  // different mazes from one seed.
+  //
+  // Burst mode restarts the stream at each synchronous run of draws, so
+  // `generateLevel` returns the same level whichever render calls it and the
+  // render count stops mattering. Verified by re-running that probe across
+  // 0/800/2500ms pauses: identical maze hash, roster, items and next value.
+  await page.evaluate((seed) => window.__PIXLAB_REPLAY__!.beginWorldSetup(seed), scenario.seed);
+
   await page.getByTestId('enter-sector-button').click();
   await page.locator('canvas').waitFor({ state: 'visible' });
 
@@ -110,6 +131,10 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
       // Restart the stream here, with no await between this and the last tick,
       // so a real timer firing during setup cannot offset the simulation's
       // draws. The harness itself was installed earlier, to stop the clock.
+      //
+      // `reseed` also leaves burst mode. The simulation wants one continuous
+      // stream — re-seeding every frame would make every frame draw the same
+      // values and the run would stop being a run.
       replay.reseed(seed as number);
       const level = window.__PIXLAB_LEVEL__!;
       const input = window.__PIXLAB_GAME_INPUT__;
@@ -131,6 +156,7 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
           bossPhase: e.bossPhase,
         })),
         pressure: level.getPressureStats(),
+        items: level.getItems().map((i) => ({ x: i.pos.x, y: i.pos.y, name: i.item.name })),
         portals: level.getPortals().map((p) => ({ x: p.pos.x, y: p.pos.y })),
         timerElapsedMs: window.__PIXLAB_TIMER__?.getElapsedMs() ?? -1,
         timerPaused: window.__PIXLAB_TIMER__?.isPaused() ?? false,

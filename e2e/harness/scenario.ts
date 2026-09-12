@@ -119,15 +119,24 @@ export const SCENARIOS: Scenario[] = [
       { frames: 16, dir: { x: 0, y: 0 } },
     ],
     sector: 5,
-    frames: 420,
+    frames: 600,
     stepMs: STEP_MS,
     sampleEvery: 60,
+    // Ring 3/4, not 6/7. At six tiles and 420 frames the approach never
+    // finished: the re-recorded baseline had zero damage either way and one of
+    // the three mobs standing still for the whole run, so the scenario meant to
+    // characterize pathing was characterizing a walk down an empty corridor.
+    //
+    // The distance is the whole point of this scenario, so it is shortened
+    // rather than removed — close enough to make contact inside the window,
+    // far enough that the mobs have to path there. `melee` is the one that
+    // starts adjacent.
     mobs: [
-      { subtype: 'drone', ring: 6 },
-      { subtype: 'charger', ring: 6 },
+      { subtype: 'drone', ring: 3 },
+      { subtype: 'charger', ring: 3 },
       // Walks through rock on the M6.7 budget — the one mover whose pathing is
       // not constrained by walls, so it exercises a distinct commit gate.
-      { subtype: 'phase', ring: 7 },
+      { subtype: 'phase', ring: 4 },
     ],
   },
   {

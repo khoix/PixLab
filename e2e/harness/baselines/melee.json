@@ -3,8 +3,8 @@
     "frame": 60,
     "virtualMs": 960,
     "player": {
-      "x": 1,
-      "y": 1,
+      "x": 2,
+      "y": 2,
       "hp": 999971
     },
     "entities": [
@@ -12,9 +12,9 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
+        "x": 2,
         "y": 1,
-        "hp": 67,
+        "hp": 77,
         "bossPhase": null
       },
       {
@@ -22,8 +22,8 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 182,
+        "y": 2,
+        "hp": 192,
         "bossPhase": null
       },
       {
@@ -31,8 +31,8 @@
         "subtype": "tracker",
         "type": "enemy",
         "x": 3,
-        "y": 2,
-        "hp": 46,
+        "y": 1,
+        "hp": 56,
         "bossPhase": null
       }
     ],
@@ -42,6 +42,23 @@
       "holders": 2,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -52,16 +69,16 @@
     "frame": 120,
     "virtualMs": 1920,
     "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999929
+      "x": 3,
+      "y": 2,
+      "hp": 999936
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 1,
+        "x": 2,
         "y": 1,
         "hp": 67,
         "bossPhase": null
@@ -70,8 +87,8 @@
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
-        "y": 1,
+        "x": 3,
+        "y": 2,
         "hp": 182,
         "bossPhase": null
       },
@@ -80,7 +97,7 @@
         "subtype": "tracker",
         "type": "enemy",
         "x": 3,
-        "y": 2,
+        "y": 1,
         "hp": 46,
         "bossPhase": null
       }
@@ -91,6 +108,23 @@
       "holders": 2,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -102,8 +136,8 @@
     "virtualMs": 2880,
     "player": {
       "x": 3,
-      "y": 2,
-      "hp": 999901
+      "y": 4,
+      "hp": 999902
     },
     "entities": [
       {
@@ -111,8 +145,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 47,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
@@ -120,8 +154,8 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 1,
-        "hp": 162,
+        "y": 3,
+        "hp": 172,
         "bossPhase": null
       },
       {
@@ -129,8 +163,8 @@
         "subtype": "tracker",
         "type": "enemy",
         "x": 3,
-        "y": 2,
-        "hp": 26,
+        "y": 1,
+        "hp": 36,
         "bossPhase": null
       }
     ],
@@ -140,6 +174,23 @@
       "holders": 2,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -151,8 +202,8 @@
     "virtualMs": 3840,
     "player": {
       "x": 3,
-      "y": 1,
-      "hp": 999867
+      "y": 5,
+      "hp": 999888
     },
     "entities": [
       {
@@ -160,8 +211,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 37,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
@@ -169,7 +220,7 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 1,
+        "y": 4,
         "hp": 152,
         "bossPhase": null
       },
@@ -178,8 +229,8 @@
         "subtype": "tracker",
         "type": "enemy",
         "x": 3,
-        "y": 2,
-        "hp": 16,
+        "y": 1,
+        "hp": 36,
         "bossPhase": null
       }
     ],
@@ -189,6 +240,23 @@
       "holders": 2,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -200,8 +268,8 @@
     "virtualMs": 4800,
     "player": {
       "x": 3,
-      "y": 3,
-      "hp": 999833
+      "y": 7,
+      "hp": 999874
     },
     "entities": [
       {
@@ -209,8 +277,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 27,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
@@ -218,7 +286,7 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 1,
+        "y": 5,
         "hp": 142,
         "bossPhase": null
       },
@@ -227,17 +295,34 @@
         "subtype": "tracker",
         "type": "enemy",
         "x": 3,
-        "y": 2,
-        "hp": 6,
+        "y": 1.5,
+        "hp": 36,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
+      "holders": 1,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -248,9 +333,9 @@
     "frame": 360,
     "virtualMs": 5760,
     "player": {
-      "x": 2,
-      "y": 3,
-      "hp": 999833
+      "x": 3,
+      "y": 5,
+      "hp": 999860
     },
     "entities": [
       {
@@ -258,8 +343,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 27,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
@@ -267,17 +352,43 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
+        "y": 5,
+        "hp": 132,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
         "y": 2,
-        "hp": 142,
+        "hp": 36,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
+      "holders": 1,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -289,8 +400,8 @@
     "virtualMs": 6720,
     "player": {
       "x": 3,
-      "y": 3,
-      "hp": 999819
+      "y": 6,
+      "hp": 999846
     },
     "entities": [
       {
@@ -298,8 +409,8 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 17,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
@@ -307,8 +418,17 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
-        "y": 3,
-        "hp": 132,
+        "y": 6,
+        "hp": 122,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 36,
         "bossPhase": null
       }
     ],
@@ -318,6 +438,23 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -328,9 +465,9 @@
     "frame": 480,
     "virtualMs": 7680,
     "player": {
-      "x": 1,
-      "y": 3,
-      "hp": 999805
+      "x": 3,
+      "y": 5,
+      "hp": 999818
     },
     "entities": [
       {
@@ -338,17 +475,26 @@
         "subtype": "drone",
         "type": "enemy",
         "x": 2,
-        "y": 1,
-        "hp": 17,
+        "y": 2,
+        "hp": 57,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 1,
-        "y": 3,
-        "hp": 122,
+        "x": 3,
+        "y": 6,
+        "hp": 112,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 36,
         "bossPhase": null
       }
     ],
@@ -358,6 +504,23 @@
       "holders": 1,
       "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 8,
+        "y": 25,
+        "name": "Spear of Foresight"
+      },
+      {
+        "x": 9,
+        "y": 17,
+        "name": "Gauntlets of War"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "name": "Sword of Power"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,

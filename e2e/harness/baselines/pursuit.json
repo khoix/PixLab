@@ -4,24 +4,24 @@
     "virtualMs": 960,
     "player": {
       "x": 1,
-      "y": 3,
-      "hp": 1000000
+      "y": 1,
+      "hp": 999983
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 4,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 46,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
+        "x": 3,
         "y": 3,
         "hp": 67,
         "bossPhase": null
@@ -30,18 +30,30 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
+        "x": 3,
         "y": 1,
-        "hp": 66,
+        "hp": 56,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 0,
@@ -54,24 +66,24 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999963
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 46,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 5,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -79,18 +91,30 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 8,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 56,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -101,26 +125,26 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 1,
-      "y": 3,
-      "hp": 1000000
+      "x": 2,
+      "y": 1,
+      "hp": 999947
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 2,
         "y": 1,
-        "hp": 66,
+        "hp": 26,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 7,
-        "y": 5,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -128,18 +152,30 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 6,
+        "x": 3,
         "y": 1,
-        "hp": 66,
+        "hp": 36,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -152,24 +188,24 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 1000000
+      "hp": 999933
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 26,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 6,
-        "y": 1,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -177,18 +213,30 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 36,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 2,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -199,9 +247,9 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 1,
-      "y": 3,
-      "hp": 999995
+      "x": 3,
+      "y": 1,
+      "hp": 999917
     },
     "entities": [
       {
@@ -210,15 +258,15 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 66,
+        "hp": 16,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -226,18 +274,30 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 56,
+        "x": 3,
+        "y": 1,
+        "hp": 26,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -250,24 +310,24 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999991
+      "hp": 999897
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
-        "hp": 66,
+        "hp": 6,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -277,16 +337,28 @@
         "type": "enemy",
         "x": 1,
         "y": 1,
-        "hp": 46,
+        "hp": 16,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 1,
+      "used": 2,
       "cap": 2,
-      "holders": 1,
-      "peakUsed": 1
+      "holders": 2,
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
@@ -297,26 +369,17 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 1,
-      "y": 2,
-      "hp": 999983
+      "x": 3,
+      "y": 1,
+      "hp": 999887
     },
     "entities": [
-      {
-        "id": "demo-enemy-0",
-        "subtype": "drone",
-        "type": "enemy",
-        "x": 3,
-        "y": 1,
-        "hp": 66,
-        "bossPhase": null
-      },
       {
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 4,
-        "y": 1,
+        "x": 3,
+        "y": 3,
         "hp": 67,
         "bossPhase": null
       },
@@ -324,9 +387,9 @@
         "id": "demo-enemy-2",
         "subtype": "phase",
         "type": "enemy",
-        "x": 1,
-        "y": 2,
-        "hp": 36,
+        "x": 2,
+        "y": 1,
+        "hp": 6,
         "bossPhase": null
       }
     ],
@@ -334,8 +397,149 @@
       "used": 1,
       "cap": 2,
       "holders": 1,
-      "peakUsed": 1
+      "peakUsed": 2
     },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999883
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 67,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 540,
+    "virtualMs": 8640,
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999883
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 67,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 600,
+    "virtualMs": 9600,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999883
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 67,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 2
+    },
+    "items": [
+      {
+        "x": 15,
+        "y": 5,
+        "name": "Axe of Might"
+      },
+      {
+        "x": 19,
+        "y": 7,
+        "name": "Elixir of Renewal"
+      }
+    ],
     "portals": [],
     "timer": {
       "advancedMs": 960,
