@@ -16,14 +16,14 @@
     },
     "items": [
       {
-        "x": 9,
-        "y": 1,
-        "name": "Amplifier of the Seer"
+        "x": 22,
+        "y": 13,
+        "name": "Mace of Power"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 1670,
+      "advancedMs": 0,
       "leftSec": 118,
       "paused": false
     }
@@ -45,14 +45,14 @@
     },
     "items": [
       {
-        "x": 9,
-        "y": 1,
-        "name": "Amplifier of the Seer"
+        "x": 22,
+        "y": 13,
+        "name": "Mace of Power"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 2630,
+      "advancedMs": 960,
       "leftSec": 117,
       "paused": false
     }
@@ -74,14 +74,14 @@
     },
     "items": [
       {
-        "x": 9,
-        "y": 1,
-        "name": "Amplifier of the Seer"
+        "x": 22,
+        "y": 13,
+        "name": "Mace of Power"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 3590,
+      "advancedMs": 960,
       "leftSec": 116,
       "paused": false
     }
@@ -103,14 +103,14 @@
     },
     "items": [
       {
-        "x": 9,
-        "y": 1,
-        "name": "Amplifier of the Seer"
+        "x": 22,
+        "y": 13,
+        "name": "Mace of Power"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 4550,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
@@ -132,14 +132,14 @@
     },
     "items": [
       {
-        "x": 9,
-        "y": 1,
-        "name": "Amplifier of the Seer"
+        "x": 22,
+        "y": 13,
+        "name": "Mace of Power"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 5510,
+      "advancedMs": 960,
       "leftSec": 114,
       "paused": false
     }

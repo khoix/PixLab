@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { openLobby } from './helpers';
-import { installDeterminism } from './harness/determinism';
+import { installDeterminism, seedRandomOnly } from './harness/determinism';
 import { captureSnapshot, type RunSnapshot } from './harness/snapshot';
 import { SCENARIOS, applyScenario, type Scenario } from './harness/scenario';
 
@@ -46,6 +46,11 @@ async function writeBaseline(name: string, snapshots: RunSnapshot[]): Promise<vo
 
 /** Drive one scenario end to end and return its sampled snapshots. */
 async function runScenario(page: import('@playwright/test').Page, scenario: Scenario) {
+  // Seeded before the page loads, so the maze, item drops and mob roster are
+  // generated from the scenario's seed rather than from real entropy. Seeding
+  // only at install time left the world random between runs.
+  await page.addInitScript(`(${seedRandomOnly.toString()})(${scenario.seed});`);
+  await page.addInitScript(`window.__install = ${installDeterminism.toString()};`);
   await openLobby(page);
   await page.evaluate((lvl) => {
     window.__PIXLAB_TEST__?.setCurrentLevel(lvl);
@@ -81,6 +86,7 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
   }, scenario.seed);
 
   const snapshots: RunSnapshot[] = [];
+  let rawElapsed: number | undefined;
   let driven = 0;
   while (driven < scenario.frames) {
     const batch = Math.min(scenario.sampleEvery, scenario.frames - driven);
@@ -111,7 +117,9 @@ async function runScenario(page: import('@playwright/test').Page, scenario: Scen
       [batch, scenario.stepMs, driven, scenario.input ?? []] as const,
     );
     driven += batch;
-    snapshots.push(await captureSnapshot(page, driven));
+    const captured = await captureSnapshot(page, driven, snapshots[snapshots.length - 1], rawElapsed);
+    rawElapsed = captured.rawElapsed;
+    snapshots.push(captured.snapshot);
   }
 
   // Stop the player before the digest settles, so a trailing direction cannot
@@ -131,11 +139,6 @@ test.describe('M8.0 — pre-split characterization', () => {
   for (const scenario of SCENARIOS) {
     test(`${scenario.name} reproduces its baseline`, async ({ page }) => {
       test.slow();
-      // The installer has to exist in the page before it can be called.
-      await page.addInitScript(
-        `window.__install = ${installDeterminism.toString()};`,
-      );
-
       const snapshots = await runScenario(page, scenario);
 
       if (UPDATE) {

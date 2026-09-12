@@ -27,7 +27,7 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 1890,
+      "advancedMs": 0,
       "leftSec": 118,
       "paused": false
     }
@@ -37,7 +37,40 @@
     "virtualMs": 2400,
     "player": {
       "x": 16,
-      "y": 13,
+      "y": 15,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 15,
+        "y": 15,
+        "hp": 1327,
+        "bossPhase": "ready"
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 3,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 117,
+      "paused": false
+    }
+  },
+  {
+    "frame": 225,
+    "virtualMs": 3600,
+    "player": {
+      "x": 15,
+      "y": 14,
       "hp": 999848
     },
     "entities": [
@@ -46,7 +79,7 @@
         "subtype": "boss_hades",
         "type": "boss_enemy",
         "x": 16,
-        "y": 13,
+        "y": 15,
         "hp": 1317,
         "bossPhase": "execute"
       }
@@ -60,17 +93,17 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 3090,
-      "leftSec": 117,
+      "advancedMs": 1200,
+      "leftSec": 116,
       "paused": false
     }
   },
   {
-    "frame": 225,
-    "virtualMs": 3600,
+    "frame": 300,
+    "virtualMs": 4800,
     "player": {
-      "x": 16,
-      "y": 14,
+      "x": 15,
+      "y": 15,
       "hp": 999848
     },
     "entities": [
@@ -78,8 +111,8 @@
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 15,
-        "y": 13,
+        "x": 16,
+        "y": 16,
         "hp": 1287,
         "bossPhase": "telegraph"
       }
@@ -93,40 +126,7 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 4290,
-      "leftSec": 116,
-      "paused": false
-    }
-  },
-  {
-    "frame": 300,
-    "virtualMs": 4800,
-    "player": {
-      "x": 16,
-      "y": 12,
-      "hp": 999697
-    },
-    "entities": [
-      {
-        "id": "boss-1",
-        "subtype": "boss_hades",
-        "type": "boss_enemy",
-        "x": 15,
-        "y": 13,
-        "hp": 1267,
-        "bossPhase": "recover"
-      }
-    ],
-    "pressure": {
-      "used": 2,
-      "cap": 3,
-      "holders": 1,
-      "peakUsed": 2
-    },
-    "items": [],
-    "portals": [],
-    "timer": {
-      "elapsedMs": 5490,
+      "advancedMs": 1200,
       "leftSec": 115,
       "paused": false
     }
@@ -135,9 +135,9 @@
     "frame": 375,
     "virtualMs": 6000,
     "player": {
-      "x": 17,
-      "y": 13,
-      "hp": 999546
+      "x": 15,
+      "y": 15,
+      "hp": 999848
     },
     "entities": [
       {
@@ -145,8 +145,8 @@
         "subtype": "boss_hades",
         "type": "boss_enemy",
         "x": 16,
-        "y": 13,
-        "hp": 1247,
+        "y": 16,
+        "hp": 1277,
         "bossPhase": "recover"
       }
     ],
@@ -159,7 +159,7 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 6690,
+      "advancedMs": 1200,
       "leftSec": 113,
       "paused": false
     }
@@ -168,17 +168,50 @@
     "frame": 450,
     "virtualMs": 7200,
     "player": {
-      "x": 18,
-      "y": 13,
-      "hp": 999546
+      "x": 14,
+      "y": 14,
+      "hp": 999697
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 12,
+        "x": 15,
+        "y": 16,
+        "hp": 1257,
+        "bossPhase": "recover"
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 3,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "leftSec": 112,
+      "paused": false
+    }
+  },
+  {
+    "frame": 525,
+    "virtualMs": 8400,
+    "player": {
+      "x": 16,
+      "y": 15,
+      "hp": 999697
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_hades",
+        "type": "boss_enemy",
+        "x": 16,
+        "y": 15,
         "hp": 1227,
         "bossPhase": "telegraph"
       }
@@ -192,26 +225,26 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 7890,
-      "leftSec": 112,
+      "advancedMs": 1200,
+      "leftSec": 111,
       "paused": false
     }
   },
   {
-    "frame": 525,
-    "virtualMs": 8400,
+    "frame": 600,
+    "virtualMs": 9600,
     "player": {
       "x": 16,
-      "y": 11,
-      "hp": 999395
+      "y": 15,
+      "hp": 999546
     },
     "entities": [
       {
         "id": "boss-1",
         "subtype": "boss_hades",
         "type": "boss_enemy",
-        "x": 17,
-        "y": 12,
+        "x": 16,
+        "y": 15,
         "hp": 1207,
         "bossPhase": "recover"
       }
@@ -225,40 +258,7 @@
     "items": [],
     "portals": [],
     "timer": {
-      "elapsedMs": 9090,
-      "leftSec": 111,
-      "paused": false
-    }
-  },
-  {
-    "frame": 600,
-    "virtualMs": 9600,
-    "player": {
-      "x": 17,
-      "y": 11,
-      "hp": 999244
-    },
-    "entities": [
-      {
-        "id": "boss-1",
-        "subtype": "boss_hades",
-        "type": "boss_enemy",
-        "x": 17,
-        "y": 11,
-        "hp": 1177,
-        "bossPhase": "recover"
-      }
-    ],
-    "pressure": {
-      "used": 2,
-      "cap": 3,
-      "holders": 1,
-      "peakUsed": 2
-    },
-    "items": [],
-    "portals": [],
-    "timer": {
-      "elapsedMs": 10290,
+      "advancedMs": 1200,
       "leftSec": 110,
       "paused": false
     }

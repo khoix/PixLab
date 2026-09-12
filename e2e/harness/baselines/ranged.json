@@ -44,29 +44,29 @@
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 1650,
+      "advancedMs": 0,
       "leftSec": 118,
       "paused": false
     }
@@ -77,7 +77,7 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999978
+      "hp": 1000000
     },
     "entities": [
       {
@@ -102,8 +102,152 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.449,
-        "y": 1.503,
+        "x": 5,
+        "y": 1,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
+      },
+      {
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
+      },
+      {
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
+      },
+      {
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "leftSec": 117,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
+      },
+      {
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
+      },
+      {
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
+      },
+      {
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "leftSec": 116,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 3.445,
+        "y": 1.521,
         "hp": 79,
         "bossPhase": null
       }
@@ -116,173 +260,29 @@
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 2610,
-      "leftSec": 117,
-      "paused": false
-    }
-  },
-  {
-    "frame": 180,
-    "virtualMs": 2880,
-    "player": {
-      "x": 2,
-      "y": 1,
-      "hp": 999892
-    },
-    "entities": [
-      {
-        "id": "demo-enemy-0",
-        "subtype": "sniper",
-        "type": "enemy",
-        "x": 6,
-        "y": 1,
-        "hp": 77,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-1",
-        "subtype": "turret",
-        "type": "enemy",
-        "x": 6,
-        "y": 5,
-        "hp": 154,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "moth",
-        "type": "enemy",
-        "x": 3.766,
-        "y": 3.38,
-        "hp": 69,
-        "bossPhase": null
-      }
-    ],
-    "pressure": {
-      "used": 3,
-      "cap": 3,
-      "holders": 2,
-      "peakUsed": 3
-    },
-    "items": [
-      {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
-      },
-      {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
-      },
-      {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
-      }
-    ],
-    "portals": [],
-    "timer": {
-      "elapsedMs": 3570,
-      "leftSec": 116,
-      "paused": false
-    }
-  },
-  {
-    "frame": 240,
-    "virtualMs": 3840,
-    "player": {
-      "x": 1,
-      "y": 1,
-      "hp": 999892
-    },
-    "entities": [
-      {
-        "id": "demo-enemy-0",
-        "subtype": "sniper",
-        "type": "enemy",
-        "x": 6,
-        "y": 1,
-        "hp": 77,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-1",
-        "subtype": "turret",
-        "type": "enemy",
-        "x": 6,
-        "y": 5,
-        "hp": 154,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "moth",
-        "type": "enemy",
-        "x": 3.463,
-        "y": 1.427,
-        "hp": 69,
-        "bossPhase": null
-      }
-    ],
-    "pressure": {
-      "used": 3,
-      "cap": 3,
-      "holders": 2,
-      "peakUsed": 3
-    },
-    "items": [
-      {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
-      },
-      {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
-      },
-      {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
-      },
-      {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
-      }
-    ],
-    "portals": [],
-    "timer": {
-      "elapsedMs": 4530,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
@@ -291,16 +291,16 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999892
+      "x": 1,
+      "y": 3,
+      "hp": 1000000
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
+        "x": 5,
         "y": 1,
         "hp": 77,
         "bossPhase": null
@@ -318,9 +318,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 3.839,
-        "y": 3.355,
-        "hp": 59,
+        "x": 1.748,
+        "y": 5.386,
+        "hp": 79,
         "bossPhase": null
       }
     ],
@@ -332,29 +332,29 @@
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 5490,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
@@ -365,14 +365,14 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999849
+      "hp": 999978
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
+        "x": 5,
         "y": 1,
         "hp": 77,
         "bossPhase": null
@@ -390,9 +390,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
-        "hp": 59,
+        "x": 1.226,
+        "y": 5.49,
+        "hp": 79,
         "bossPhase": null
       }
     ],
@@ -404,29 +404,29 @@
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 6450,
+      "advancedMs": 960,
       "leftSec": 114,
       "paused": false
     }
@@ -435,16 +435,16 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999806
+      "x": 1,
+      "y": 2,
+      "hp": 999978
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
+        "x": 5,
         "y": 1,
         "hp": 77,
         "bossPhase": null
@@ -462,9 +462,9 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 5.366,
-        "y": 1.808,
-        "hp": 49,
+        "x": 3.141,
+        "y": 3.29,
+        "hp": 79,
         "bossPhase": null
       }
     ],
@@ -476,29 +476,29 @@
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 7410,
+      "advancedMs": 960,
       "leftSec": 113,
       "paused": false
     }
@@ -509,14 +509,14 @@
     "player": {
       "x": 1,
       "y": 1,
-      "hp": 999806
+      "hp": 999978
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "sniper",
         "type": "enemy",
-        "x": 6,
+        "x": 5,
         "y": 1,
         "hp": 77,
         "bossPhase": null
@@ -534,43 +534,43 @@
         "id": "demo-enemy-2",
         "subtype": "moth",
         "type": "enemy",
-        "x": 1.363,
-        "y": 3.473,
-        "hp": 49,
+        "x": 1.123,
+        "y": 4.497,
+        "hp": 79,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 3,
       "cap": 3,
-      "holders": 1,
+      "holders": 2,
       "peakUsed": 3
     },
     "items": [
       {
-        "x": 5,
-        "y": 15,
-        "name": "Scanner of Foresight"
+        "x": 10,
+        "y": 9,
+        "name": "Potion of Healing"
       },
       {
-        "x": 9,
-        "y": 2,
-        "name": "Stim of Swiftness"
+        "x": 10,
+        "y": 21,
+        "name": "Thruster of Quickness"
       },
       {
-        "x": 11,
-        "y": 1,
-        "name": "Boots of the Nimble"
+        "x": 13,
+        "y": 20,
+        "name": "Mace of Power"
       },
       {
-        "x": 20,
-        "y": 11,
-        "name": "Axe of Wrath"
+        "x": 26,
+        "y": 9,
+        "name": "Potion of Rejuvenation"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 8370,
+      "advancedMs": 960,
       "leftSec": 112,
       "paused": false
     }

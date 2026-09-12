@@ -44,19 +44,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 1660,
+      "advancedMs": 0,
       "leftSec": 118,
       "paused": false
     }
@@ -74,7 +74,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 7,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -83,7 +83,7 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
+        "x": 7,
         "y": 3,
         "hp": 67,
         "bossPhase": null
@@ -106,19 +106,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 2620,
+      "advancedMs": 960,
       "leftSec": 117,
       "paused": false
     }
@@ -127,8 +127,8 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 3,
-      "y": 2,
+      "x": 1,
+      "y": 3,
       "hp": 1000000
     },
     "entities": [
@@ -136,7 +136,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -145,7 +145,7 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
+        "x": 7,
         "y": 3,
         "hp": 67,
         "bossPhase": null
@@ -168,19 +168,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 3580,
+      "advancedMs": 960,
       "leftSec": 116,
       "paused": false
     }
@@ -189,7 +189,7 @@
     "frame": 240,
     "virtualMs": 3840,
     "player": {
-      "x": 3,
+      "x": 1,
       "y": 1,
       "hp": 1000000
     },
@@ -198,7 +198,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -207,8 +207,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 7,
+        "y": 7,
         "hp": 67,
         "bossPhase": null
       },
@@ -217,7 +217,7 @@
         "subtype": "phase",
         "type": "enemy",
         "x": 8,
-        "y": 3,
+        "y": 1,
         "hp": 66,
         "bossPhase": null
       }
@@ -230,19 +230,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 4540,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
@@ -251,7 +251,7 @@
     "frame": 300,
     "virtualMs": 4800,
     "player": {
-      "x": 3,
+      "x": 1,
       "y": 3,
       "hp": 1000000
     },
@@ -260,7 +260,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -269,8 +269,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 7,
+        "y": 7,
         "hp": 67,
         "bossPhase": null
       },
@@ -279,7 +279,7 @@
         "subtype": "phase",
         "type": "enemy",
         "x": 8,
-        "y": 6,
+        "y": 3,
         "hp": 66,
         "bossPhase": null
       }
@@ -292,19 +292,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 5500,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
@@ -313,8 +313,8 @@
     "frame": 360,
     "virtualMs": 5760,
     "player": {
-      "x": 2,
-      "y": 3,
+      "x": 1,
+      "y": 1,
       "hp": 1000000
     },
     "entities": [
@@ -322,7 +322,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -331,8 +331,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 7,
+        "y": 7,
         "hp": 67,
         "bossPhase": null
       },
@@ -341,7 +341,7 @@
         "subtype": "phase",
         "type": "enemy",
         "x": 8,
-        "y": 9,
+        "y": 5,
         "hp": 66,
         "bossPhase": null
       }
@@ -354,19 +354,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 6460,
+      "advancedMs": 960,
       "leftSec": 114,
       "paused": false
     }
@@ -375,8 +375,8 @@
     "frame": 420,
     "virtualMs": 6720,
     "player": {
-      "x": 3,
-      "y": 3,
+      "x": 1,
+      "y": 2,
       "hp": 1000000
     },
     "entities": [
@@ -384,7 +384,7 @@
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 5,
+        "x": 3,
         "y": 1,
         "hp": 66,
         "bossPhase": null
@@ -393,8 +393,8 @@
         "id": "demo-enemy-1",
         "subtype": "charger",
         "type": "enemy",
-        "x": 5,
-        "y": 3,
+        "x": 7,
+        "y": 7,
         "hp": 67,
         "bossPhase": null
       },
@@ -403,7 +403,7 @@
         "subtype": "phase",
         "type": "enemy",
         "x": 8,
-        "y": 10,
+        "y": 4,
         "hp": 66,
         "bossPhase": null
       }
@@ -416,19 +416,19 @@
     },
     "items": [
       {
-        "x": 23,
-        "y": 3,
-        "name": "Gauntlets of the Guardian"
+        "x": 15,
+        "y": 4,
+        "name": "Armor of Warding"
       },
       {
-        "x": 23,
-        "y": 27,
-        "name": "Amplifier of Precise Strike"
+        "x": 27,
+        "y": 7,
+        "name": "Scanner of Precise Strike"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 7420,
+      "advancedMs": 960,
       "leftSec": 113,
       "paused": false
     }

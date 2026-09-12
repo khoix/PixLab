@@ -58,6 +58,30 @@ declare global {
 }
 
 /**
+ * Seed `Math.random` alone, with nothing else patched.
+ *
+ * This has to run *before the page loads*, via `addInitScript`, because level
+ * generation — the maze, the item drops, the mob roster — happens the moment a
+ * sector is entered, long before the replay harness takes the frame queue.
+ * Seeding only at install time left the world itself random: two runs of the
+ * same scenario generated different mazes and different items, and the
+ * reproducibility check caught it on the first comparison.
+ *
+ * Kept separate from `installDeterminism` so the clock and frame queue are not
+ * taken during startup, which would starve React's first paint.
+ */
+export function seedRandomOnly(seed: number): void {
+  let a = seed >>> 0;
+  Math.random = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
  * The seeded generator. mulberry32 — small, fast, and good enough that a
  * scenario exercises varied branches rather than the same one repeatedly.
  * Exactness matters here, not statistical quality: the same seed must give the

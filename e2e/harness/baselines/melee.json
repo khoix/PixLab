@@ -4,17 +4,17 @@
     "virtualMs": 960,
     "player": {
       "x": 1,
-      "y": 1,
-      "hp": 1000000
+      "y": 3,
+      "hp": 999985
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 2,
-        "y": 1,
-        "hp": 87,
+        "x": 1,
+        "y": 3,
+        "hp": 77,
         "bossPhase": null
       },
       {
@@ -37,31 +37,31 @@
       }
     ],
     "pressure": {
-      "used": 0,
+      "used": 1,
       "cap": 2,
-      "holders": 0,
-      "peakUsed": 0
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 1650,
+      "advancedMs": 0,
       "leftSec": 118,
       "paused": false
     }
@@ -81,14 +81,14 @@
         "type": "enemy",
         "x": 1,
         "y": 1,
-        "hp": 87,
+        "hp": 67,
         "bossPhase": null
       },
       {
         "id": "demo-enemy-1",
         "subtype": "guardian",
         "type": "enemy",
-        "x": 2,
+        "x": 3,
         "y": 1,
         "hp": 202,
         "bossPhase": null
@@ -104,31 +104,31 @@
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 2610,
+      "advancedMs": 960,
       "leftSec": 117,
       "paused": false
     }
@@ -137,84 +137,17 @@
     "frame": 180,
     "virtualMs": 2880,
     "player": {
-      "x": 3,
-      "y": 2,
-      "hp": 999929
+      "x": 1,
+      "y": 3,
+      "hp": 999957
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 2,
-        "y": 1,
-        "hp": 67,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-1",
-        "subtype": "guardian",
-        "type": "enemy",
-        "x": 3,
-        "y": 1,
-        "hp": 182,
-        "bossPhase": null
-      },
-      {
-        "id": "demo-enemy-2",
-        "subtype": "tracker",
-        "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 2,
-        "hp": 46,
-        "bossPhase": null
-      }
-    ],
-    "pressure": {
-      "used": 2,
-      "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
-    },
-    "items": [
-      {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
-      },
-      {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
-      },
-      {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
-      }
-    ],
-    "portals": [],
-    "timer": {
-      "elapsedMs": 3570,
-      "leftSec": 116,
-      "paused": false
-    }
-  },
-  {
-    "frame": 240,
-    "virtualMs": 3840,
-    "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999895
-    },
-    "entities": [
-      {
-        "id": "demo-enemy-0",
-        "subtype": "drone",
-        "type": "enemy",
-        "x": 2,
-        "y": 1,
         "hp": 57,
         "bossPhase": null
       },
@@ -224,7 +157,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 172,
+        "hp": 202,
         "bossPhase": null
       },
       {
@@ -233,54 +166,54 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 36,
+        "hp": 66,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 4530,
-      "leftSec": 115,
+      "advancedMs": 960,
+      "leftSec": 116,
       "paused": false
     }
   },
   {
-    "frame": 300,
-    "virtualMs": 4800,
+    "frame": 240,
+    "virtualMs": 3840,
     "player": {
-      "x": 3,
-      "y": 3,
-      "hp": 999861
+      "x": 1,
+      "y": 1,
+      "hp": 999943
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 2,
+        "x": 1,
         "y": 1,
         "hp": 47,
         "bossPhase": null
@@ -291,7 +224,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 162,
+        "hp": 202,
         "bossPhase": null
       },
       {
@@ -300,55 +233,55 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 26,
+        "hp": 66,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 5490,
+      "advancedMs": 960,
       "leftSec": 115,
       "paused": false
     }
   },
   {
-    "frame": 360,
-    "virtualMs": 5760,
+    "frame": 300,
+    "virtualMs": 4800,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999847
+      "x": 1,
+      "y": 3,
+      "hp": 999929
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 2,
-        "y": 1,
+        "x": 1,
+        "y": 2,
         "hp": 37,
         "bossPhase": null
       },
@@ -358,7 +291,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 152,
+        "hp": 202,
         "bossPhase": null
       },
       {
@@ -367,54 +300,54 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 16,
+        "hp": 66,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 6450,
+      "advancedMs": 960,
       "leftSec": 114,
       "paused": false
     }
   },
   {
-    "frame": 420,
-    "virtualMs": 6720,
+    "frame": 360,
+    "virtualMs": 5760,
     "player": {
-      "x": 3,
-      "y": 2,
-      "hp": 999813
+      "x": 1,
+      "y": 1,
+      "hp": 999915
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 2,
+        "x": 1,
         "y": 1,
         "hp": 27,
         "bossPhase": null
@@ -425,7 +358,7 @@
         "type": "enemy",
         "x": 3,
         "y": 1,
-        "hp": 142,
+        "hp": 202,
         "bossPhase": null
       },
       {
@@ -434,54 +367,54 @@
         "type": "enemy",
         "x": 3,
         "y": 2,
-        "hp": 6,
+        "hp": 66,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 7410,
-      "leftSec": 113,
+      "advancedMs": 960,
+      "leftSec": 114,
       "paused": false
     }
   },
   {
-    "frame": 480,
-    "virtualMs": 7680,
+    "frame": 420,
+    "virtualMs": 6720,
     "player": {
-      "x": 3,
-      "y": 1,
-      "hp": 999792
+      "x": 1,
+      "y": 2,
+      "hp": 999901
     },
     "entities": [
       {
         "id": "demo-enemy-0",
         "subtype": "drone",
         "type": "enemy",
-        "x": 3,
+        "x": 1,
         "y": 1,
         "hp": 17,
         "bossPhase": null
@@ -491,37 +424,113 @@
         "subtype": "guardian",
         "type": "enemy",
         "x": 3,
+        "y": 1,
+        "hp": 202,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
         "y": 2,
-        "hp": 132,
+        "hp": 66,
         "bossPhase": null
       }
     ],
     "pressure": {
-      "used": 2,
+      "used": 1,
       "cap": 2,
-      "holders": 2,
-      "peakUsed": 2
+      "holders": 1,
+      "peakUsed": 1
     },
     "items": [
       {
-        "x": 5,
-        "y": 9,
-        "name": "Helmet of Watchfulness"
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
       },
       {
-        "x": 5,
-        "y": 15,
-        "name": "Sword of Power"
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
       },
       {
-        "x": 12,
-        "y": 9,
-        "name": "Axe of Power"
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
       }
     ],
     "portals": [],
     "timer": {
-      "elapsedMs": 8370,
+      "advancedMs": 960,
+      "leftSec": 113,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999887
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 2,
+        "hp": 7,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 202,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "tracker",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 66,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 1,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 1
+    },
+    "items": [
+      {
+        "x": 10,
+        "y": 13,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 18,
+        "name": "Dagger of Lightning"
+      },
+      {
+        "x": 24,
+        "y": 3,
+        "name": "Scanner of Foresight"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
       "leftSec": 112,
       "paused": false
     }

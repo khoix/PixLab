@@ -47,7 +47,16 @@ export interface RunSnapshot {
   pressure: { used: number; cap: number; holders: number; peakUsed: number };
   items: Array<{ x: number; y: number; name: string }>;
   portals: Array<{ x: number; y: number }>;
-  timer: { elapsedMs: number; leftSec: number; paused: boolean };
+  /**
+   * Timer advance since the previous sample, not the absolute elapsed.
+   *
+   * Absolute elapsed is stamped from the real clock at sector entry and
+   * therefore carries however many milliseconds of setup happened before the
+   * harness installed — it differed by 10ms between two runs of the same
+   * scenario. The delta is what a timer regression would actually move: a
+   * clock running at the wrong rate, or one that stops advancing.
+   */
+  timer: { advancedMs: number; leftSec: number; paused: boolean };
 }
 
 /**
@@ -66,7 +75,12 @@ export function q(n: number): number {
  * entity array is not part of the contract — a refactor is free to change it,
  * and a digest that failed on reordering would be testing the wrong thing.
  */
-export async function captureSnapshot(page: Page, frame: number): Promise<RunSnapshot> {
+export async function captureSnapshot(
+  page: Page,
+  frame: number,
+  previous?: RunSnapshot,
+  previousRawElapsed?: number,
+): Promise<{ snapshot: RunSnapshot; rawElapsed: number }> {
   const raw = await page.evaluate(() => {
     const level = window.__PIXLAB_LEVEL__;
     const harness = window.__PIXLAB_REPLAY__;
@@ -94,7 +108,7 @@ export async function captureSnapshot(page: Page, frame: number): Promise<RunSna
     };
   });
 
-  return {
+  const snapshot: RunSnapshot = {
     frame,
     virtualMs: raw.virtualMs,
     player: { x: q(raw.player.x), y: q(raw.player.y), hp: raw.player.hp },
@@ -105,14 +119,20 @@ export async function captureSnapshot(page: Page, frame: number): Promise<RunSna
     items: raw.items.map((i) => ({ ...i, x: q(i.x), y: q(i.y) }))
       .sort((a, b) => a.x - b.x || a.y - b.y || (a.name < b.name ? -1 : 1)),
     portals: raw.portals.map((p) => ({ x: q(p.x), y: q(p.y) })).sort((a, b) => a.x - b.x || a.y - b.y),
-    // Elapsed is quantized to 10ms: it is derived from the virtual clock and a
-    // one-frame sampling offset is not a regression.
     timer: {
-      elapsedMs: Math.round(raw.timer.elapsedMs / 10) * 10,
+      // Filled in by the caller, which knows the previous sample.
+      advancedMs: raw.timer.elapsedMs,
       leftSec: Math.round(raw.timer.leftSec),
       paused: raw.timer.paused,
     },
   };
+  // Quantized to 10ms: the delta is a virtual-clock difference and a
+  // sub-frame sampling offset is not a regression.
+  const advanced =
+    previousRawElapsed === undefined ? 0 : raw.timer.elapsedMs - previousRawElapsed;
+  snapshot.timer.advancedMs = Math.round(advanced / 10) * 10;
+  void previous;
+  return { snapshot, rawElapsed: raw.timer.elapsedMs };
 }
 
 /** Stable one-line digest, for a cheap equality check before diffing detail. */
