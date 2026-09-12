@@ -19,7 +19,16 @@
  *   melee     — attack cadence, damage, cooldowns       (M8.5)
  *   ranged    — projectile spawn, flight and expiry     (M8.4/M8.6)
  *   crowd     — the attack-pressure scheduler above cap (M8.5/M8.6)
- *   boss      — boss attack cycle: telegraph/execute/recover (M8.6)
+ *   bossRanged — Zeus: ranged telegraph and projectile spawn  (M8.5/M8.6)
+ *   bossPhased — Hades: the telegraph/execute/recover machine  (M8.6)
+ *
+ * Two boss scenarios, because the bosses do not share a mechanism. Only Hades
+ * and Ares drive the `BOSS_CYCLES` phase machine; `boss_zeus`
+ * (GameCanvas.tsx:2449) is a ranged attacker with its own telegraph and never
+ * calls readCycle/writeCycle at all. A first cut used sector 8 and recorded
+ * `bossPhase: null` for the whole run — correctly, as it turns out, because
+ * Zeus has no phase. Sector choice decides which: `engine.ts:25` indexes
+ * ['zeus','hades','ares'] by floor(level/8)-1, so 8 is Zeus, 16 is Hades.
  *
  * Subtypes are spread deliberately rather than all `drone`. Each behaviour is a
  * separate branch of `update()` — `charger` commits to a dash, `phase` walks
@@ -188,24 +197,35 @@ export const SCENARIOS: Scenario[] = [
     })),
   },
   {
-    name: 'boss',
+    name: 'bossRanged',
     seed: 0x5eed0006,
     input: [
-      { frames: 24, dir: { x: 1, y: 0 } },
-      { frames: 24, dir: { x: 0, y: 1 } },
-      { frames: 24, dir: { x: -1, y: 0 } },
-      { frames: 24, dir: { x: 0, y: -1 } },
-      { frames: 16, dir: { x: 1, y: 1 } },
-      { frames: 16, dir: { x: 0, y: 0 } },
+      { frames: 10, dir: { x: 1, y: 0 } },
+      { frames: 10, dir: { x: -1, y: 0 } },
+      { frames: 10, dir: { x: 0, y: 1 } },
+      { frames: 10, dir: { x: 0, y: -1 } },
     ],
     sector: 8,
     frames: 600,
     stepMs: STEP_MS,
     sampleEvery: 75,
-    // A boss sector generates its own arena and boss; the roster is left alone
-    // rather than cleared, because the boss *is* the scenario. `bossPhase` is
-    // already in the digest, so a changed telegraph/execute/recover cadence
-    // shows up directly — which is the M8.6 risk.
+    mobs: [],
+    keepGeneratedRoster: true,
+    approachBoss: true,
+  },
+  {
+    name: 'bossPhased',
+    seed: 0x5eed0007,
+    input: [
+      { frames: 10, dir: { x: 1, y: 0 } },
+      { frames: 10, dir: { x: -1, y: 0 } },
+      { frames: 10, dir: { x: 0, y: 1 } },
+      { frames: 10, dir: { x: 0, y: -1 } },
+    ],
+    sector: 16,
+    frames: 600,
+    stepMs: STEP_MS,
+    sampleEvery: 75,
     mobs: [],
     keepGeneratedRoster: true,
     approachBoss: true,
