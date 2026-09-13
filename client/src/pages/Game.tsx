@@ -59,6 +59,7 @@ import { findSmallestHealingPotion } from '../lib/game/quickHeal';
 import { getConsumables, shouldShowQuickConsumablesMenu } from '../lib/game/quickConsumables';
 import { triggerHaptic } from '../lib/game/haptics';
 import { clearGameInputDirection, setGameInputDirection } from '../lib/game/gameInput';
+import { directionForKey, isMovementKey } from '../lib/game/input/keyboardDirection';
 import {
   MAX_TOUCH_SENSITIVITY,
   normalizeTouchSensitivity,
@@ -616,23 +617,17 @@ export default function Game() {
         return;
       }
       
-      // Handle movement keys
-      let x = 0, y = 0;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') y = -1;
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') y = 1;
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') x = -1;
-      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') x = 1;
-      if (x !== 0 || y !== 0) {
-        setGameInputDirection({ x, y });
+      // Handle movement keys. The binding table lives in
+      // lib/game/input/keyboardDirection.ts so keydown and keyup cannot drift
+      // apart — they were two hand-written lists of the same twelve keys.
+      const dir = directionForKey(e.key);
+      if (dir) {
+        setGameInputDirection(dir);
         e.preventDefault();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      const moveKeys = new Set([
-        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-        'w', 'a', 's', 'd', 'W', 'A', 'S', 'D',
-      ]);
-      if (moveKeys.has(e.key)) {
+      if (isMovementKey(e.key)) {
         clearGameInputDirection();
       }
     };
