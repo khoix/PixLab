@@ -33,7 +33,13 @@ const groups = { weapons: ['sword', 'spear', 'axe', 'dagger', 'mace'],
   armor: ['armor', 'shield', 'helmet', 'boots', 'gauntlets', 'gauntlets-sleeve'],
   utility: ['scope', 'thruster', 'scanner', 'amplifier'] };
 const assets = ['operator.png', 'operator-hand.png', ...Object.entries(groups).flatMap(([g, names]) => names.map(n => `${g}/${n}.png`))];
-const cases = process.env.CAPTURE_SET === 'weapon-foundation' ? [
+const cases = process.env.CAPTURE_SET === 'armor-gate' ? [
+  ['sword-armor-scope', 'sword', 'armor', 'scope'],
+  ['spear-shield-scanner', 'spear', 'shield', 'scanner'],
+  ['sword-helmet-scope', 'sword', 'helmet', 'scope'],
+  ['sword-shield-thruster', 'sword', 'shield', 'thruster'],
+  ['spear-helmet-amplifier', 'spear', 'helmet', 'amplifier'],
+] : process.env.CAPTURE_SET === 'weapon-foundation' ? [
   ['sword-armor-scope', 'sword', 'armor', 'scope'],
   ['sword-gauntlets-scope', 'sword', 'gauntlets', 'scope'],
   ['sword-shield-scanner', 'sword', 'shield', 'scanner'],

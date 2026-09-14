@@ -1,0 +1,140 @@
+{
+  "sourceCommit": "8758d90bf9cc57093640a00cbf7f3427b8086015",
+  "composites": [
+    {
+      "name": "sword-armor-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "armor",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-shield-scanner",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "shield",
+        "utility": "scanner"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-helmet-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "helmet",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-shield-thruster",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "shield",
+        "utility": "thruster"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-helmet-amplifier",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "helmet",
+        "utility": "amplifier"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    }
+  ],
+  "phoneDisplay": {
+    "x": 35.5,
+    "y": 333.53125,
+    "width": 322,
+    "height": 322
+  },
+  "runtimeErrors": [],
+  "assets": [
+    {
+      "file": "armor/shield.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 138,
+        "y0": 74,
+        "x1": 200,
+        "y1": 150,
+        "pixels": 3634,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 138,
+        "y0": 74,
+        "x1": 200,
+        "y1": 150,
+        "pixels": 3608,
+        "edgePixels": 0
+      },
+      "transparentPixels": 61902,
+      "sha256": "c532d905c703ed4d7ee74075ee5dd559dd123c7c07d6a97dd3ccf738664aeae3"
+    },
+    {
+      "file": "armor/helmet.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 109,
+        "y0": 43,
+        "x1": 154,
+        "y1": 104,
+        "pixels": 2083,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 109,
+        "y0": 43,
+        "x1": 154,
+        "y1": 104,
+        "pixels": 2062,
+        "edgePixels": 0
+      },
+      "transparentPixels": 63453,
+      "sha256": "6facb999d5be4a1a0c757aa7d7f4670c7236e753bc199a0261fe7abf669953ff"
+    }
+  ]
+}

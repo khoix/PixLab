@@ -1,8 +1,8 @@
-# Operator equipment art — Executions 1–2
+# Operator equipment art — Executions 1–3
 
 Branch: `astra/operator-equipment-art-revision`, from current main **aaff08e**
-(2026-09-13). Execution 2 complete (2026-09-14): only the sword and spear
-production PNGs revised. Production code, mappings and all other art unchanged.
+(2026-09-13). Execution 3 complete (2026-09-14): sword, spear, shield and helmet revised.
+Production code, mappings and all other art unchanged.
 
 ## Durable references
 
@@ -167,9 +167,38 @@ Pre-existing observations (do not repair in Execution 1):
   with explicit loopback host and installed Chromium because this environment's
   network-interface enumeration/default browser download failed; no repo config
   changes were needed.
-- Next: **Execution 3 only**, shield + helmet and the four-prototype style gate.
-  Carry forward dark gunmetal, selective cyan and substantial brass fittings.
-  Keep utility attachment space and the documented layer order, especially scope
-  above helmet and scanner above shield. Revisit sword/spear only if that gate
-  exposes a concrete cross-family defect. Do not redo the baseline or propagate
-  the remaining weapons/armor before the gate.
+## Execution 3 — armor foundation and style gate
+
+- **Cyber-Aegis:** dark overlapping radial plates, restrained brass ribs and
+  substantial central boss, small cyan core and short plate seams. Original oval
+  orientation and forearm attachment preserved. Scanner remains the top layer.
+- **Corinthian Echo:** modern enclosed segmented combat helmet, pronounced cheek
+  framing, brass ridge/facial structure and narrow cyan ocular slit. No plume,
+  literal historical costume or engraving. Scope sits naturally over the eye.
+- Built-in imagegen edited original PNGs using the revised sword and utility
+  references. Helmet's first draft had a baked checkerboard; an imagegen alpha
+  extraction corrected it before integration. No rejected draft is shipped.
+- Sharp removed alpha below 32, cropped ink, resized nearest-neighbour to original
+  solid envelopes, and placed on transparent 256px frames: shield 63×77 at
+  (138,74); helmet 46×62 at (109,43). No renderer offset or layer-order change.
+- **Four-prototype style gate passed:** sword, spear, shield and helmet share
+  dark gunmetal, steel bevels, structural brass and selective cyan. Classical
+  lineage is substantial silhouette/geometry; practical cybertech dominates.
+  Sword/spear needed no correction and retain their Execution 2 hashes.
+- Five real React preview loadouts reviewed at 320px: sword+armor+scope,
+  spear+shield+scanner, sword+helmet+scope, sword+shield+thruster,
+  spear+helmet+amplifier. All four utilities visible, no new clipping/floating,
+  hand alignment preserved, and gold/cyan readable without exterior glow.
+- Capture: 5/5 loadouts, 17/17 images loaded, zero runtime errors; desktop and
+  phone display measurements in `docs/operator-art-execution-3/validation.json`.
+  `style-gate.png` preserves five native-size 320px composites. Reproduce with
+  `CAPTURE_SET=armor-gate`, a new OUTPUT_DIR and the existing capture script.
+- Existing utility/weapon e2e: 14 passed on desktop/mobile. No new test framework
+  or production TypeScript changes. Reused Execution 2 typecheck findings above.
+- Changed: shield/helmet PNGs, capture script, this handoff and Execution 3 notes,
+  capture sheet and validation JSON. Base operator and remaining armor are still
+  intentionally medieval/light-cloth until their scheduled execution.
+- **Next: Execution 4 only**, propagate the settled language to axe, dagger and
+  mace. Preserve original grip/registration. Use these four prototypes and the
+  unchanged utilities as references; do not reopen overall direction or start
+  the remaining armor/support layers yet.
