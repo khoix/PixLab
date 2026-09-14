@@ -1,7 +1,8 @@
-# Operator equipment art — Executions 1–4
+# Operator equipment art — Execution 5 in progress
 
 Branch: `astra/operator-equipment-art-revision`, from current main **aaff08e**
-(2026-09-13). Execution 4 complete (2026-09-14): all five weapons, shield and helmet revised.
+(2026-09-13). Execution 4 complete; Execution 5 PARTIAL (2026-09-14): cuirass integrated.
+Boots, gauntlets/sleeve and operator/hand work remain. Do not begin Execution 6.
 Production code, mappings and all other art unchanged.
 
 ## Durable references
@@ -236,7 +237,33 @@ Pre-existing observations (do not repair in Execution 1):
   handoff and Execution 4 evidence. Work used a separate clean checkout because
   the earlier checkout had an unrelated local audio edit; that edit was preserved
   in place and excluded from this branch's commit.
-- **Next: Execution 5 only**, remaining armor, boots, gauntlets/sleeve and evaluate
-  operator/hand per the plan. Propagate the settled material/silhouette language.
-  Preserve attachment regions and these five verified grips; do not reopen the
-  completed weapon family or change gameplay/compositing to accommodate artwork.
+## Execution 5 — partial, resume here
+
+- Completed body armor: dark segmented cybertech cuirass with strong brass central
+  structure/framing, cyan chest slit, no sculpted abdominal musculature. Built-in
+  imagegen edited original torso with accepted helmet as material reference; two
+  transparency correction passes were needed. Sharp used established alpha<32
+  cleanup and nearest-neighbour registration: 54×76 at (102,80), transparent256px.
+- Three real React previews reviewed: armor only, armor+thruster, sword+armor+scope.
+  Cuirass fits torso, weapons remain attached, utilities readable. Evidence in
+  `docs/operator-art-execution-5/cuirass-320.png` and validation JSON: 3/3 captures,
+  17/17 assets loaded, zero runtime errors. Gold is broad but bounded by dark
+  plates; no exterior glow. Other production art/code unchanged this run.
+- Added objective e2e covering all14 subtype mappings/expected paths, all17 source
+  dimensions, base/hand/helper paths and real composition for each equipment type.
+  Existing utility/weapon tests:20 passed. New test initially used lowercase names
+  despite the game's title-case item contract; corrected the fixture, then both
+  desktop/mobile tests passed. No production mapping change.
+- Boots were attempted with dark greaves, mechanical ankle/heel hardware, brass
+  vent/fins and tiny cyan mobility modules. Three drafts/extraction attempts
+  retained baked checkerboards, so none was installed. Original boots preserved.
+  Resume at boots: obtain actual alpha and verify both leg positions before
+  replacing the production PNG; do not blindly accept the generated background.
+- Gauntlets and sleeve not yet revised. Preserve all five grips and stack measures
+  from Execution4. Complete required armor/boots/gauntlets utility combinations.
+- Operator evaluation: light cloth/tunic materially conflicts with dark equipment;
+  a neutral dark undersuit revision is warranted but NOT yet attempted. Preserve
+  exact pose, limbs, face, grip and landscape background. Hand skin is not itself
+  a conflict; retain unless a precise material correction proves necessary.
+- Timeboxed partial checkpoint under 50% budget. Finish these Execution5 items
+  before final integration/PR. Do not reopen accepted weapon or shield/helmet art.
