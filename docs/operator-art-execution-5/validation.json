@@ -1,0 +1,85 @@
+{
+  "sourceCommit": "a532521edaa6164c574ed369eba9454269a24d8e",
+  "composites": [
+    {
+      "name": "armor-only",
+      "loadout": {
+        "weapon": null,
+        "armor": "armor",
+        "utility": null
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "armor-thruster",
+      "loadout": {
+        "weapon": null,
+        "armor": "armor",
+        "utility": "thruster"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-armor-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "armor",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    }
+  ],
+  "phoneDisplay": {
+    "x": 35.5,
+    "y": 333.53125,
+    "width": 322,
+    "height": 322
+  },
+  "runtimeErrors": [],
+  "assets": [
+    {
+      "file": "armor/armor.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 102,
+        "y0": 80,
+        "x1": 155,
+        "y1": 155,
+        "pixels": 3087,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 102,
+        "y0": 80,
+        "x1": 155,
+        "y1": 155,
+        "pixels": 3066,
+        "edgePixels": 0
+      },
+      "transparentPixels": 62449,
+      "sha256": "d690ef00297b57f66927786fb3e04fc92e8e5eae7cea412b5f24133e8a5be3b6"
+    }
+  ]
+}

@@ -1,0 +1,273 @@
+{
+  "sourceCommit": "63b831212811b15b341aaefc4f256aedbe0cdbce",
+  "composites": [
+    {
+      "name": "axe-armor-scanner",
+      "loadout": {
+        "weapon": "axe",
+        "armor": "armor",
+        "utility": "scanner"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "dagger-armor-amplifier",
+      "loadout": {
+        "weapon": "dagger",
+        "armor": "armor",
+        "utility": "amplifier"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "mace-armor-thruster",
+      "loadout": {
+        "weapon": "mace",
+        "armor": "armor",
+        "utility": "thruster"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-gauntlets-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-gauntlets-scope",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "axe-gauntlets-scope",
+      "loadout": {
+        "weapon": "axe",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "dagger-gauntlets-scope",
+      "loadout": {
+        "weapon": "dagger",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "mace-gauntlets-scope",
+      "loadout": {
+        "weapon": "mace",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    }
+  ],
+  "phoneDisplay": {
+    "x": 35.5,
+    "y": 333.53125,
+    "width": 322,
+    "height": 322
+  },
+  "runtimeErrors": [],
+  "assets": [
+    {
+      "file": "weapons/axe.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 64,
+        "y0": 90,
+        "x1": 153,
+        "y1": 143,
+        "pixels": 2274,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 64,
+        "y0": 91,
+        "x1": 153,
+        "y1": 143,
+        "pixels": 2234,
+        "edgePixels": 0
+      },
+      "transparentPixels": 63262,
+      "sha256": "400bfbda3703cf9da05f76a0ae83c3b9add51e5943a78e0c7a4f59691c8cddf6"
+    },
+    {
+      "file": "weapons/dagger.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 71,
+        "y0": 116,
+        "x1": 124,
+        "y1": 137,
+        "pixels": 450,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 71,
+        "y0": 116,
+        "x1": 124,
+        "y1": 137,
+        "pixels": 440,
+        "edgePixels": 0
+      },
+      "transparentPixels": 65086,
+      "sha256": "f18303cf12f918d6ba091b7e5a44eccda46cccbec4a647a6855b7b4dde5d6f60"
+    },
+    {
+      "file": "weapons/mace.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 65,
+        "y0": 105,
+        "x1": 146,
+        "y1": 140,
+        "pixels": 1185,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 65,
+        "y0": 105,
+        "x1": 146,
+        "y1": 140,
+        "pixels": 1146,
+        "edgePixels": 0
+      },
+      "transparentPixels": 64351,
+      "sha256": "e32bd531f8a7c7200c84802143599bd4c5ceada4fe22fac52f7c8932338bf349"
+    }
+  ],
+  "stackMeasurements": [
+    {
+      "weapon": "sword",
+      "handOverlapPixels": 110,
+      "gripCentroid": [
+        81.3,
+        131.691
+      ],
+      "sleeveOverlapPixels": 110,
+      "gauntletsOverlapPixels": 173
+    },
+    {
+      "weapon": "spear",
+      "handOverlapPixels": 87,
+      "gripCentroid": [
+        81.23,
+        131.885
+      ],
+      "sleeveOverlapPixels": 1,
+      "gauntletsOverlapPixels": 133
+    },
+    {
+      "weapon": "axe",
+      "handOverlapPixels": 141,
+      "gripCentroid": [
+        81.333,
+        131.163
+      ],
+      "sleeveOverlapPixels": 1,
+      "gauntletsOverlapPixels": 211
+    },
+    {
+      "weapon": "dagger",
+      "handOverlapPixels": 84,
+      "gripCentroid": [
+        81.75,
+        131.81
+      ],
+      "sleeveOverlapPixels": 1,
+      "gauntletsOverlapPixels": 144
+    },
+    {
+      "weapon": "mace",
+      "handOverlapPixels": 91,
+      "gripCentroid": [
+        81.374,
+        132.714
+      ],
+      "sleeveOverlapPixels": 1,
+      "gauntletsOverlapPixels": 134
+    }
+  ],
+  "changedProductionAssets": [
+    "weapons/mace.png",
+    "weapons/dagger.png",
+    "weapons/axe.png"
+  ],
+  "tests": {
+    "assetUtilityE2E": "20 passed (10.1s), desktop/mobile",
+    "typecheck": "15 pre-existing errors; included source inputs unchanged",
+    "capture": "8 loadouts, 17 assets, zero runtime errors"
+  }
+}

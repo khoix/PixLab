@@ -1,0 +1,174 @@
+{
+  "baselineCommit": "dc542493fd752d5bc8827760277e511d7a252d4f",
+  "assets": [
+    {
+      "file": "weapons/sword.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 69,
+        "y0": 87,
+        "x1": 161,
+        "y1": 141,
+        "pixels": 1657,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 70,
+        "y0": 87,
+        "x1": 161,
+        "y1": 141,
+        "pixels": 1626,
+        "edgePixels": 0
+      },
+      "transparentPixels": 63879,
+      "sha256": "5a301a7869f3b2f1e18fd0f8e2fe1dbcf1f6351ffe43e7b0cbbbdaf8270f50db",
+      "handIntersection": {
+        "pixels": 110,
+        "centroid": [
+          81.3,
+          131.691
+        ]
+      }
+    },
+    {
+      "file": "weapons/spear.png",
+      "width": 256,
+      "height": 256,
+      "alphaNonzero": {
+        "x0": 47,
+        "y0": 104,
+        "x1": 160,
+        "y1": 147,
+        "pixels": 1067,
+        "edgePixels": 0
+      },
+      "alphaSolid": {
+        "x0": 47,
+        "y0": 104,
+        "x1": 160,
+        "y1": 147,
+        "pixels": 1042,
+        "edgePixels": 0
+      },
+      "transparentPixels": 64469,
+      "sha256": "2e399d371fd615ce51104cf546642af66c2ccd632129d9dacff97a0a58073cd3",
+      "handIntersection": {
+        "pixels": 87,
+        "centroid": [
+          81.23,
+          131.885
+        ]
+      }
+    }
+  ],
+  "composites": [
+    {
+      "name": "sword-armor-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "armor",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-gauntlets-scope",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "sword-shield-scanner",
+      "loadout": {
+        "weapon": "sword",
+        "armor": "shield",
+        "utility": "scanner"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-armor-thruster",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "armor",
+        "utility": "thruster"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-shield-scanner",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "shield",
+        "utility": "scanner"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    },
+    {
+      "name": "spear-gauntlets-scope",
+      "loadout": {
+        "weapon": "spear",
+        "armor": "gauntlets",
+        "utility": "scope"
+      },
+      "width": 320,
+      "height": 320,
+      "display": {
+        "width": 322,
+        "height": 322
+      },
+      "smoothing": true,
+      "cssImageRendering": "pixelated"
+    }
+  ],
+  "phoneDisplay": {
+    "x": 35.5,
+    "y": 333.53125,
+    "width": 322,
+    "height": 322
+  },
+  "runtimeErrors": [],
+  "tests": {
+    "operatorUtilityAndWeaponE2E": "14 passed (8.7s), desktop and mobile",
+    "typecheck": "15 existing errors; all TypeScript inputs unchanged"
+  }
+}
