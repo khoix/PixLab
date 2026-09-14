@@ -12,9 +12,10 @@
  *
  * Two deliberate omissions, both of which would otherwise look like oversights:
  *
- * - **There is no `SharedState` interface.** Six cells are written by more than
- *   one seam (`levelRef`, `visualPosRef`, `statsRef`, `temporaryVisionBoostRef`,
- *   `activeScrollEffectsRef`, `bonusSelectionRef`). Giving them a type would
+ * - **There is no `SharedState` interface.** Five cells are written by more than
+ *   one seam (`visualPosRef`, `statsRef`, `temporaryVisionBoostRef`,
+ *   `activeScrollEffectsRef`, `bonusSelectionRef`) — `levelRef` was a sixth
+ *   until M8.3 took the legacy effects out of `draw()`. Giving them a type would
  *   make them look settled. They are the decisions M8.2-M8.7 have to make one
  *   at a time, and each is called out below where it bites.
  *
@@ -39,9 +40,12 @@ import type { DrawFrameSnapshot } from '../renderer/drawSnapshot';
  */
 export interface EngineState {
   /**
-   * The world. Note that `level.particles` is *not* engine-owned today —
-   * `draw()` spawns, integrates and expires particles across seven sites. Until
-   * that loop moves (it has to, before M8.3), this field has two writers.
+   * The world.
+   *
+   * `level.particles` had two writers until M8.3: `update()` spawns the moth
+   * trail, and `draw()` also pushed the legacy 2D view's portal and sense
+   * effects onto the same array, in screen pixels. Those moved to a
+   * render-owned field, so this is engine-owned throughout now.
    */
   level: Level | null;
 

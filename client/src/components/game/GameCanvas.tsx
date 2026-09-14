@@ -3,6 +3,14 @@ import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
 import { shuffleInPlace } from '../../lib/game/shuffle';
 import {
+  clearEffectsNear,
+  clearLegacyEffects,
+  createLegacyEffectField,
+  effectsWithPrefix,
+  spawnLegacyEffect,
+  stepLegacyEffects,
+} from '../../lib/game/renderer/legacyEffects';
+import {
   legacyScreenToTile,
   portalAt,
   portalDestinationCandidates,
@@ -380,6 +388,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const HADES_STRIKE_TILES = 1.6;
 
   /** Adds already summoned this boss fight, so a threshold cannot re-fire. */
+  // Render-owned: the legacy 2D view's portal and sense effects, which used to
+  // be pushed onto `level.particles` from inside draw(). See
+  // lib/game/renderer/legacyEffects.ts.
+  const legacyEffectsRef = useRef(createLegacyEffectField());
   const bossAddsSpawnedRef = useRef(0);
 
   // Who is allowed to be attacking right now. A mob holds its slot for a whole
@@ -645,6 +657,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     enemyDamageCooldownRef.current.clear();
     enemyMoveTimersRef.current.clear();
     bossAddsSpawnedRef.current = 0;
+    clearLegacyEffects(legacyEffectsRef.current);
     attackPressureRef.current.clear();
     peakPressureRef.current = 0;
     aiScheduler.reset();
@@ -738,6 +751,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       },
       getPerspectiveFogStats: () => perspectiveFog.getStats(),
       getPlayerHp: () => statsRef.current.hp,
+      // Render-owned legacy 2D effects. Exposed because the pause leak they
+      // used to cause is only observable from outside the component.
+      getLegacyEffectCount: () => legacyEffectsRef.current.effects.length,
       isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
       getPressureStats: () => ({
         used: usedSlots(attackPressureRef.current),
@@ -3532,9 +3548,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Generate particles (bright fading particles)
       if (levelRef.current) {
-        if (!levelRef.current.particles) {
-          levelRef.current.particles = [];
-        }
         // Add new particles occasionally
         if (Math.random() < 0.3) {
           const angle = Math.random() * Math.PI * 2;
@@ -3552,25 +3565,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               y: Math.sin(angle) * speed,
             },
           };
-          levelRef.current.particles.push(particle as any);
+          spawnLegacyEffect(legacyEffectsRef.current, particle as never, isGamePaused());
         }
         
-        // Draw existing particles
-        if (levelRef.current.particles) {
+        // Draw existing particles. Ageing and expiry are the field's job now;
+        // this pass only paints what survived.
+        {
           const now = getGameNow();
-          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
-          if (p.id && p.id.startsWith('portal-particle-')) {
-            const age = now - p.createdAt;
-            if (age > p.lifetime) return false;
-            
-            // Update particle position
-            if (p.velocity) {
-              p.pos.x += p.velocity.x;
-              p.pos.y += p.velocity.y;
-            }
-            
-            // Draw particle (bright, fading)
-            const alpha = 1 - (age / p.lifetime);
+          stepLegacyEffects(legacyEffectsRef.current, now);
+          for (const p of effectsWithPrefix(legacyEffectsRef.current, 'portal-particle-')) {
+            const alpha = 1 - (now - p.createdAt) / p.lifetime;
             ctx.fillStyle = `rgba(255, 200, 255, ${alpha})`;
             ctx.shadowColor = 'rgba(255, 200, 255, 0.8)';
             ctx.shadowBlur = 5;
@@ -3578,11 +3582,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             ctx.arc(p.pos.x, p.pos.y, 2, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
-            
-            return true;
           }
-          return true;
-        });
         }
       }
       });
@@ -3704,9 +3704,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               ctx.restore();
               
               // Add sparkling particles
-              if (levelRef.current && !levelRef.current.particles) {
-                levelRef.current.particles = [];
-              }
               if (Math.random() < 0.1 && levelRef.current) {
                 const angle = Math.random() * Math.PI * 2;
                 const sparkle = {
@@ -3718,7 +3715,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   createdAt: getGameNow(),
                   lifetime: 500 + Math.random() * 300,
                 };
-                levelRef.current.particles.push(sparkle as any);
+                spawnLegacyEffect(legacyEffectsRef.current, sparkle as never, isGamePaused());
               }
             } else {
               // Thin enough fog that the real sprite reads: draw nothing. The
@@ -3734,22 +3731,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
         
         // Remove particles near entities that are now in range
-        if (levelRef.current && levelRef.current.particles && entitiesInRange.length > 0) {
-          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
-            if (p.id && p.id.startsWith('threatsense-sparkle-')) {
-              // Check if this particle is near any entity that's in range
-              for (const entityPos of entitiesInRange) {
-                const dist = Math.sqrt(
-                  Math.pow(p.pos.x - entityPos.x, 2) + Math.pow(p.pos.y - entityPos.y, 2)
-                );
-                if (dist < TILE_SIZE * 1.5) {
-                  return false; // Remove particle
-                }
-              }
-            }
-            return true;
-          });
-        }
+        clearEffectsNear(
+          legacyEffectsRef.current,
+          'threatsense-sparkle-',
+          entitiesInRange,
+          TILE_SIZE * 1.5,
+        );
       }
       
       // Draw Loot-sense: All items
@@ -3792,9 +3779,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             ctx.restore();
             
             // Add sparkling particles
-            if (levelRef.current && !levelRef.current.particles) {
-              levelRef.current.particles = [];
-            }
             if (Math.random() < 0.1 && levelRef.current) {
               const angle = Math.random() * Math.PI * 2;
               const sparkle = {
@@ -3806,7 +3790,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 createdAt: getGameNow(),
                 lifetime: 500 + Math.random() * 300,
               };
-              levelRef.current.particles.push(sparkle as any);
+              spawnLegacyEffect(legacyEffectsRef.current, sparkle as never, isGamePaused());
             }
           } else {
             // Item is in range - ensure it's fully visible with no blur, no particles, no rarity color effects
@@ -3841,45 +3825,34 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         
         // Remove particles near items that are now in range
         if (levelRef.current && levelRef.current.particles && itemsInRange.length > 0) {
-          levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
-            if (p.id && p.id.startsWith('lootsense-sparkle-')) {
-              // Check if this particle is near any item that's in range
-              for (const itemPos of itemsInRange) {
-                const dist = Math.sqrt(
-                  Math.pow(p.pos.x - itemPos.x, 2) + Math.pow(p.pos.y - itemPos.y, 2)
-                );
-                if (dist < TILE_SIZE * 1.5) {
-                  return false; // Remove particle
-                }
-              }
-            }
-            return true;
-          });
+          clearEffectsNear(
+            legacyEffectsRef.current,
+            'lootsense-sparkle-',
+            itemsInRange,
+            TILE_SIZE * 1.5,
+          );
         }
       }
       
       // Draw sparkling particles for sense effects
-      if (levelRef.current && levelRef.current.particles) {
+      {
         const particleNow = getGameNow();
-        levelRef.current.particles = levelRef.current.particles.filter((p: any) => {
-          if (p.id && (p.id.startsWith('threatsense-sparkle-') || p.id.startsWith('lootsense-sparkle-'))) {
-            const age = particleNow - p.createdAt;
-            if (age > p.lifetime) return false;
-            
-            // Draw sparkling particle
-            const alpha = 1 - (age / p.lifetime);
-            ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
-            ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
-            ctx.shadowBlur = 8;
-            ctx.beginPath();
-            ctx.arc(p.pos.x, p.pos.y, 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            return true;
-          }
-          return true;
-        });
+        stepLegacyEffects(legacyEffectsRef.current, particleNow);
+        const sense = effectsWithPrefix(
+          legacyEffectsRef.current,
+          'threatsense-sparkle-',
+          'lootsense-sparkle-',
+        );
+        for (const p of sense) {
+          const alpha = 1 - (particleNow - p.createdAt) / p.lifetime;
+          ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
+          ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(p.pos.x, p.pos.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
       }
       
       ctx.restore();

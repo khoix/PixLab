@@ -26,9 +26,9 @@ inventing one.
 
 | Seam | Cells | What it means |
 |---|---|---|
-| `engine` | 19 | Simulation owns and mutates it |
-| `shared` | 6 | **Two or more seams write it** — a decision, not a bucket |
-| `render` | 9 | Renderer owns it; engine must not read it |
+| `engine` | 20 | Simulation owns and mutates it |
+| `shared` | 5 | **Two or more seams write it** — a decision, not a bucket |
+| `render` | 10 | Renderer owns it; engine must not read it |
 | `mirrored` | 3 | React writes, engine reads, one way |
 | `input` | 1 | The portal affordance handed to the parent |
 | `orchestration` | 6 | The loop and React plumbing that stays behind |
@@ -40,6 +40,8 @@ re-runs the sweep against `GameCanvas.tsx` and fails if it disagrees.
 ## Three findings that change what the later stages can assume
 
 ### 1. `draw()` is not a renderer, and M8.3 is blocked on that
+
+> **Resolved in M8.3 (state ownership half).** The legacy portal and sense effects moved to a render-owned field, and `draw()` now writes no engine state at all — 10 writes to `levelRef.current` down to 0. It still consumes the shared RNG stream and clock, below, which is a separate problem.
 
 `draw()` writes `levelRef.current.particles` at seven sites. It does not just
 render particles — it **spawns** them on `Math.random()`, **integrates** their
@@ -133,9 +135,13 @@ knowing before rather than after.
 
 The plan's stage order still holds, with one insertion:
 
-1. **M8.2** `InputManager` — smallest surface, already pinned by `m1-input-loop`.
-2. **M8.2b (new)** Move the particle lifecycle out of `draw()` into `update()`.
-   Re-record M8.0 baselines, stating why. Without this, M8.3 cannot be a move.
+1. **M8.2** `InputManager` — done, PR #85.
+2. ~~**M8.2b** Move the particle lifecycle out of `draw()` into `update()`.~~
+   Superseded. The lifecycle did not belong in `update()`: two of the three
+   systems are threat-sense and loot-sense sparkles whose existence depends on
+   fog computed during the render pass, and all three store screen pixels. They
+   are render state that was living on the level, so M8.3 gave them a
+   render-owned field instead. No baseline re-record was needed.
 3. **M8.3** `CanvasRenderer` — now genuinely orchestration over existing
    modules. Fix the canvas-state leak during the move, as planned: the `finally`
    at the draw loop restores the shadow gate and **not** the save-stack, with

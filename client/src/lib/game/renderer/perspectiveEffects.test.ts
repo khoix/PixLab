@@ -26,8 +26,14 @@ test('following translation does not change footpoint visibility', () => {
 });
 test('effects retain world foot offsets, expire, pool records, and never mutate simulation', () => {
   const level = { footprints: [{ pos: { x: 2, y: 3 }, direction: { x: 1, y: 0 }, isLeftFoot: true, createdAt: 0, lifetime: 1000 }],
-    particles: [{ id: 'moth', pos: { x: 4, y: 5 }, createdAt: 0, lifetime: 1000 },
-      { id: 'portal-particle-old', pos: { x: 999, y: 999 }, createdAt: 0, lifetime: 1000 }],
+    // One engine-spawned moth particle. This array used to also carry the
+    // legacy 2D view's portal and sense effects, in screen pixels, which this
+    // renderer skipped by id prefix — the fixture pinned that with a
+    // 'portal-particle-old' entry at world (999, 999). M8.3 moved those to a
+    // render-owned field (renderer/legacyEffects.ts), so nothing can put one
+    // here any more: the three spawn sites are gone and particles are not
+    // persisted. The skip and the entry that modelled it both go.
+    particles: [{ id: 'moth', pos: { x: 4, y: 5 }, createdAt: 0, lifetime: 1000 }],
     portals: [{ pos: { x: 6, y: 7 } }], afterimages: [], lightswitches: [] } as unknown as Level;
   const before = JSON.stringify(level), effects = new PerspectiveEffects();
   const first = effects.prepare(level, 500, 'low', []), foot = first[0];

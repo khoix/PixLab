@@ -119,9 +119,11 @@ export class PerspectiveEffects {
     for (const a of level.afterimages ?? []) this.add(a.pos.x + 0.5, a.pos.y + 0.5, COLORS.mob_tracker,
       0.5, Math.max(0, 1 - (now - a.createdAt) / a.lifetime) * 0.6);
     for (const p of level.particles ?? []) {
-      // Legacy portal/sense particles used screen pixels and were created by
-      // its draw pass. Their replacements below/sense pass are anchored in world units.
-      if (/^(portal-particle-|threatsense-sparkle-|lootsense-sparkle-)/.test(p.id)) continue;
+      // No id filter here any more. The legacy portal and sense effects that
+      // used to need skipping were pushed onto this array by the 2D draw pass in
+      // screen pixels; M8.3 moved them to a render-owned field
+      // (renderer/legacyEffects.ts), so what remains is engine-spawned and
+      // already in world units.
       this.add(p.pos.x + 0.5, p.pos.y + 0.5, COLORS.mob_moth, 3 / 32,
         Math.max(0, 1 - (now - p.createdAt) / p.lifetime) * 0.7, false);
     }
