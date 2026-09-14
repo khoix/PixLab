@@ -1,7 +1,7 @@
 /** Non-destructive baseline capture using the real lobby OperatorPreview.
  * Run (starts Vite unless BASE_URL is set): node scripts/operator-art-baseline.mjs
  * Optional BASE_URL, BROWSER_EXECUTABLE_PATH, OUTPUT_DIR.
- * CAPTURE_SET: weapon-foundation, armor-gate, weapon-family, cuirass, boots, equipment-support; omitted = original baseline.
+ * CAPTURE_SET: weapon-foundation, armor-gate, weapon-family, cuirass, boots, equipment-support, final-review; omitted = original baseline.
  * Production files are read-only. Use a new OUTPUT_DIR for after captures.
  */
 import { chromium } from '@playwright/test';
@@ -34,7 +34,21 @@ const groups = { weapons: ['sword', 'spear', 'axe', 'dagger', 'mace'],
   armor: ['armor', 'shield', 'helmet', 'boots', 'gauntlets', 'gauntlets-sleeve'],
   utility: ['scope', 'thruster', 'scanner', 'amplifier'] };
 const assets = ['operator.png', 'operator-hand.png', ...Object.entries(groups).flatMap(([g, names]) => names.map(n => `${g}/${n}.png`))];
-const cases = process.env.CAPTURE_SET === 'equipment-support' ? [
+const cases = process.env.CAPTURE_SET === 'final-review' ? [
+  ['bare', null, null, null],
+  ['weapon-only', 'sword', null, null],
+  ['armor-only', null, 'armor', null],
+  ['utility-only', null, null, 'scope'],
+  ['sword-armor-scope', 'sword', 'armor', 'scope'],
+  ['spear-shield-scanner', 'spear', 'shield', 'scanner'],
+  ['dagger-boots-amplifier', 'dagger', 'boots', 'amplifier'],
+  ['mace-helmet-thruster', 'mace', 'helmet', 'thruster'],
+  ['axe-gauntlets-scanner', 'axe', 'gauntlets', 'scanner'],
+  ...groups.weapons.map(w => [`${w}-gauntlets-scope`, w, 'gauntlets', 'scope']),
+  ['shield-thruster', null, 'shield', 'thruster'],
+  ['helmet-scope', null, 'helmet', 'scope'],
+  ['armor-thruster', null, 'armor', 'thruster'],
+] : process.env.CAPTURE_SET === 'equipment-support' ? [
   ['bare', null, null, null],
   ['armor-only', null, 'armor', null],
   ['boots-amplifier', null, 'boots', 'amplifier'],
