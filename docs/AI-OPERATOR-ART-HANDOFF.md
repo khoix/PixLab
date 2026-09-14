@@ -1,7 +1,8 @@
-# Operator equipment art — Execution 1 baseline
+# Operator equipment art — Executions 1–2
 
 Branch: `astra/operator-equipment-art-revision`, from current main **aaff08e**
-(2026-09-13). Execution 1 complete; no production code, mappings or PNGs changed.
+(2026-09-13). Execution 2 complete (2026-09-14): only the sword and spear
+production PNGs revised. Production code, mappings and all other art unchanged.
 
 ## Durable references
 
@@ -113,15 +114,62 @@ Pre-existing observations (do not repair in Execution 1):
   No equipment alpha touches a source-canvas edge, and no source-edge clipping or
   disconnected grip was found in the reviewed composites. No async render errors.
 
+## Execution 2 — weapon foundation
+
+- **Cyber-Xiphos:** dark advanced blade with a subtle leaf-shaped swell, steel-grey
+  bevel, substantial antique-brass curved/wing guard, and one narrow cyan blade
+  seam. The guard's cyan inset supports that focal point without bloom. Keep the
+  blade predominantly dark; classical ancestry is geometry, not engraving.
+- **Hoplite Rail-Lance:** long segmented dark-composite shaft, compact brass-ended
+  counterweight, strong brass collar, angular leaf spearhead and narrow cyan core.
+  Both weapons now share the utilities' dark hardware and restrained cyan. Gold
+  occupies fittings rather than whole blades; no external glow or ornament text.
+- Generated using built-in imagegen with original PNGs as positional targets and
+  scanner/thruster as material references. The spear also referenced the revised
+  sword. A separate imagegen extraction removed a baked checkerboard in the first
+  spear draft; that rejected draft is not shipped. Prompt briefs are in
+  `docs/operator-art-execution-2/production-notes.md`.
+- Integration corrected generated full-frame registration with Sharp: remove alpha
+  below 32, crop remaining ink, nearest-neighbour resize to the original solid
+  envelope, then place on transparent 256×256. Sword: 93×55 at (69,87); spear:
+  114×44 at (47,104). No renderer offset, rotation or attachment changes.
+- Final solid hand intersections: sword **110px**, centroid **(81.300,131.691)**;
+  spear **87px**, centroid **(81.230,131.885)**. Both remain in the original grip
+  region. No edge ink or detached grip; original hand/sleeve/gauntlets still cover
+  the handles correctly. All other 15 source hashes still match Execution 1.
+- Reviewed six real React OperatorPreview loadouts: each weapon with body armor,
+  gauntlets and shield, plus scope/scanner/thruster. Checked 256px source sheet,
+  native 320px composites, and actual desktop/phone display. Brass/cyan remain
+  readable; no utility obstruction or new clipping found. Existing medieval
+  operator/armor mismatch remains pending the later executions.
+- Evidence: `docs/operator-art-execution-2/weapons-before-after.png`,
+  `loadouts-320.png` (six actual composites, each 320px), and `validation.json`.
+  Reuse the capture script with `CAPTURE_SET=weapon-foundation` and a fresh
+  `OUTPUT_DIR`; preserve the original baseline directory.
+- Changed files: the two weapon PNGs, this handoff, the capture script,
+  `e2e/operator-weapon-art.spec.ts`, and the Execution 2 evidence directory.
+
 ## Validation and next execution
 
 - Capture harness: **15/15** real UI composites, all **17/17** PNGs loaded at 256px;
   desktop and phone preview inspected. SHA-256 manifest preserves the exact baseline.
-- Existing `operator-utility-art.spec.ts`: **10 passed**, desktop/mobile (8.3s).
-  Rendering/mapping behavior and all production files remain unchanged.
-- Next: **Execution 2 only**, revise sword + spear using their original full-frame
-  PNGs and the measured ~81,132 grip. Match utility dark hardware/selective cyan,
-  adding structural antique gold and xiphos/rail-lance silhouette cues per the plan.
-  Validate through the real preview with armor/gauntlets and utilities at 256/320
-  and normal display size. Keep every other production asset unchanged. Do not
-  redo this baseline or begin the shield/helmet style gate yet.
+- Execution 1 `operator-utility-art.spec.ts`: **10 passed**, desktop/mobile (8.3s).
+  That baseline execution changed no production files.
+- Execution 2 capture: **6/6**, **17/17** images loaded, zero runtime errors;
+  bitmap 320×320 and display 322×322 including border on desktop and phone.
+- Utility + new weapon registration e2e: **14 passed (8.7s)** across desktop/mobile.
+  Weapon tests guard transparency, spatial envelope and hand overlap. Script syntax
+  check and `git diff --check` passed.
+- `npm run check`: **15 pre-existing TypeScript errors**, including GameCanvas,
+  compendium, Game/Demo, and the case-sensitive `pixlab3.PNG` import. All inputs
+  included by tsconfig and dependency versions are unchanged by this execution.
+  Not repaired as part of asset production. Tests used a temporary local config
+  with explicit loopback host and installed Chromium because this environment's
+  network-interface enumeration/default browser download failed; no repo config
+  changes were needed.
+- Next: **Execution 3 only**, shield + helmet and the four-prototype style gate.
+  Carry forward dark gunmetal, selective cyan and substantial brass fittings.
+  Keep utility attachment space and the documented layer order, especially scope
+  above helmet and scanner above shield. Revisit sword/spear only if that gate
+  exposes a concrete cross-family defect. Do not redo the baseline or propagate
+  the remaining weapons/armor before the gate.

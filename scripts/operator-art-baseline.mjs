@@ -1,6 +1,7 @@
 /** Non-destructive baseline capture using the real lobby OperatorPreview.
  * Run (starts Vite unless BASE_URL is set): node scripts/operator-art-baseline.mjs
- * Optional BASE_URL, BROWSER_EXECUTABLE_PATH, OUTPUT_DIR. Production files are read-only.
+ * Optional BASE_URL, BROWSER_EXECUTABLE_PATH, OUTPUT_DIR, CAPTURE_SET=weapon-foundation.
+ * Production files are read-only. Use a new OUTPUT_DIR for after captures.
  */
 import { chromium } from '@playwright/test';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
@@ -32,7 +33,14 @@ const groups = { weapons: ['sword', 'spear', 'axe', 'dagger', 'mace'],
   armor: ['armor', 'shield', 'helmet', 'boots', 'gauntlets', 'gauntlets-sleeve'],
   utility: ['scope', 'thruster', 'scanner', 'amplifier'] };
 const assets = ['operator.png', 'operator-hand.png', ...Object.entries(groups).flatMap(([g, names]) => names.map(n => `${g}/${n}.png`))];
-const cases = [
+const cases = process.env.CAPTURE_SET === 'weapon-foundation' ? [
+  ['sword-armor-scope', 'sword', 'armor', 'scope'],
+  ['sword-gauntlets-scope', 'sword', 'gauntlets', 'scope'],
+  ['sword-shield-scanner', 'sword', 'shield', 'scanner'],
+  ['spear-armor-thruster', 'spear', 'armor', 'thruster'],
+  ['spear-shield-scanner', 'spear', 'shield', 'scanner'],
+  ['spear-gauntlets-scope', 'spear', 'gauntlets', 'scope'],
+] : [
   ['bare', null, null, null],
   ['sword-armor-scope', 'sword', 'armor', 'scope'],
   ['spear-shield-scanner', 'spear', 'shield', 'scanner'],
