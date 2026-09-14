@@ -254,16 +254,26 @@ Pre-existing observations (do not repair in Execution 1):
   Existing utility/weapon tests:20 passed. New test initially used lowercase names
   despite the game's title-case item contract; corrected the fixture, then both
   desktop/mobile tests passed. No production mapping change.
-- Boots were attempted with dark greaves, mechanical ankle/heel hardware, brass
-  vent/fins and tiny cyan mobility modules. Three drafts/extraction attempts
-  retained baked checkerboards, so none was installed. Original boots preserved.
-  Resume at boots: obtain actual alpha and verify both leg positions before
-  replacing the production PNG; do not blindly accept the generated background.
+- Boots now completed: dark articulated combat greaves, mechanical ankle/heel,
+  brass vent fins and contained cyan mobility accents. Two new checkerboard drafts
+  were rejected; the third output has actual RGBA alpha. Sharp registered each leg
+  independently to the original envelopes: left (70,142) 56×74, right (130,144)
+  62×70, on a transparent 256px canvas. No renderer or mapping changes.
+- Boots+amplifier and dagger+boots+amplifier reviewed in real 320px React previews
+  and phone layout: lower-leg placement preserved, utility visible, no background
+  contamination. Evidence: boots-amplifier-320.png and boots-validation.json in
+  docs/operator-art-execution-5/. Capture with CAPTURE_SET=boots and fresh OUTPUT_DIR.
+- New objective test rejects pixels outside the two original leg envelopes and
+  requires both boots to be present. Equipment/utility/weapon e2e: 24 passed (18.1s)
+  across desktop/mobile. npm run check rerun: same 15 pre-existing errors in
+  unchanged production TypeScript. 2/2 captures, 17/17 images, zero runtime errors.
 - Gauntlets and sleeve not yet revised. Preserve all five grips and stack measures
   from Execution4. Complete required armor/boots/gauntlets utility combinations.
 - Operator evaluation: light cloth/tunic materially conflicts with dark equipment;
   a neutral dark undersuit revision is warranted but NOT yet attempted. Preserve
   exact pose, limbs, face, grip and landscape background. Hand skin is not itself
   a conflict; retain unless a precise material correction proves necessary.
-- Timeboxed partial checkpoint under 50% budget. Finish these Execution5 items
+- Resume exactly at gauntlets + sleeve, then the operator undersuit. Boots and
+  cuirass are accepted; do not regenerate them. Timeboxed partial checkpoint under
+  50% budget. Finish these Execution5 items
   before final integration/PR. Do not reopen accepted weapon or shield/helmet art.
