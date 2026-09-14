@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Full-frame registration is the attachment contract: the renderer has no
 // per-weapon offset. Catch missing alpha, stray backgrounds and detached grips.
-for (const weapon of ['sword', 'spear']) {
+for (const weapon of ['sword', 'spear', 'axe', 'dagger', 'mace']) {
   test(`${weapon} loads as a transparent, hand-registered equipment layer`, async ({ page }) => {
     await page.goto('/');
     const result = await page.evaluate(async name => {

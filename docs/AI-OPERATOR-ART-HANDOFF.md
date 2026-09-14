@@ -1,7 +1,7 @@
-# Operator equipment art — Executions 1–3
+# Operator equipment art — Executions 1–4
 
 Branch: `astra/operator-equipment-art-revision`, from current main **aaff08e**
-(2026-09-13). Execution 3 complete (2026-09-14): sword, spear, shield and helmet revised.
+(2026-09-13). Execution 4 complete (2026-09-14): all five weapons, shield and helmet revised.
 Production code, mappings and all other art unchanged.
 
 ## Durable references
@@ -198,7 +198,45 @@ Pre-existing observations (do not repair in Execution 1):
 - Changed: shield/helmet PNGs, capture script, this handoff and Execution 3 notes,
   capture sheet and validation JSON. Base operator and remaining armor are still
   intentionally medieval/light-cloth until their scheduled execution.
-- **Next: Execution 4 only**, propagate the settled language to axe, dagger and
-  mace. Preserve original grip/registration. Use these four prototypes and the
-  unchanged utilities as references; do not reopen overall direction or start
-  the remaining armor/support layers yet.
+## Execution 4 — completed weapon family
+
+- **Cyber-Labrys:** paired dark powered axe blades, substantial brass head collars,
+  compact cyan capacitor and controlled cyan cutting channels. Preserves original
+  double-head geometry; original stray purple fringe/line is not retained.
+- **Ritual Cyberblade:** compact asymmetric clipped blade with stepped heel,
+  squared brass guard/spine bracket, dark machined grip and small inset cyan
+  channel. First draft resembled a miniature sword; corrected before acceptance.
+- **Divine Capacitor:** dark radial impact flanges around a cylindrical reactor,
+  structural brass rings and contained cyan core. No lightning-bolt decoration.
+- Built-in imagegen used original weapons for attachment and revised sword/spear
+  plus utilities for materials. Axe/dagger drafts needed transparency corrections.
+  Sharp applied the established alpha<32 cleanup, nearest-neighbour resizing and
+  full-frame registration: axe 90×54 at (64,90); dagger 54×22 at (71,116); mace
+  82×36 at (65,105). Each remains a transparent 256×256 PNG. Renderer unchanged.
+- All five weapons reviewed with gauntlets/sleeve/scope; each newly revised weapon
+  also reviewed with body armor and scanner/amplifier/thruster. Eight real React
+  previews, source-size before/after sheet and phone display inspected. No new
+  floating, clipping or utility interference. Dark material, structural brass and
+  contained cyan remain coherent with the accepted sword/spear and armor gate.
+- New hand intersections: axe 141px at (81.333,131.163), dagger 84px at
+  (81.750,131.810), mace 91px at (81.374,132.714). All remain at the original grip.
+  **For gauntlet revision:** preserve this hand region and the stack sleeve →
+  weapon → hand → gauntlets. Sword overlaps 110 sleeve pixels; the other four
+  weapons only 1 each. Gauntlets intentionally cover handles (133–211 solid
+  overlap pixels); do not move weapons to reveal hidden handle detail.
+- Evidence: `docs/operator-art-execution-4/` contains native 320px loadout sheet,
+  256px before/after sheet, prompt notes and `validation.json` with all five stack
+  measurements. Capture with `CAPTURE_SET=weapon-family` and a fresh OUTPUT_DIR.
+- Validation: 8/8 captures, 17/17 assets loaded, zero runtime errors; utility and
+  all-five-weapon registration e2e **20 passed (10.1s)** on desktop/mobile.
+  `npm run check` still reports the same 15 pre-existing errors; every included
+  TypeScript input and dependency version is unchanged. Script syntax and diff
+  integrity checks passed. Other 14 source hashes unchanged from Execution 3.
+- Changed: axe/dagger/mace PNGs, capture script, existing weapon e2e parameter list,
+  handoff and Execution 4 evidence. Work used a separate clean checkout because
+  the earlier checkout had an unrelated local audio edit; that edit was preserved
+  in place and excluded from this branch's commit.
+- **Next: Execution 5 only**, remaining armor, boots, gauntlets/sleeve and evaluate
+  operator/hand per the plan. Propagate the settled material/silhouette language.
+  Preserve attachment regions and these five verified grips; do not reopen the
+  completed weapon family or change gameplay/compositing to accommodate artwork.
