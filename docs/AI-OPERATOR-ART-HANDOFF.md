@@ -1,9 +1,9 @@
-# Operator equipment art — Execution 5 in progress
+# Operator equipment art — Execution 5 complete
 
-Branch: `astra/operator-equipment-art-revision`, from current main **aaff08e**
-(2026-09-13). Execution 4 complete; Execution 5 PARTIAL (2026-09-14): cuirass integrated.
-Boots, gauntlets/sleeve and operator/hand work remain. Do not begin Execution 6.
-Production code, mappings and all other art unchanged.
+Branch: `astra/operator-equipment-art-revision`, from main **aaff08e**.
+Executions 1–5 complete (2026-09-14). All planned equipment art is installed.
+Operator clothing revised; natural hand preserved. Production renderer, item
+mappings, gameplay and utility PNGs unchanged. Next: final validation in Execution 6.
 
 ## Durable references
 
@@ -237,7 +237,7 @@ Pre-existing observations (do not repair in Execution 1):
   handoff and Execution 4 evidence. Work used a separate clean checkout because
   the earlier checkout had an unrelated local audio edit; that edit was preserved
   in place and excluded from this branch's commit.
-## Execution 5 — partial, resume here
+## Execution 5 — complete
 
 - Completed body armor: dark segmented cybertech cuirass with strong brass central
   structure/framing, cyan chest slit, no sculpted abdominal musculature. Built-in
@@ -267,13 +267,46 @@ Pre-existing observations (do not repair in Execution 1):
   requires both boots to be present. Equipment/utility/weapon e2e: 24 passed (18.1s)
   across desktop/mobile. npm run check rerun: same 15 pre-existing errors in
   unchanged production TypeScript. 2/2 captures, 17/17 images, zero runtime errors.
-- Gauntlets and sleeve not yet revised. Preserve all five grips and stack measures
-  from Execution4. Complete required armor/boots/gauntlets utility combinations.
-- Operator evaluation: light cloth/tunic materially conflicts with dark equipment;
-  a neutral dark undersuit revision is warranted but NOT yet attempted. Preserve
-  exact pose, limbs, face, grip and landscape background. Hand skin is not itself
-  a conflict; retain unless a precise material correction proves necessary.
-- Resume exactly at gauntlets + sleeve, then the operator undersuit. Boots and
-  cuirass are accepted; do not regenerate them. Timeboxed partial checkpoint under
-  50% budget. Finish these Execution5 items
-  before final integration/PR. Do not reopen accepted weapon or shield/helmet art.
+- Gauntlets completed: powered steel knuckles, broad structural brass cuffs and
+  tiny cyan wrist elements. Original independent hand envelopes preserved:
+  lowered fist (74,119) 20×21; raised fist/bracer (155,102) 37×28. Removed the
+  original stray upper-left pixels. Native RGBA output verified before integration.
+- Sleeve completed as a minimal dark steel/brass helper at (77,106), 20×17. No
+  new geometry or renderer offsets. Same stack: sleeve → weapon → hand → gauntlets.
+  All five weapon/hand intersections and centroids exactly match Execution 4.
+  New glove overlap pixels: sword165, spear130, axe208, dagger144, mace133.
+  Sleeve: sword105, others0; isolated original fringe pixels were not preserved.
+- Operator revision warranted by light tunic conflicting with equipment: generated
+  dark slate undersuit panels integrated through original clothing mask, preserving
+  original background and anchors. Only 3,750 garment/wrap pixels changed; face,
+  hair, fists, belt, shoes and surrounding landscape retained. New objective tests
+  compare pre-revision RGBA digests for head, grip, raised fist, sky and ground.
+  Natural `operator-hand.png` unchanged: skin did not conflict and grip is critical.
+- 12 real React previews reviewed at320px, plus phone display: bare, armor-only,
+  boots+amplifier, axe+gauntlets+scanner, all five weapons+gauntlets+scope,
+  armor+thruster, helmet+scope, spear+shield+scanner. No detached equipment, sleeve
+  seam, utility obstruction or excessive new glow. Only one armor slot exists.
+- Evidence: `support-320.webp` (lossless, identical decoded pixels to PNG capture)
+  and `support-validation.json` in docs/operator-art-execution-5/. Sheet reads
+  left-to-right in the capture order above; all17 assets loaded, zero runtime errors.
+  Reproduce with CAPTURE_SET=equipment-support and a new OUTPUT_DIR. Keep BEFORE
+  baseline and earlier checkpoint evidence intact.
+- Final targeted tests: equipment/utility/weapon e2e **30 passed (16.9s)** on desktop
+  and Pixel5; includes glove/sleeve envelope checks and original operator anchors.
+  `npm run check`: same15 pre-existing errors in unchanged production TypeScript.
+  Script syntax and `git diff --check` passed. No new source-code regressions.
+- This completion changed gauntlets.png, gauntlets-sleeve.png, operator.png,
+  capture script, equipment-assets e2e, handoff, production notes and support evidence.
+  Earlier Execution5 checkpoints changed cuirass and boots. All other assets unchanged.
+
+## Exact starting point for Execution 6
+
+Reuse the completed artwork and captures; do not reopen design. Finish the plan's
+minimal/standard/stress composition review (including weapon-only and utility-only,
+plus sword+armor+scope, dagger+boots+amplifier, mace+helmet+thruster on the revised
+base). Compare selected final captures against the original baseline. Run relevant
+build/check/tests, classify existing failures separately, prepare concise
+asset-by-asset before/after review material, clean historical handoff instructions,
+and open the branch PR to main. Inspect CI and repair only task-caused failures.
+No PR opened during Execution5. The remaining work is final integration validation,
+not unfinished art production.
