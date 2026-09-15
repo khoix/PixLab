@@ -41,7 +41,6 @@ import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
 import {
   BOSS_CYCLES,
   canBeginCycle,
-  canDealDamage as cycleCanDealDamage,
   enterPhase,
   isRooted,
   phaseExpired,
@@ -66,8 +65,7 @@ import {
 import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
-import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
-import { canLandMeleeHit } from '../../lib/game/combat/meleeCadence';
+import { mobReachesPlayer, resolveMobMeleeAttack } from '../../lib/game/combat/mobContact';
 import {
   applyVisionDebuffStack,
   createVisionDebuffState,
@@ -168,7 +166,6 @@ import {
 } from '../../lib/game/combat/rangedTelegraph';
 import {
   shouldAdvanceCerberusCombo,
-  shouldCerberusBiteDamage,
   CERBERUS_COMBO_COOLDOWN_AFTER_MS,
   CERBERUS_COMBO_RESET_MS,
 } from '../../lib/game/combat/cerberus';
@@ -2693,155 +2690,55 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         }
 
-        // Calculate distance to player for melee check
-        const finalDistToPlayer = Math.sqrt(
-          Math.pow(updatedEntity.pos.x - playerPosRef.current.x, 2) +
-          Math.pow(updatedEntity.pos.y - playerPosRef.current.y, 2)
-        );
-        
-        // Check collision with player for melee damage
-        // Use distance-based check for melee attacks (1.5 tiles), exact position for ranged
-        const meleeRange = 1.5;
-        const isInMeleeRange = finalDistToPlayer <= meleeRange;
-        const isExactPosition = updatedEntity.pos.x === playerPosRef.current.x && updatedEntity.pos.y === playerPosRef.current.y;
-        
-        // For non-flying mobs, only allow attacks in cardinal directions
-        const canAttack = canMoveDiagonally(updatedEntity) || isInCardinalDirection(updatedEntity.pos, playerPosRef.current);
-        // Symmetry with the player's attack rule: a mob cannot land a melee hit
-        // from a tile the player has no line of sight into (notably a phasing
-        // mob parked inside a wall, which the player cannot attack back).
-        const hasMeleeLineOfSight =
-          !levelRef.current || canMeleeReach(playerPosRef.current, updatedEntity.pos, levelRef.current);
-        // Stated outright rather than left to LOS geometry: a mob standing in
-        // solid rock is a mob the player cannot attack back, so it does not get
-        // to attack either.
-        const attackerInWall = !!levelRef.current && checkCollision(updatedEntity.pos, levelRef.current);
-        
-        if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack && hasMeleeLineOfSight) {
-          if (!entity.isRanged || finalDistToPlayer <= 1) {
-            // Special handling for Cerberus tri-bite combo
-            if (mobSubtype === 'cerberus') {
-              const biteComboCount = updatedEntity.biteComboCount || 0;
-              const lastBite = updatedEntity.lastBiteTime || 0;
-              const timeSinceLastBite = now - lastBite;
-              const lastDamageComboCount = updatedEntity.lastDamageComboCount || 0;
+        // Contact: does this mob reach the player, and may it swing?
+        //
+        // Both questions live in combat/mobContact.ts. What stays here is the
+        // applying: hp, the cooldown stamp, sound, haptics, the event log and
+        // the game-over path.
+        const reach = mobReachesPlayer(updatedEntity, playerPosRef.current, levelRef.current);
 
-              const shouldDamage = shouldCerberusBiteDamage(
-                biteComboCount,
-                timeSinceLastBite,
-                lastDamageComboCount,
-              );
-              
-              if (shouldDamage) {
-                const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
-                // Short cooldown, only to stop one bite landing twice — the
-                // tri-bite cadence itself is `shouldCerberusBiteDamage`.
-                if (canLandMeleeHit({
-                  now,
-                  lastDamageTime,
-                  cooldownMs: 100,
-                  attackerInWall,
-                  emergedAt: updatedEntity.phaseEmergedAt,
-                })) {
-                  const damage = computeIncomingDamage({
-                    baseDamage: entity.damage,
-                    defense: getTotalDefense(loadoutRef.current),
-                    hpRatio: baseStats.hp / baseStats.maxHp,
-                    maxHp: baseStats.maxHp,
-                    // The tri-bite's cadence is the whole combo, not the 100 ms
-                    // guard between individual bites.
-                    cadenceMs: entity.attackCooldown ?? 500,
-                    isBoss: entity.isBoss === true,
-                    level: state.currentLevel,
-                  });
-                  const newHp = Math.max(0, baseStats.hp - damage);
-                  
-                  // Mark this combo count as having dealt damage
-                  updatedEntity.lastDamageComboCount = biteComboCount;
-                  
-                  enemyDamageCooldownRef.current.set(entity.id, now);
-                  audioManager.playSound('damage');
-                  haptic('medium');
-                  statsRef.current = { ...statsRef.current, hp: newHp };
-            queueStatsUpdate({ hp: newHp });
-                  
-                  // Log damage event (Cerberus bite)
-                  const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
-                  eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
-                    damage,
-                    enemyType: entity.mobSubtype,
-                    isBoss: entity.isBoss,
-                    hp: newHp,
-                    maxHp: baseStats.maxHp
-                  });
-                  
-                  if (newHp <= 0 && !gameOverTriggeredRef.current) {
-                    gameOverTriggeredRef.current = true;
-                    audioManager.playSound('gameOver');
-                    audioManager.stopMusic();
-                    onGameOver();
-                  }
-                }
-              }
-            } else {
-              // Normal melee damage cooldown
-              const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
-              const DAMAGE_COOLDOWN_MS = entity.attackCooldown || 500;
+        if (reach.reaches) {
+          const outcome = resolveMobMeleeAttack({
+            attacker: updatedEntity,
+            now,
+            lastDamageTime: enemyDamageCooldownRef.current.get(entity.id) || 0,
+            attackerInWall: reach.attackerInWall,
+            defense: getTotalDefense(loadoutRef.current),
+            hp: baseStats.hp,
+            maxHp: baseStats.maxHp,
+            sector: state.currentLevel,
+            claimSlot: (cadenceMs) => claimAttackSlot(updatedEntity, now, cadenceMs),
+          });
 
-              // A boss running the attack cycle can only hurt during an
-              // execution, and only once per cycle: one charge is one hit, which
-              // is what makes baiting it a decision rather than a gamble.
-              const cycleAllows =
-                updatedEntity.bossPhase === undefined ||
-                cycleCanDealDamage(readCycle(updatedEntity, now));
+          if (outcome.kind === 'hit') {
+            if (outcome.comboCount !== undefined) {
+              // Mark this combo count as having dealt damage
+              updatedEntity.lastDamageComboCount = outcome.comboCount;
+            }
+            if (outcome.countsAgainstCycle) {
+              updatedEntity.bossPhaseHits = (updatedEntity.bossPhaseHits ?? 0) + 1;
+            }
 
-              // And it has to hold one of the sector's attack slots. Without
-              // one it keeps pursuing and repositioning but does not swing —
-              // per-hit fairness does not compose, so the crowd is bounded here
-              // rather than by making every individual hit weaker.
-              const hasSlot = claimAttackSlot(updatedEntity, now, DAMAGE_COOLDOWN_MS);
+            enemyDamageCooldownRef.current.set(entity.id, now);
+            audioManager.playSound('damage');
+            haptic('medium');
+            statsRef.current = { ...statsRef.current, hp: outcome.newHp };
+            queueStatsUpdate({ hp: outcome.newHp });
 
-              if (cycleAllows && hasSlot && canLandMeleeHit({
-                now,
-                lastDamageTime,
-                cooldownMs: DAMAGE_COOLDOWN_MS,
-                attackerInWall,
-                emergedAt: updatedEntity.phaseEmergedAt,
-              })) {
-                updatedEntity.bossPhaseHits = (updatedEntity.bossPhaseHits ?? 0) + 1;
-                const damage = computeIncomingDamage({
-                  baseDamage: entity.damage,
-                  defense: getTotalDefense(loadoutRef.current),
-                  hpRatio: baseStats.hp / baseStats.maxHp,
-                  maxHp: baseStats.maxHp,
-                  cadenceMs: DAMAGE_COOLDOWN_MS,
-                  isBoss: entity.isBoss === true,
-                  level: state.currentLevel,
-                });
-                const newHp = Math.max(0, baseStats.hp - damage);
-                
-                enemyDamageCooldownRef.current.set(entity.id, now);
-                audioManager.playSound('damage');
-                haptic('medium');
-                statsRef.current = { ...statsRef.current, hp: newHp };
-            queueStatsUpdate({ hp: newHp });
-                
-                // Log damage event
-                const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
-                eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
-                  damage,
-                  enemyType: entity.mobSubtype,
-                  hp: newHp,
-                  maxHp: baseStats.maxHp
-                });
-                
-                if (newHp <= 0 && !gameOverTriggeredRef.current) {
-                  gameOverTriggeredRef.current = true;
-                  audioManager.playSound('gameOver');
-                  audioManager.stopMusic();
-                  onGameOver();
-                }
-              }
+            const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
+            eventLogger.logEvent('combat', `Took ${outcome.damage} damage from ${enemyTypeName}`, {
+              damage: outcome.damage,
+              enemyType: entity.mobSubtype,
+              isBoss: entity.isBoss,
+              hp: outcome.newHp,
+              maxHp: baseStats.maxHp,
+            });
+
+            if (outcome.newHp <= 0 && !gameOverTriggeredRef.current) {
+              gameOverTriggeredRef.current = true;
+              audioManager.playSound('gameOver');
+              audioManager.stopMusic();
+              onGameOver();
             }
           }
         }
