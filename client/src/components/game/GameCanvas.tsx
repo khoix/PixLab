@@ -58,6 +58,7 @@ import {
   type MobBrainContext,
 } from '../../lib/game/ai/mobBehaviour';
 import { buildMobOccupancy, occupancyKey } from '../../lib/game/ai/mobOccupancy';
+import { buildLevelDebugHooks } from '../../lib/game/testHooks';
 import { addsDueAt } from '../../lib/game/ai/bossAdds';
 import {
   createPressureState,
@@ -90,8 +91,8 @@ import {
   decayVisionDebuff,
   resetVisionDebuff,
 } from '../../lib/game/combat/visionDebuff';
-import { getLosCacheStats, hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
-import { spawnMobEntity, spawnPortalAtPosition } from '../../lib/game/demoSpawn';
+import { hasLineOfSightCached, invalidateLosCache } from '../../lib/game/ai/losCache';
+import { spawnMobEntity } from '../../lib/game/demoSpawn';
 import { getThemeForLevel } from '../../lib/game/colorThemes';
 import { drawMobArt } from '../../lib/game/renderer/mobArt';
 import { drawPerspectiveSenses } from '../../lib/game/renderer/perspectiveSenses';
@@ -746,89 +747,26 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // E2e/debug hook: read-only view of the live level plus controlled mob spawning,
   // so AI scheduling can be verified without relying on random level layouts.
   useEffect(() => {
-    window.__PIXLAB_LEVEL__ = {
-      getPlayerPos: () => ({ ...playerPosRef.current }),
-      getWorldRenderStats: () => voxelWorld.getStats(),
-      getRenderedPerspectiveCamera: () => {
-        const camera = renderedCameraRef.current?.perspective;
-        return camera ? { ...camera, focus: { ...camera.focus }, anchor: { ...camera.anchor } } : null;
-      },
-      getPerspectiveFogStats: () => perspectiveFog.getStats(),
-      getPlayerHp: () => statsRef.current.hp,
-      // Render-owned legacy 2D effects. Exposed because the pause leak they
-      // used to cause is only observable from outside the component.
-      getLegacyEffectCount: () => legacyEffectsRef.current.effects.length,
-      isWall: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'wall',
-      getPressureStats: () => ({
-        used: usedSlots(attackPressureRef.current),
-        cap: slotCapForLevel(state.currentLevel),
-        holders: attackPressureRef.current.size,
-        peakUsed: peakPressureRef.current,
-      }),
-      getEntities: () =>
-        (levelRef.current?.entities ?? []).map((e) => ({
-          id: e.id,
-          type: e.type,
-          mobSubtype: e.mobSubtype ?? null,
-          pos: { ...e.pos },
-          hp: e.hp,
-          bossPhase: e.bossPhase ?? null,
-        })),
-      getExitPos: () => (levelRef.current ? { ...levelRef.current.exitPos } : null),
-      isFloor: (x: number, y: number) => levelRef.current?.tiles[y]?.[x] === 'floor',
-      setPlayerPos: (pos) => {
-        playerPosRef.current = { ...pos };
-        visualPosRef.current = { ...pos };
-        moveStartPosRef.current = { ...pos };
-        moveProgressRef.current = 1;
-        lastPlayerPosRef.current = { ...pos };
-      },
-      spawnMob: (subtype, pos) => {
-        const level = levelRef.current;
-        if (!level) return null;
-        const entity = spawnMobEntity(level, subtype, { ...pos }, level.levelNumber, statsRef.current, loadoutRef.current);
-        if (!entity) return null;
-        level.entities = [...level.entities, entity];
-        return entity.id;
-      },
-      clearMobs: () => {
-        const level = levelRef.current;
-        if (!level) return;
-        level.entities = level.entities.filter((e) => e.type !== 'enemy' && e.type !== 'boss_enemy');
-      },
-      spawnItem: (item, pos) => {
-        const level = levelRef.current;
-        if (!level) return;
-        level.items = [...level.items, { pos: { ...pos }, item }];
-      },
-      getItems: () => (levelRef.current?.items ?? []).map(({ pos, item }) => ({ pos: { ...pos }, item })),
-      getLosCacheStats: () => (levelRef.current ? getLosCacheStats(levelRef.current) : null),
-      spawnPortal: (pos: Position) => {
-        const level = levelRef.current;
-        if (!level) return null;
-        const portal = spawnPortalAtPosition(level, { ...pos });
-        if (!portal) return null;
-        level.portals = [...(level.portals ?? []), portal];
-        return portal.id;
-      },
-      clearPortals: () => {
-        const level = levelRef.current;
-        if (level) level.portals = [];
-      },
-      getPortals: () =>
-        (levelRef.current?.portals ?? []).map((p) => ({
-          id: p.id,
-          pos: { ...p.pos },
-          exitPos: { ...p.exitPos },
-        })),
-      isStandingOnPortal: () => portalApiRef.current?.isStandingOnPortal() ?? false,
-      screenToTile: (x: number, y: number) => portalApiRef.current?.screenToTile(x, y) ?? null,
-      tapAt: (x: number, y: number) => {
-        const tile = portalApiRef.current?.screenToTile(x, y);
-        if (!tile) return false;
-        return portalApiRef.current?.tryEnterPortalAt(tile) ?? false;
-      },
-    };
+    window.__PIXLAB_LEVEL__ = buildLevelDebugHooks({
+      levelRef,
+      playerPosRef,
+      visualPosRef,
+      moveStartPosRef,
+      moveProgressRef,
+      lastPlayerPosRef,
+      statsRef,
+      loadoutRef,
+      attackPressureRef,
+      peakPressureRef,
+      legacyEffectsRef,
+      portalApiRef,
+      renderedCameraRef,
+      voxelWorld,
+      perspectiveFog,
+      // A value, not a getter, exactly as before: the cap reported is the one
+      // for the sector this canvas mounted in.
+      sector: state.currentLevel,
+    });
     return () => {
       delete window.__PIXLAB_LEVEL__;
     };
