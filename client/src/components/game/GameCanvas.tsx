@@ -66,6 +66,8 @@ import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { mobReachesPlayer, resolveMobMeleeAttack } from '../../lib/game/combat/mobContact';
+import { stepProjectile } from '../../lib/game/combat/projectileStep';
+import { dropExpired, hasExpired } from '../../lib/game/world/lifetimes';
 import {
   resolveStrike,
   selectAttackableEnemies,
@@ -1374,194 +1376,140 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Update projectiles FIRST (before entity movement) to avoid timing issues
     // Wrap in try-catch to ensure update always completes even if projectiles fail
+    //
+    // Which of the five ends a shot meets — and in what order they are checked
+    // — is combat/projectileStep.ts. What stays here is what each one costs.
     try {
-      const PROJECTILE_SPEED = 0.15; // tiles per frame (roughly)
-      
-      // Ensure projectiles array exists
       if (!levelRef.current.projectiles) {
         levelRef.current.projectiles = [];
       }
-      
-      // Early exit if no projectiles to process
-      if (levelRef.current.projectiles.length === 0) {
-        // Skip projectile processing if empty
-      } else {
-        // Update projectiles - use for loop for better performance
-        const updatedProjectiles: Projectile[] = [];
-        for (let i = 0; i < levelRef.current.projectiles.length; i++) {
-          const projectile = levelRef.current.projectiles[i];
+
+      const updatedProjectiles: Projectile[] = [];
+      for (const projectile of levelRef.current.projectiles) {
+        const outcome = stepProjectile({
+          projectile,
+          now,
+          playerPos: playerPosRef.current,
+          entities: levelRef.current.entities ?? [],
+          level: levelRef.current,
+          lifetimeMs: PROJECTILE_LIFETIME,
+        });
+
+        // Aged out, or stopped by rock: gone either way, and nothing to pay.
+        if (outcome.kind === 'expired' || outcome.kind === 'blocked') continue;
+
+        if (outcome.kind === 'hitPlayer') {
+          // Hit player - update stats synchronously but ensure loop continues
+          const damage = computeIncomingDamage({
+            baseDamage: projectile.damage,
+            defense: getTotalDefense(loadoutRef.current),
+            hpRatio: baseStats.hp / baseStats.maxHp,
+            maxHp: baseStats.maxHp,
+            // The cadence the shot was fired at, not the shooter's current
+            // one — the shooter may already be dead.
+            cadenceMs: projectile.cadenceMs,
+            isBoss: projectile.isBoss,
+            level: state.currentLevel,
+          });
+          const newHp = Math.max(0, baseStats.hp - damage);
           
-          // Check lifetime
-          if (now - projectile.createdAt > PROJECTILE_LIFETIME) {
-            continue; // Skip expired projectiles
+          // Apply vision debuff if shadow pulse (bounded stack, at most one
+          // per moth per cooldown window)
+          if (projectile.isShadowPulse) {
+            applyVisionDebuff(projectile.ownerId, now);
           }
           
-          // Update position
-          const newPos = {
-            x: projectile.pos.x + projectile.velocity.x * PROJECTILE_SPEED,
-            y: projectile.pos.y + projectile.velocity.y * PROJECTILE_SPEED,
-          };
+          // Find the projectile owner to identify attacker
+          const attacker = levelRef.current?.entities.find(e => e.id === projectile.ownerId);
+          const attackerTypeName = attacker 
+            ? formatEntityName(attacker.mobSubtype, attacker.isBoss)
+            : 'Unknown';
           
-          // Check if hit player
-          const distToPlayer = Math.sqrt(
-            Math.pow(newPos.x - playerPosRef.current.x, 2) +
-            Math.pow(newPos.y - playerPosRef.current.y, 2)
-          );
+          // Update stats immediately - dispatch is fast and shouldn't block
+          audioManager.playSound('damage');
+          haptic('medium');
+          statsRef.current = { ...statsRef.current, hp: newHp };
+          queueStatsUpdate({ hp: newHp });
           
-          if (distToPlayer < 0.5) {
-            // Hit player - update stats synchronously but ensure loop continues
-            const damage = computeIncomingDamage({
-              baseDamage: projectile.damage,
-              defense: getTotalDefense(loadoutRef.current),
-              hpRatio: baseStats.hp / baseStats.maxHp,
-              maxHp: baseStats.maxHp,
-              // The cadence the shot was fired at, not the shooter's current
-              // one — the shooter may already be dead.
-              cadenceMs: projectile.cadenceMs,
-              isBoss: projectile.isBoss,
-              level: state.currentLevel,
+          // Log damage event (projectile/ranged attack)
+          eventLogger.logEvent('combat', `Took ${damage} damage from ${attackerTypeName}`, {
+            damage,
+            enemyType: attacker?.mobSubtype,
+            isBoss: attacker?.isBoss,
+            isProjectile: true,
+            hp: newHp,
+            maxHp: baseStats.maxHp
+          });
+          
+          if (newHp <= 0 && !gameOverTriggeredRef.current) {
+            gameOverTriggeredRef.current = true;
+            // Defer game over to next frame to ensure current frame completes
+            requestAnimationFrame(() => {
+              audioManager.playSound('gameOver');
+              audioManager.stopMusic();
+              onGameOver();
             });
-            const newHp = Math.max(0, baseStats.hp - damage);
+          }
+          
+          continue; // Skip this projectile (hit player)
+        }
+
+        if (outcome.kind === 'hitEnemy') {
+          const entity = outcome.target;
+          const j = outcome.targetIndex;
+          // Hit enemy - apply damage
+          const newHp = Math.max(0, entity.hp - projectile.damage);
+          
+          if (newHp <= 0) {
+            // Entity killed by friendly fire - remove immediately
+            const bossDeathPos = entity.isBoss ? { x: Math.floor(entity.pos.x), y: Math.floor(entity.pos.y) } : null;
             
-            // Apply vision debuff if shadow pulse (bounded stack, at most one
-            // per moth per cooldown window)
-            if (projectile.isShadowPulse) {
-              applyVisionDebuff(projectile.ownerId, now);
+            // Play death sound (no coin sound - friendly fire kills don't reward player)
+            audioManager.playSound('enemyDeath');
+            
+            // If boss was defeated, place exit at boss death location
+            if (entity.isBoss && bossDeathPos && levelRef.current) {
+              const exitX = bossDeathPos.x;
+              const exitY = bossDeathPos.y;
+              
+              // Ensure position is within bounds and is a floor tile
+              if (exitX >= 0 && exitX < levelRef.current.width && 
+                  exitY >= 0 && exitY < levelRef.current.height &&
+                  levelRef.current.tiles[exitY] &&
+                  (levelRef.current.tiles[exitY][exitX] === 'floor' || levelRef.current.tiles[exitY][exitX] === 'wall')) {
+                // Set the tile to exit (convert wall to floor first if needed)
+                if (levelRef.current.tiles[exitY][exitX] === 'wall') {
+                  levelRef.current.tiles[exitY][exitX] = 'floor';
+                }
+                levelRef.current.tiles[exitY][exitX] = 'exit';
+                invalidateLosCache(levelRef.current);
+                // Update exit position
+                levelRef.current.exitPos = { x: exitX, y: exitY };
+              }
             }
             
-            // Find the projectile owner to identify attacker
-            const attacker = levelRef.current?.entities.find(e => e.id === projectile.ownerId);
-            const attackerTypeName = attacker 
-              ? formatEntityName(attacker.mobSubtype, attacker.isBoss)
-              : 'Unknown';
+            // Remove the dead entity immediately
+            levelRef.current.entities = levelRef.current.entities.filter(e => e.id !== entity.id);
+            releaseMobBookkeeping(entity.id);
+          } else {
+            // Entity still alive - just update HP
+            levelRef.current.entities[j] = {
+              ...entity,
+              hp: newHp
+            };
             
-            // Update stats immediately - dispatch is fast and shouldn't block
+            // Play damage sound
             audioManager.playSound('damage');
             haptic('medium');
-            statsRef.current = { ...statsRef.current, hp: newHp };
-            queueStatsUpdate({ hp: newHp });
-            
-            // Log damage event (projectile/ranged attack)
-            eventLogger.logEvent('combat', `Took ${damage} damage from ${attackerTypeName}`, {
-              damage,
-              enemyType: attacker?.mobSubtype,
-              isBoss: attacker?.isBoss,
-              isProjectile: true,
-              hp: newHp,
-              maxHp: baseStats.maxHp
-            });
-            
-            if (newHp <= 0 && !gameOverTriggeredRef.current) {
-              gameOverTriggeredRef.current = true;
-              // Defer game over to next frame to ensure current frame completes
-              requestAnimationFrame(() => {
-                audioManager.playSound('gameOver');
-                audioManager.stopMusic();
-                onGameOver();
-              });
-            }
-            
-            continue; // Skip this projectile (hit player)
           }
-          
-          // Check friendly fire - projectile hits other mobs (but not its owner)
-          let hitEnemy = false;
-          if (levelRef.current && levelRef.current.entities) {
-            for (let j = 0; j < levelRef.current.entities.length; j++) {
-              const entity = levelRef.current.entities[j];
-              
-              // Skip if this is the projectile owner or not an enemy
-              if (entity.id === projectile.ownerId || 
-                  (entity.type !== 'enemy' && entity.type !== 'boss_enemy')) {
-                continue;
-              }
-              
-              // Check collision with enemy
-              const distToEnemy = Math.sqrt(
-                Math.pow(newPos.x - entity.pos.x, 2) +
-                Math.pow(newPos.y - entity.pos.y, 2)
-              );
-              
-              if (distToEnemy < 0.5) {
-                // Hit enemy - apply damage
-                const newHp = Math.max(0, entity.hp - projectile.damage);
-                
-                if (newHp <= 0) {
-                  // Entity killed by friendly fire - remove immediately
-                  const bossDeathPos = entity.isBoss ? { x: Math.floor(entity.pos.x), y: Math.floor(entity.pos.y) } : null;
-                  
-                  // Play death sound (no coin sound - friendly fire kills don't reward player)
-                  audioManager.playSound('enemyDeath');
-                  
-                  // If boss was defeated, place exit at boss death location
-                  if (entity.isBoss && bossDeathPos && levelRef.current) {
-                    const exitX = bossDeathPos.x;
-                    const exitY = bossDeathPos.y;
-                    
-                    // Ensure position is within bounds and is a floor tile
-                    if (exitX >= 0 && exitX < levelRef.current.width && 
-                        exitY >= 0 && exitY < levelRef.current.height &&
-                        levelRef.current.tiles[exitY] &&
-                        (levelRef.current.tiles[exitY][exitX] === 'floor' || levelRef.current.tiles[exitY][exitX] === 'wall')) {
-                      // Set the tile to exit (convert wall to floor first if needed)
-                      if (levelRef.current.tiles[exitY][exitX] === 'wall') {
-                        levelRef.current.tiles[exitY][exitX] = 'floor';
-                      }
-                      levelRef.current.tiles[exitY][exitX] = 'exit';
-                      invalidateLosCache(levelRef.current);
-                      // Update exit position
-                      levelRef.current.exitPos = { x: exitX, y: exitY };
-                    }
-                  }
-                  
-                  // Remove the dead entity immediately
-                  levelRef.current.entities = levelRef.current.entities.filter(e => e.id !== entity.id);
-                  releaseMobBookkeeping(entity.id);
-                } else {
-                  // Entity still alive - just update HP
-                  levelRef.current.entities[j] = {
-                    ...entity,
-                    hp: newHp
-                  };
-                  
-                  // Play damage sound
-                  audioManager.playSound('damage');
-                  haptic('medium');
-                }
-                
-                hitEnemy = true;
-                break; // Projectile can only hit one enemy
-              }
-            }
-          }
-          
-          if (hitEnemy) {
-            continue; // Skip this projectile (hit enemy)
-          }
-          
-          // Check wall collision
-          if (levelRef.current && checkCollision(newPos, levelRef.current)) {
-            // Check if projectile can phase through walls (Zeus projectiles)
-            if (projectile.wallPhaseChance !== undefined && projectile.wallPhaseChance > 0) {
-              // Roll for phase chance - if successful, projectile passes through
-              if (Math.random() < projectile.wallPhaseChance) {
-                // Projectile phases through wall - continue movement
-              } else {
-                // Projectile hits wall - remove it
-                continue;
-              }
-            } else {
-              // No phase chance - projectile hits wall
-              continue; // Skip this projectile (hit wall)
-            }
-          }
-          
-          // Keep projectile with updated position
-          updatedProjectiles.push({ ...projectile, pos: newPos });
+          continue; // Skip this projectile (hit enemy)
         }
-        
-        levelRef.current.projectiles = updatedProjectiles;
+
+        // Keep projectile with updated position
+        updatedProjectiles.push({ ...projectile, pos: outcome.pos });
       }
+
+      levelRef.current.projectiles = updatedProjectiles;
       
     } catch (error) {
       // If projectile update fails, just ensure array exists and continue
@@ -1572,20 +1520,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
 
     // Update afterimages
+    //
+    // Not `dropExpired`: an afterimage that reaches the player is consumed by
+    // the hit as well as by its age, so the loop stays and only the expiry
+    // rule is shared.
     try {
-      if (!levelRef.current.afterimages) {
-        levelRef.current.afterimages = [];
-      }
-      
       const updatedAfterimages: Afterimage[] = [];
-      for (let i = 0; i < levelRef.current.afterimages.length; i++) {
-        const afterimage = levelRef.current.afterimages[i];
-        
-        // Check lifetime
-        if (now - afterimage.createdAt > afterimage.lifetime) {
-          continue; // Skip expired afterimages
-        }
-        
+      for (const afterimage of levelRef.current.afterimages ?? []) {
+        if (hasExpired(afterimage, now)) continue;
+
         // Check player collision
         const distToPlayer = Math.sqrt(
           Math.pow(afterimage.pos.x - playerPosRef.current.x, 2) +
@@ -1622,24 +1565,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Update particles
     try {
-      if (!levelRef.current.particles) {
-        levelRef.current.particles = [];
-      }
-      
-      const updatedParticles: Particle[] = [];
-      for (let i = 0; i < levelRef.current.particles.length; i++) {
-        const particle = levelRef.current.particles[i];
-        
-        // Check lifetime
-        if (now - particle.createdAt > particle.lifetime) {
-          continue; // Skip expired particles
-        }
-        
-        updatedParticles.push(particle);
-      }
-      
-      levelRef.current.particles = updatedParticles;
-      
+      levelRef.current.particles = dropExpired(levelRef.current.particles, now);
     } catch (error) {
       console.error('Error updating particles:', error);
       if (!levelRef.current.particles) {
@@ -1653,23 +1579,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Update footprints
     try {
-      if (!levelRef.current.footprints) {
-        levelRef.current.footprints = [];
-      }
-      
-      const updatedFootprints: Footprint[] = [];
-      for (let i = 0; i < levelRef.current.footprints.length; i++) {
-        const footprint = levelRef.current.footprints[i];
-        
-        // Check lifetime
-        if (now - footprint.createdAt > footprint.lifetime) {
-          continue; // Skip expired footprints
-        }
-        
-        updatedFootprints.push(footprint);
-      }
-      
-      levelRef.current.footprints = updatedFootprints;
+      levelRef.current.footprints = dropExpired(levelRef.current.footprints, now);
     } catch (error) {
       console.error('Error updating footprints:', error);
       if (!levelRef.current.footprints) {
