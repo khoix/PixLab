@@ -1,0 +1,952 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 3,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 9,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 6,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 9,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 1,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 9,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 1,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 9,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 11,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 360,
+    "virtualMs": 5760,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 13,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 420,
+    "virtualMs": 6720,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 13,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 8,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 13,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 540,
+    "virtualMs": 8640,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 9,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 13,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 600,
+    "virtualMs": 9600,
+    "world": {
+      "mazeHash": "ce2d2a66",
+      "floorCount": 409,
+      "exit": "27,27",
+      "rosterHash": "9dd283f1"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "phase",
+        "type": "enemy",
+        "x": 6,
+        "y": 8,
+        "hp": 114,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 7,
+        "y": 3,
+        "hp": 48,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 11,
+        "y": 1,
+        "hp": 274,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 5,
+        "hp": 121,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 13,
+        "y": 1,
+        "hp": 122,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 3,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 7,
+        "y": 7,
+        "name": "Sword of Destruction"
+      },
+      {
+        "x": 12,
+        "y": 9,
+        "name": "Stim of Velocity"
+      },
+      {
+        "x": 15,
+        "y": 19,
+        "name": "Thruster of Agility"
+      },
+      {
+        "x": 27,
+        "y": 17,
+        "name": "Axe of Destruction"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  }
+]

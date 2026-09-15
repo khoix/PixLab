@@ -131,6 +131,23 @@ much randomness the simulation consumed during the run. This does not invalidate
 the harness — it bounds what a green run means, which is the sort of thing worth
 knowing before rather than after.
 
+> **Closed in M8.4**, by the first of the two remedies. Recording a draw count
+> was the wrong one: the count a page makes includes the renderer's 13 per frame
+> and whatever React did, so it is a field a rendering change moves — the
+> brittleness `snapshot.ts` opens by warning about.
+>
+> The scenario instead makes a stream shift visible in behaviour that is
+> *already* recorded. `roam` places five mobs outside their own aggro ranges and
+> inside `classifyAiTier`'s dormancy threshold, which is the band where
+> `performIdleRoaming` runs: a cardinal direction drawn from the stream every 2s
+> of game time. Shift the stream by one draw and three rolls in four pick
+> differently, so the entity positions in the digest move.
+>
+> Re-measured with the same probe: **2 of 8 scenarios now fail** — `ranged` and
+> `roam`. One scenario that reliably fails is what the gate needed; seven that
+> pin behaviour while one pins consumption order is the shape to keep, rather
+> than making every scenario noisy about the stream.
+
 ## Recommended order, updated
 
 The plan's stage order still holds, with one insertion:
