@@ -40,6 +40,7 @@ import {
 import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
 import {
   BOSS_CYCLES,
+  advanceTimedPhase,
   canBeginCycle,
   enterPhase,
   isRooted,
@@ -2320,40 +2321,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const cycle = readCycle(entity, now);
               let next = cycle;
 
-              switch (cycle.phase) {
-                case 'ready': {
-                  if (canBeginCycle(cycle, now, timings) && distToPlayer <= HADES_STRIKE_TILES) {
-                    const aim = restrictToCardinal(dx, dy);
-                    updatedEntity.attackTelegraphVelocity = { x: aim.x, y: aim.y };
-                    updatedEntity.attackTelegraphUntil = now + timings.telegraphMs;
-                    updatedEntity.attackTelegraphMs = timings.telegraphMs;
-                    next = enterPhase('telegraph', now);
-                  } else {
-                    // Pursuit, still cutting through cover. The movement budget
-                    // charges the diagonal properly, so he closes at his stated
-                    // speed rather than 41% faster than it.
-                    nextPos = {
-                      x: entity.pos.x + Math.sign(dx),
-                      y: entity.pos.y + Math.sign(dy),
-                    };
-                    shouldMove = true;
-                  }
-                  break;
+              if (cycle.phase === 'ready') {
+                if (canBeginCycle(cycle, now, timings) && distToPlayer <= HADES_STRIKE_TILES) {
+                  const aim = restrictToCardinal(dx, dy);
+                  updatedEntity.attackTelegraphVelocity = { x: aim.x, y: aim.y };
+                  updatedEntity.attackTelegraphUntil = now + timings.telegraphMs;
+                  updatedEntity.attackTelegraphMs = timings.telegraphMs;
+                  next = enterPhase('telegraph', now);
+                } else {
+                  // Pursuit, still cutting through cover. The movement budget
+                  // charges the diagonal properly, so he closes at his stated
+                  // speed rather than 41% faster than it.
+                  nextPos = {
+                    x: entity.pos.x + Math.sign(dx),
+                    y: entity.pos.y + Math.sign(dy),
+                  };
+                  shouldMove = true;
                 }
-                case 'telegraph': {
-                  if (phaseExpired(cycle, now, timings)) next = enterPhase('execute', now);
-                  break;
-                }
-                case 'execute': {
-                  // The strike itself is the contact damage the gate allows
-                  // once; the phase just bounds how long that window is open.
-                  if (phaseExpired(cycle, now, timings)) next = enterPhase('recover', now);
-                  break;
-                }
-                case 'recover': {
-                  if (phaseExpired(cycle, now, timings)) next = enterPhase('ready', now);
-                  break;
-                }
+              } else {
+                // Telegraph, execute and recover are pure sequencing here: the
+                // strike is the contact damage the gate allows once, and the
+                // phase only bounds how long that window is open.
+                next = advanceTimedPhase(cycle, now, timings);
               }
 
               writeCycle(updatedEntity, next);
@@ -2391,7 +2380,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 case 'telegraph': {
                   // Rooted, showing the lane. Committed once it expires — the
                   // player has the whole wind-up to leave it.
-                  if (phaseExpired(cycle, now, timings)) next = enterPhase('execute', now);
+                  next = advanceTimedPhase(cycle, now, timings);
                   break;
                 }
                 case 'execute': {
@@ -2415,7 +2404,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
                 case 'recover': {
                   // Rooted and open. This is the damage window.
-                  if (phaseExpired(cycle, now, timings)) next = enterPhase('ready', now);
+                  next = advanceTimedPhase(cycle, now, timings);
                   break;
                 }
               }

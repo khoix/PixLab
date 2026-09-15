@@ -131,6 +131,40 @@ export function canBeginCycle(
 }
 
 /**
+ * What follows what.
+ *
+ * `ready -> telegraph` is in the table for completeness and is never taken by
+ * `advanceTimedPhase`: starting a cycle is a decision, not a timeout, and each
+ * boss makes it differently — Hades when the player is inside strike range,
+ * Ares when there is *enough room* to charge. A boss that opened its cycle on a
+ * timer would telegraph at nothing.
+ */
+export const NEXT_PHASE: Record<BossPhase, BossPhase> = {
+  ready: 'telegraph',
+  telegraph: 'execute',
+  execute: 'recover',
+  recover: 'ready',
+};
+
+/**
+ * Step a timed phase on when its span is up, and leave it alone otherwise.
+ *
+ * This is the half of the machine both bosses share. What they do *during* a
+ * phase differs — Ares moves down a committed lane and can end its own
+ * execution early by hitting a wall — but the sequencing is the same, and
+ * having it in one place is what stops a boss acquiring a fifth phase or
+ * skipping recovery in a refactor.
+ */
+export function advanceTimedPhase(
+  cycle: BossCycleState,
+  now: number,
+  timings: BossCycleTimings,
+): BossCycleState {
+  if (cycle.phase === 'ready') return cycle;
+  return phaseExpired(cycle, now, timings) ? enterPhase(NEXT_PHASE[cycle.phase], now) : cycle;
+}
+
+/**
  * The cycle as it is stored: three fields on the entity, not a Map in a
  * component.
  *
