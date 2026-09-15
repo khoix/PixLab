@@ -169,4 +169,21 @@ The plan's stage order still holds, with one insertion:
    into `movement/playerStep.ts` as pure functions over the values the refs
    hold, so no cell changed hands. `visualPos` stays `shared` for the reason
    finding 3 gives: `update()` reads it back to anchor the next step.
+
+   M8.5 took both attack resolutions the same way: `combat/mobContact.ts` for
+   mob-on-player contact, `combat/playerStrike.ts` for the auto-attack, plus the
+   geometry rules (`ai/mobGeometry.ts`) and the cycle accessors, which moved to
+   `ai/bossCycle.ts` where the cycle type already lived. That last one is the
+   milestone's balance-enabler: the attack cycle rides on the entity so it
+   survives the AI scheduler skipping a frame and the mob crossing in and out of
+   range, and a test now pins it rather than a comment asserting it.
+
+   `statsRef` is still `shared`, and M8.5 shows why finding 2 matters in
+   practice. The extracted decision returns the player's new hp; it does not
+   write it. It also inherits the existing staleness there: every damage path in
+   a frame — melee contact and projectiles alike — computes from the hp captured
+   once at the top of `update()`, so a second hit in the same frame overwrites
+   the first rather than stacking. Preserved deliberately: an extraction is the
+   wrong place to change how much damage a crowd does, and the fix is a one-line
+   read of `statsRef.current` whenever someone decides to.
 5. **M8.7** Slim `GameCanvas` to `OrchestrationState` and confirm exit criteria.

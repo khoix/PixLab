@@ -2692,7 +2692,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             eventLogger.logEvent('combat', `Took ${outcome.damage} damage from ${enemyTypeName}`, {
               damage: outcome.damage,
               enemyType: entity.mobSubtype,
-              isBoss: entity.isBoss,
+              // The tri-bite's event carried `isBoss` and the ordinary one did
+              // not. Preserved rather than tidied: unifying a logged payload is
+              // still a change, and this PR is an extraction.
+              ...(outcome.comboCount !== undefined ? { isBoss: entity.isBoss } : {}),
               hp: outcome.newHp,
               maxHp: baseStats.maxHp,
             });
