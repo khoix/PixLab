@@ -165,4 +165,8 @@ The plan's stage order still holds, with one insertion:
    four swallowing `catch` blocks between `ctx.save()` and `ctx.restore()`.
 4. **M8.4–M8.6** `GameEngine`, in the planned three slices, against
    `EngineState`. Decide each `shared` cell explicitly when its stage reaches it.
+   M8.4 took the player's step — gate, collision, interpolation and footprints —
+   into `movement/playerStep.ts` as pure functions over the values the refs
+   hold, so no cell changed hands. `visualPos` stays `shared` for the reason
+   finding 3 gives: `update()` reads it back to anchor the next step.
 5. **M8.7** Slim `GameCanvas` to `OrchestrationState` and confirm exit criteria.
