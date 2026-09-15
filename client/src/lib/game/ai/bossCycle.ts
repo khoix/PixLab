@@ -130,6 +130,48 @@ export function canBeginCycle(
   return state.phase === 'ready' && phaseElapsed(state, now) >= timings.readyMs;
 }
 
+/**
+ * The cycle as it is stored: three fields on the entity, not a Map in a
+ * component.
+ *
+ * This is the milestone's balance-enabler stated as code. The cycle has to
+ * survive the AI scheduler skipping a mob's frame and the mob crossing in and
+ * out of range — `classifyAiTier` stops updating anything past the dormancy
+ * threshold, so a cycle held in a table beside the entities would either keep
+ * running for a mob that is not being updated, or be dropped and restarted the
+ * moment the player walked back into range. Both make "bait the telegraph, hit
+ * during recovery" unlearnable.
+ *
+ * Reading through `initialCycle` rather than storing one on spawn also means a
+ * mob that has never cycled is `ready` from *now*, so it does not arrive with a
+ * rest period that elapsed while it was asleep.
+ */
+export function readCycle(entity: EntityCycleFields, now: number): BossCycleState {
+  return entity.bossPhase
+    ? { phase: entity.bossPhase, since: entity.bossPhaseSince ?? now, hits: entity.bossPhaseHits ?? 0 }
+    : initialCycle(now);
+}
+
+/** Write it back. Mutates, because the entity is the store. */
+export function writeCycle(entity: EntityCycleFields, cycle: BossCycleState): void {
+  entity.bossPhase = cycle.phase;
+  entity.bossPhaseSince = cycle.since;
+  entity.bossPhaseHits = cycle.hits;
+}
+
+/**
+ * Just the fields the accessors touch.
+ *
+ * Narrower than `Entity` so the cycle can be reasoned about — and tested —
+ * without constructing a mob, and so this module does not depend on the shape
+ * of everything else that rides on an entity.
+ */
+export interface EntityCycleFields {
+  bossPhase?: BossPhase;
+  bossPhaseSince?: number;
+  bossPhaseHits?: number;
+}
+
 export function initBossCycleApi(): void {
   if (typeof window === 'undefined') return;
 

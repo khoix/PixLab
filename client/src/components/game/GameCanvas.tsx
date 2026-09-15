@@ -43,11 +43,16 @@ import {
   canBeginCycle,
   canDealDamage as cycleCanDealDamage,
   enterPhase,
-  initialCycle,
   isRooted,
   phaseExpired,
-  type BossCycleState,
+  readCycle,
+  writeCycle,
 } from '../../lib/game/ai/bossCycle';
+import {
+  canMoveDiagonally,
+  isInCardinalDirection,
+  restrictToCardinal,
+} from '../../lib/game/ai/mobGeometry';
 import { addsDueAt } from '../../lib/game/ai/bossAdds';
 import {
   createPressureState,
@@ -450,19 +455,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
     }
     return bossPos;
-  };
-
-  // The boss attack cycle lives on the entity so it survives the AI scheduler
-  // skipping a frame; these two just move it in and out.
-  const readCycle = (entity: Entity, now: number): BossCycleState =>
-    entity.bossPhase
-      ? { phase: entity.bossPhase, since: entity.bossPhaseSince ?? now, hits: entity.bossPhaseHits ?? 0 }
-      : initialCycle(now);
-
-  const writeCycle = (entity: Entity, cycle: BossCycleState): void => {
-    entity.bossPhase = cycle.phase;
-    entity.bossPhaseSince = cycle.since;
-    entity.bossPhaseHits = cycle.hits;
   };
 
   // Drop every per-mob record when a mob leaves the level, so a future mob that
@@ -870,48 +862,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  // Helper function to check if a mob can move diagonally (flying mobs)
-  const canMoveDiagonally = (entity: Entity): boolean => {
-    // Phase mobs and moth mobs can move diagonally
-    if (entity.mobSubtype === 'phase' || entity.mobSubtype === 'moth') {
-      return true;
-    }
-    // Boss Hades can phase through walls, so it can move diagonally
-    if (entity.mobSubtype === 'boss_hades' || entity.canPhase) {
-      return true;
-    }
-    return false;
-  };
-
-  // Helper function to restrict movement to cardinal directions for non-flying mobs
-  const restrictToCardinal = (dx: number, dy: number): { x: number; y: number } => {
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    
-    // If both directions are non-zero (diagonal), choose the larger component
-    if (absDx > 0 && absDy > 0) {
-      if (absDx > absDy) {
-        return { x: Math.sign(dx), y: 0 };
-      } else if (absDy > absDx) {
-        return { x: 0, y: Math.sign(dy) };
-      } else {
-        // Equal distance, prefer horizontal (can be changed to random or vertical)
-        return { x: Math.sign(dx), y: 0 };
-      }
-    }
-    
-    // Already cardinal, return as-is
-    return { x: Math.sign(dx), y: Math.sign(dy) };
-  };
-
-  // Helper function to check if a position is in a cardinal direction (reachable by non-flying mobs)
-  const isInCardinalDirection = (fromPos: Position, toPos: Position): boolean => {
-    const dx = toPos.x - fromPos.x;
-    const dy = toPos.y - fromPos.y;
-    // Cardinal direction means either dx or dy is zero (or both, meaning same position)
-    return dx === 0 || dy === 0;
-  };
 
   // The geometry lives in lib/game/input/portalTap.ts; what stays here is the
   // ref reading, which is all these closures were ever adding.
