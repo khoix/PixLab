@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
-import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
+import { generateLevel, checkCollision } from '../../lib/game/engine';
 import { shuffleInPlace } from '../../lib/game/shuffle';
 import {
   clearEffectsNear,
@@ -66,6 +66,11 @@ import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { mobReachesPlayer, resolveMobMeleeAttack } from '../../lib/game/combat/mobContact';
+import {
+  resolveStrike,
+  selectAttackableEnemies,
+  weaponLevelFrom,
+} from '../../lib/game/combat/playerStrike';
 import {
   applyVisionDebuffStack,
   createVisionDebuffState,
@@ -1158,108 +1163,66 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
       }
 
-      // Auto-attack nearby enemies with weapon-specific mechanics
+      // Auto-attack nearby enemies with weapon-specific mechanics.
+      //
+      // The weapon's footprint and the per-swing rules live in
+      // combat/playerStrike.ts; what stays here is the applying — hp, feedback,
+      // the log, knockback and the death path.
       const weapon = loadoutRef.current.weapon;
       const weaponBaseName = weapon ? getItemBaseName(weapon.name) : null;
-      
-      // Extract weapon level from item name (e.g., "Sword Lv5" -> 5, or use current level as fallback)
-      let weaponLevel = state.currentLevel;
-      if (weapon) {
-        const levelMatch = weapon.name.match(/Lv(\d+)/i);
-        if (levelMatch) {
-          weaponLevel = parseInt(levelMatch[1], 10);
-        }
-      }
-      
-      // Get attackable positions based on weapon type
-      const attackablePositions = getAttackablePositions(nextPos, weaponBaseName, levelRef.current);
-      
-      // Find enemies in attackable positions
-      const attackableEnemies = levelRef.current.entities.filter(enemy => {
-        if (enemy.type !== 'enemy' && enemy.type !== 'boss_enemy') return false;
-        
-        // Check if enemy is in any attackable position using distance-based check
-        // This matches mob attack logic (1.5 tile range for melee, 2.0 for spear)
-        const meleeRange = 1.5;
-        const isInRange = attackablePositions.some(pos => {
-          const dx = enemy.pos.x - pos.x;
-          const dy = enemy.pos.y - pos.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // For spear, use 2-tile range (spear attacks 2 tiles in each direction)
-          if (weaponBaseName?.toLowerCase() === 'spear') {
-            return distance <= 2.0;
-          }
-          
-          // Default melee range: 1.5 tiles (matching mob attack range)
-          return distance <= meleeRange;
-        });
-        
-        if (!isInRange) return false;
-        
-        // Check line of sight - prevent attacks through walls
-        // Spear has special wall-piercing logic handled later, but still check LOS here
-        if (levelRef.current) {
-          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-          // For non-spear weapons, require line of sight
-          // For spear, allow it through (wall-piercing logic handles it later)
-          if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
-            return false;
-          }
-        }
-        
-        return true;
+      const weaponLevel = weaponLevelFrom(weapon?.name, state.currentLevel);
+
+      const attackableEnemies = selectAttackableEnemies({
+        from: nextPos,
+        weaponBaseName,
+        entities: levelRef.current.entities,
+        level: levelRef.current,
       });
       
       if (canPlayerAttack(lastPlayerAttackTimeRef.current, now) && attackableEnemies.length > 0) {
         let playerAttackLanded = false;
         attackableEnemies.forEach(enemy => {
-        // Spear: Check if enemy is behind a wall (10% chance to pierce through)
-        if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
-          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-          if (!hasLOS) {
-            // Enemy is behind a wall - only 10% chance to hit
-            if (Math.random() >= 0.10) {
-              return; // Attack fails, don't damage enemy
-            }
-            // Attack succeeds through wall, but with reduced damage
-            audioManager.playSound('attack');
-            let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
-            enemy.hp -= damage;
-            if (levelRef.current) {
-              applyEnemyHitFeedback(levelRef.current, enemy, damage, now, false);
-            }
-            playerAttackLanded = true;
-            
-            // Log player attack event
-            const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
-            eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
-              damage: Math.floor(damage),
-              enemyType: enemy.mobSubtype,
-              isBoss: enemy.isBoss,
-              enemyHp: Math.floor(enemy.hp)
-            });
-            
-            return; // Skip other weapon mechanics for wall-piercing attacks
+        // Only a spear can use the answer, so only a spear pays for asking.
+        const wallBetween =
+          weaponBaseName?.toLowerCase() === 'spear' &&
+          !!levelRef.current &&
+          !hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
+
+        const strike = resolveStrike({
+          weaponBaseName,
+          weaponLevel,
+          baseDamage: effectiveStats.damage,
+          wallBetween,
+        });
+
+        if (strike.kind === 'missed') return; // the pierce roll failed
+
+        if (strike.kind === 'pierced') {
+          // Through rock at half damage, and nothing else: no knockback, and no
+          // death handling this tick. A mob killed through a wall is swept up
+          // by the cleanup pass instead.
+          audioManager.playSound('attack');
+          enemy.hp -= strike.damage;
+          if (levelRef.current) {
+            applyEnemyHitFeedback(levelRef.current, enemy, strike.damage, now, false);
           }
+          playerAttackLanded = true;
+
+          const piercedName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
+          eventLogger.logEvent('combat', `Dealt ${Math.floor(strike.damage)} damage to ${piercedName}`, {
+            damage: Math.floor(strike.damage),
+            enemyType: enemy.mobSubtype,
+            isBoss: enemy.isBoss,
+            enemyHp: Math.floor(enemy.hp)
+          });
+          return;
         }
-        
+
         audioManager.playSound('attack');
-        
-        // Calculate base damage
-        let damage = effectiveStats.damage;
-        
-        // Dagger: Critical hit chance (higher level = more chance)
-        // Base 10% crit chance, +2% per level
-        let isCrit = false;
-        if (weaponBaseName?.toLowerCase() === 'dagger') {
-          const critChance = 0.10 + (weaponLevel - 1) * 0.02; // 10% base, +2% per level
-          if (Math.random() < critChance) {
-            damage *= 3; // Triple damage on crit
-            isCrit = true;
-          }
-        }
-        
+
+        const damage = strike.damage;
+        const isCrit = strike.isCrit;
+
         // Apply damage
         enemy.hp -= damage;
         if (levelRef.current) {
