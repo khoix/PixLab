@@ -67,6 +67,11 @@ import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
 import { mobReachesPlayer, resolveMobMeleeAttack } from '../../lib/game/combat/mobContact';
 import { stepProjectile } from '../../lib/game/combat/projectileStep';
+import {
+  WALL_PHASE_BASE,
+  fireProjectile,
+  wallPhaseChance,
+} from '../../lib/game/combat/projectileSpawn';
 import { dropExpired, hasExpired } from '../../lib/game/world/lifetimes';
 import {
   resolveStrike,
@@ -945,11 +950,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   };
 
   // Helper function to calculate wall phase chance based on base chance and level
-  const calculateWallPhaseChance = (baseChance: number): number => {
-    const phaseChancePerLevel = 0.005; // 0.5% per level
-    return Math.min(1.0, baseChance + (state.currentLevel * phaseChancePerLevel));
-  };
-
   const update = (deltaTime: number) => {
     try {
     if (!levelRef.current) return;
@@ -1675,26 +1675,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
               const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                 if (levelRef.current) {
-                  if (!levelRef.current.projectiles) {
-                    levelRef.current.projectiles = [];
-                  }
-
-                  let wallPhaseChance: number | undefined;
-                  if (mobSubtype === 'turret') {
-                    wallPhaseChance = calculateWallPhaseChance(0.25);
-                  }
-
-                  levelRef.current.projectiles.push({
+                  // Only the turret phases among the stationary shooters; the
+                  // rest are stopped by rock like anything else.
+                  fireProjectile(levelRef.current, {
                     id: `projectile-${projectileIdCounterRef.current++}`,
-                    pos: { ...entity.pos },
+                    shooter: entity,
                     velocity,
-                    damage: entity.damage,
-                    ownerId: entity.id,
-                    cadenceMs: entity.attackCooldown ?? 1000,
-                    isBoss: entity.isBoss === true,
-                    lifetime: PROJECTILE_LIFETIME,
-                    createdAt: now,
-                    ...(wallPhaseChance !== undefined && { wallPhaseChance }),
+                    now,
+                    lifetimeMs: PROJECTILE_LIFETIME,
+                    ...(mobSubtype === 'turret' && {
+                      wallPhaseChance: wallPhaseChance(WALL_PHASE_BASE.turret, state.currentLevel),
+                    }),
                   });
                 }
                 audioManager.playSound('attack');
@@ -1827,23 +1818,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
                 const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                   if (levelRef.current) {
-                    if (!levelRef.current.projectiles) {
-                      levelRef.current.projectiles = [];
-                    }
-
-                    const wallPhaseChance = calculateWallPhaseChance(0.10);
-
-                    levelRef.current.projectiles.push({
+                    fireProjectile(levelRef.current, {
                       id: `projectile-${projectileIdCounterRef.current++}`,
-                      pos: { ...entity.pos },
+                      shooter: entity,
                       velocity,
-                      damage: entity.damage,
-                      ownerId: entity.id,
-                      cadenceMs: entity.attackCooldown ?? 1000,
-                      isBoss: entity.isBoss === true,
-                      lifetime: PROJECTILE_LIFETIME,
-                      createdAt: now,
-                      wallPhaseChance,
+                      now,
+                      lifetimeMs: PROJECTILE_LIFETIME,
+                      wallPhaseChance: wallPhaseChance(WALL_PHASE_BASE.sniper, state.currentLevel),
                     });
                   }
 
@@ -2037,25 +2018,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   }
                   
                   if (levelRef.current) {
-                    if (!levelRef.current.projectiles) {
-                      levelRef.current.projectiles = [];
-                    }
-                    
-                    // Calculate wall phase chance for moth (nyx) projectiles (5% base)
-                    const wallPhaseChance = calculateWallPhaseChance(0.05);
-                    
-                    levelRef.current.projectiles.push({
+                    fireProjectile(levelRef.current, {
                       id: `projectile-${projectileIdCounterRef.current++}`,
-                      pos: { ...entity.pos },
+                      shooter: entity,
                       velocity,
-                      damage: entity.damage,
-                      ownerId: entity.id,
-                      cadenceMs: entity.attackCooldown ?? 1000,
-                      isBoss: entity.isBoss === true,
-                      lifetime: PROJECTILE_LIFETIME,
-                      createdAt: now,
+                      now,
+                      lifetimeMs: PROJECTILE_LIFETIME,
+                      wallPhaseChance: wallPhaseChance(WALL_PHASE_BASE.moth, state.currentLevel),
                       isShadowPulse: true,
-                      wallPhaseChance,
                     });
                   }
                   
@@ -2279,25 +2249,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
                 const telegraphComplete = completeAttackTelegraph(updatedEntity, now, (velocity) => {
                   if (levelRef.current) {
-                    if (!levelRef.current.projectiles) {
-                      levelRef.current.projectiles = [];
-                    }
-
-                    const basePhaseChance = 0.5;
-                    const phaseChancePerLevel = 0.005;
-                    const wallPhaseChance = Math.min(1.0, basePhaseChance + (state.currentLevel * phaseChancePerLevel));
-
-                    levelRef.current.projectiles.push({
+                    // Even odds at sector 8, which is the point of the fight:
+                    // cover is unreliable against Zeus, so the answer is
+                    // movement rather than a corner.
+                    fireProjectile(levelRef.current, {
                       id: `projectile-${projectileIdCounterRef.current++}`,
-                      pos: { ...entity.pos },
+                      shooter: entity,
                       velocity,
-                      damage: entity.damage,
-                      ownerId: entity.id,
-                      cadenceMs: entity.attackCooldown ?? 1000,
-                      isBoss: entity.isBoss === true,
-                      lifetime: PROJECTILE_LIFETIME,
-                      createdAt: now,
-                      wallPhaseChance,
+                      now,
+                      lifetimeMs: PROJECTILE_LIFETIME,
+                      wallPhaseChance: wallPhaseChance(WALL_PHASE_BASE.bossZeus, state.currentLevel),
                     });
                   }
 
