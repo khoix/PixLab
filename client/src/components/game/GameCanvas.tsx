@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../lib/store';
-import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
+import { generateLevel, checkCollision } from '../../lib/game/engine';
 import { shuffleInPlace } from '../../lib/game/shuffle';
 import {
   clearEffectsNear,
@@ -41,13 +41,17 @@ import { nextMoveTimer } from '../../lib/game/ai/movementBudget';
 import {
   BOSS_CYCLES,
   canBeginCycle,
-  canDealDamage as cycleCanDealDamage,
   enterPhase,
-  initialCycle,
   isRooted,
   phaseExpired,
-  type BossCycleState,
+  readCycle,
+  writeCycle,
 } from '../../lib/game/ai/bossCycle';
+import {
+  canMoveDiagonally,
+  isInCardinalDirection,
+  restrictToCardinal,
+} from '../../lib/game/ai/mobGeometry';
 import { addsDueAt } from '../../lib/game/ai/bossAdds';
 import {
   createPressureState,
@@ -61,8 +65,12 @@ import {
 import { rollPortalDestination } from '../../lib/game/engine';
 import { computeIncomingDamage } from '../../lib/game/combat/damageModel';
 import { getGameNow, isGamePaused, pauseGameClock, resetGameClock, resumeGameClock } from '../../lib/game/gameClock';
-import { canMeleeReach } from '../../lib/game/combat/meleeLineOfSight';
-import { canLandMeleeHit } from '../../lib/game/combat/meleeCadence';
+import { mobReachesPlayer, resolveMobMeleeAttack } from '../../lib/game/combat/mobContact';
+import {
+  resolveStrike,
+  selectAttackableEnemies,
+  weaponLevelFrom,
+} from '../../lib/game/combat/playerStrike';
 import {
   applyVisionDebuffStack,
   createVisionDebuffState,
@@ -163,7 +171,6 @@ import {
 } from '../../lib/game/combat/rangedTelegraph';
 import {
   shouldAdvanceCerberusCombo,
-  shouldCerberusBiteDamage,
   CERBERUS_COMBO_COOLDOWN_AFTER_MS,
   CERBERUS_COMBO_RESET_MS,
 } from '../../lib/game/combat/cerberus';
@@ -450,19 +457,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
     }
     return bossPos;
-  };
-
-  // The boss attack cycle lives on the entity so it survives the AI scheduler
-  // skipping a frame; these two just move it in and out.
-  const readCycle = (entity: Entity, now: number): BossCycleState =>
-    entity.bossPhase
-      ? { phase: entity.bossPhase, since: entity.bossPhaseSince ?? now, hits: entity.bossPhaseHits ?? 0 }
-      : initialCycle(now);
-
-  const writeCycle = (entity: Entity, cycle: BossCycleState): void => {
-    entity.bossPhase = cycle.phase;
-    entity.bossPhaseSince = cycle.since;
-    entity.bossPhaseHits = cycle.hits;
   };
 
   // Drop every per-mob record when a mob leaves the level, so a future mob that
@@ -871,48 +865,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     };
   }, []);
 
-  // Helper function to check if a mob can move diagonally (flying mobs)
-  const canMoveDiagonally = (entity: Entity): boolean => {
-    // Phase mobs and moth mobs can move diagonally
-    if (entity.mobSubtype === 'phase' || entity.mobSubtype === 'moth') {
-      return true;
-    }
-    // Boss Hades can phase through walls, so it can move diagonally
-    if (entity.mobSubtype === 'boss_hades' || entity.canPhase) {
-      return true;
-    }
-    return false;
-  };
-
-  // Helper function to restrict movement to cardinal directions for non-flying mobs
-  const restrictToCardinal = (dx: number, dy: number): { x: number; y: number } => {
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    
-    // If both directions are non-zero (diagonal), choose the larger component
-    if (absDx > 0 && absDy > 0) {
-      if (absDx > absDy) {
-        return { x: Math.sign(dx), y: 0 };
-      } else if (absDy > absDx) {
-        return { x: 0, y: Math.sign(dy) };
-      } else {
-        // Equal distance, prefer horizontal (can be changed to random or vertical)
-        return { x: Math.sign(dx), y: 0 };
-      }
-    }
-    
-    // Already cardinal, return as-is
-    return { x: Math.sign(dx), y: Math.sign(dy) };
-  };
-
-  // Helper function to check if a position is in a cardinal direction (reachable by non-flying mobs)
-  const isInCardinalDirection = (fromPos: Position, toPos: Position): boolean => {
-    const dx = toPos.x - fromPos.x;
-    const dy = toPos.y - fromPos.y;
-    // Cardinal direction means either dx or dy is zero (or both, meaning same position)
-    return dx === 0 || dy === 0;
-  };
-
   // The geometry lives in lib/game/input/portalTap.ts; what stays here is the
   // ref reading, which is all these closures were ever adding.
   const portalUnderPlayer = (): Portal | null =>
@@ -1211,108 +1163,66 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
       }
 
-      // Auto-attack nearby enemies with weapon-specific mechanics
+      // Auto-attack nearby enemies with weapon-specific mechanics.
+      //
+      // The weapon's footprint and the per-swing rules live in
+      // combat/playerStrike.ts; what stays here is the applying — hp, feedback,
+      // the log, knockback and the death path.
       const weapon = loadoutRef.current.weapon;
       const weaponBaseName = weapon ? getItemBaseName(weapon.name) : null;
-      
-      // Extract weapon level from item name (e.g., "Sword Lv5" -> 5, or use current level as fallback)
-      let weaponLevel = state.currentLevel;
-      if (weapon) {
-        const levelMatch = weapon.name.match(/Lv(\d+)/i);
-        if (levelMatch) {
-          weaponLevel = parseInt(levelMatch[1], 10);
-        }
-      }
-      
-      // Get attackable positions based on weapon type
-      const attackablePositions = getAttackablePositions(nextPos, weaponBaseName, levelRef.current);
-      
-      // Find enemies in attackable positions
-      const attackableEnemies = levelRef.current.entities.filter(enemy => {
-        if (enemy.type !== 'enemy' && enemy.type !== 'boss_enemy') return false;
-        
-        // Check if enemy is in any attackable position using distance-based check
-        // This matches mob attack logic (1.5 tile range for melee, 2.0 for spear)
-        const meleeRange = 1.5;
-        const isInRange = attackablePositions.some(pos => {
-          const dx = enemy.pos.x - pos.x;
-          const dy = enemy.pos.y - pos.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // For spear, use 2-tile range (spear attacks 2 tiles in each direction)
-          if (weaponBaseName?.toLowerCase() === 'spear') {
-            return distance <= 2.0;
-          }
-          
-          // Default melee range: 1.5 tiles (matching mob attack range)
-          return distance <= meleeRange;
-        });
-        
-        if (!isInRange) return false;
-        
-        // Check line of sight - prevent attacks through walls
-        // Spear has special wall-piercing logic handled later, but still check LOS here
-        if (levelRef.current) {
-          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-          // For non-spear weapons, require line of sight
-          // For spear, allow it through (wall-piercing logic handles it later)
-          if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
-            return false;
-          }
-        }
-        
-        return true;
+      const weaponLevel = weaponLevelFrom(weapon?.name, state.currentLevel);
+
+      const attackableEnemies = selectAttackableEnemies({
+        from: nextPos,
+        weaponBaseName,
+        entities: levelRef.current.entities,
+        level: levelRef.current,
       });
       
       if (canPlayerAttack(lastPlayerAttackTimeRef.current, now) && attackableEnemies.length > 0) {
         let playerAttackLanded = false;
         attackableEnemies.forEach(enemy => {
-        // Spear: Check if enemy is behind a wall (10% chance to pierce through)
-        if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
-          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-          if (!hasLOS) {
-            // Enemy is behind a wall - only 10% chance to hit
-            if (Math.random() >= 0.10) {
-              return; // Attack fails, don't damage enemy
-            }
-            // Attack succeeds through wall, but with reduced damage
-            audioManager.playSound('attack');
-            let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
-            enemy.hp -= damage;
-            if (levelRef.current) {
-              applyEnemyHitFeedback(levelRef.current, enemy, damage, now, false);
-            }
-            playerAttackLanded = true;
-            
-            // Log player attack event
-            const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
-            eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
-              damage: Math.floor(damage),
-              enemyType: enemy.mobSubtype,
-              isBoss: enemy.isBoss,
-              enemyHp: Math.floor(enemy.hp)
-            });
-            
-            return; // Skip other weapon mechanics for wall-piercing attacks
+        // Only a spear can use the answer, so only a spear pays for asking.
+        const wallBetween =
+          weaponBaseName?.toLowerCase() === 'spear' &&
+          !!levelRef.current &&
+          !hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
+
+        const strike = resolveStrike({
+          weaponBaseName,
+          weaponLevel,
+          baseDamage: effectiveStats.damage,
+          wallBetween,
+        });
+
+        if (strike.kind === 'missed') return; // the pierce roll failed
+
+        if (strike.kind === 'pierced') {
+          // Through rock at half damage, and nothing else: no knockback, and no
+          // death handling this tick. A mob killed through a wall is swept up
+          // by the cleanup pass instead.
+          audioManager.playSound('attack');
+          enemy.hp -= strike.damage;
+          if (levelRef.current) {
+            applyEnemyHitFeedback(levelRef.current, enemy, strike.damage, now, false);
           }
+          playerAttackLanded = true;
+
+          const piercedName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
+          eventLogger.logEvent('combat', `Dealt ${Math.floor(strike.damage)} damage to ${piercedName}`, {
+            damage: Math.floor(strike.damage),
+            enemyType: enemy.mobSubtype,
+            isBoss: enemy.isBoss,
+            enemyHp: Math.floor(enemy.hp)
+          });
+          return;
         }
-        
+
         audioManager.playSound('attack');
-        
-        // Calculate base damage
-        let damage = effectiveStats.damage;
-        
-        // Dagger: Critical hit chance (higher level = more chance)
-        // Base 10% crit chance, +2% per level
-        let isCrit = false;
-        if (weaponBaseName?.toLowerCase() === 'dagger') {
-          const critChance = 0.10 + (weaponLevel - 1) * 0.02; // 10% base, +2% per level
-          if (Math.random() < critChance) {
-            damage *= 3; // Triple damage on crit
-            isCrit = true;
-          }
-        }
-        
+
+        const damage = strike.damage;
+        const isCrit = strike.isCrit;
+
         // Apply damage
         enemy.hp -= damage;
         if (levelRef.current) {
@@ -2743,155 +2653,58 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         }
 
-        // Calculate distance to player for melee check
-        const finalDistToPlayer = Math.sqrt(
-          Math.pow(updatedEntity.pos.x - playerPosRef.current.x, 2) +
-          Math.pow(updatedEntity.pos.y - playerPosRef.current.y, 2)
-        );
-        
-        // Check collision with player for melee damage
-        // Use distance-based check for melee attacks (1.5 tiles), exact position for ranged
-        const meleeRange = 1.5;
-        const isInMeleeRange = finalDistToPlayer <= meleeRange;
-        const isExactPosition = updatedEntity.pos.x === playerPosRef.current.x && updatedEntity.pos.y === playerPosRef.current.y;
-        
-        // For non-flying mobs, only allow attacks in cardinal directions
-        const canAttack = canMoveDiagonally(updatedEntity) || isInCardinalDirection(updatedEntity.pos, playerPosRef.current);
-        // Symmetry with the player's attack rule: a mob cannot land a melee hit
-        // from a tile the player has no line of sight into (notably a phasing
-        // mob parked inside a wall, which the player cannot attack back).
-        const hasMeleeLineOfSight =
-          !levelRef.current || canMeleeReach(playerPosRef.current, updatedEntity.pos, levelRef.current);
-        // Stated outright rather than left to LOS geometry: a mob standing in
-        // solid rock is a mob the player cannot attack back, so it does not get
-        // to attack either.
-        const attackerInWall = !!levelRef.current && checkCollision(updatedEntity.pos, levelRef.current);
-        
-        if ((isExactPosition || (!entity.isRanged && isInMeleeRange)) && canAttack && hasMeleeLineOfSight) {
-          if (!entity.isRanged || finalDistToPlayer <= 1) {
-            // Special handling for Cerberus tri-bite combo
-            if (mobSubtype === 'cerberus') {
-              const biteComboCount = updatedEntity.biteComboCount || 0;
-              const lastBite = updatedEntity.lastBiteTime || 0;
-              const timeSinceLastBite = now - lastBite;
-              const lastDamageComboCount = updatedEntity.lastDamageComboCount || 0;
+        // Contact: does this mob reach the player, and may it swing?
+        //
+        // Both questions live in combat/mobContact.ts. What stays here is the
+        // applying: hp, the cooldown stamp, sound, haptics, the event log and
+        // the game-over path.
+        const reach = mobReachesPlayer(updatedEntity, playerPosRef.current, levelRef.current);
 
-              const shouldDamage = shouldCerberusBiteDamage(
-                biteComboCount,
-                timeSinceLastBite,
-                lastDamageComboCount,
-              );
-              
-              if (shouldDamage) {
-                const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
-                // Short cooldown, only to stop one bite landing twice — the
-                // tri-bite cadence itself is `shouldCerberusBiteDamage`.
-                if (canLandMeleeHit({
-                  now,
-                  lastDamageTime,
-                  cooldownMs: 100,
-                  attackerInWall,
-                  emergedAt: updatedEntity.phaseEmergedAt,
-                })) {
-                  const damage = computeIncomingDamage({
-                    baseDamage: entity.damage,
-                    defense: getTotalDefense(loadoutRef.current),
-                    hpRatio: baseStats.hp / baseStats.maxHp,
-                    maxHp: baseStats.maxHp,
-                    // The tri-bite's cadence is the whole combo, not the 100 ms
-                    // guard between individual bites.
-                    cadenceMs: entity.attackCooldown ?? 500,
-                    isBoss: entity.isBoss === true,
-                    level: state.currentLevel,
-                  });
-                  const newHp = Math.max(0, baseStats.hp - damage);
-                  
-                  // Mark this combo count as having dealt damage
-                  updatedEntity.lastDamageComboCount = biteComboCount;
-                  
-                  enemyDamageCooldownRef.current.set(entity.id, now);
-                  audioManager.playSound('damage');
-                  haptic('medium');
-                  statsRef.current = { ...statsRef.current, hp: newHp };
-            queueStatsUpdate({ hp: newHp });
-                  
-                  // Log damage event (Cerberus bite)
-                  const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
-                  eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
-                    damage,
-                    enemyType: entity.mobSubtype,
-                    isBoss: entity.isBoss,
-                    hp: newHp,
-                    maxHp: baseStats.maxHp
-                  });
-                  
-                  if (newHp <= 0 && !gameOverTriggeredRef.current) {
-                    gameOverTriggeredRef.current = true;
-                    audioManager.playSound('gameOver');
-                    audioManager.stopMusic();
-                    onGameOver();
-                  }
-                }
-              }
-            } else {
-              // Normal melee damage cooldown
-              const lastDamageTime = enemyDamageCooldownRef.current.get(entity.id) || 0;
-              const DAMAGE_COOLDOWN_MS = entity.attackCooldown || 500;
+        if (reach.reaches) {
+          const outcome = resolveMobMeleeAttack({
+            attacker: updatedEntity,
+            now,
+            lastDamageTime: enemyDamageCooldownRef.current.get(entity.id) || 0,
+            attackerInWall: reach.attackerInWall,
+            defense: getTotalDefense(loadoutRef.current),
+            hp: baseStats.hp,
+            maxHp: baseStats.maxHp,
+            sector: state.currentLevel,
+            claimSlot: (cadenceMs) => claimAttackSlot(updatedEntity, now, cadenceMs),
+          });
 
-              // A boss running the attack cycle can only hurt during an
-              // execution, and only once per cycle: one charge is one hit, which
-              // is what makes baiting it a decision rather than a gamble.
-              const cycleAllows =
-                updatedEntity.bossPhase === undefined ||
-                cycleCanDealDamage(readCycle(updatedEntity, now));
+          if (outcome.kind === 'hit') {
+            if (outcome.comboCount !== undefined) {
+              // Mark this combo count as having dealt damage
+              updatedEntity.lastDamageComboCount = outcome.comboCount;
+            }
+            if (outcome.countsAgainstCycle) {
+              updatedEntity.bossPhaseHits = (updatedEntity.bossPhaseHits ?? 0) + 1;
+            }
 
-              // And it has to hold one of the sector's attack slots. Without
-              // one it keeps pursuing and repositioning but does not swing —
-              // per-hit fairness does not compose, so the crowd is bounded here
-              // rather than by making every individual hit weaker.
-              const hasSlot = claimAttackSlot(updatedEntity, now, DAMAGE_COOLDOWN_MS);
+            enemyDamageCooldownRef.current.set(entity.id, now);
+            audioManager.playSound('damage');
+            haptic('medium');
+            statsRef.current = { ...statsRef.current, hp: outcome.newHp };
+            queueStatsUpdate({ hp: outcome.newHp });
 
-              if (cycleAllows && hasSlot && canLandMeleeHit({
-                now,
-                lastDamageTime,
-                cooldownMs: DAMAGE_COOLDOWN_MS,
-                attackerInWall,
-                emergedAt: updatedEntity.phaseEmergedAt,
-              })) {
-                updatedEntity.bossPhaseHits = (updatedEntity.bossPhaseHits ?? 0) + 1;
-                const damage = computeIncomingDamage({
-                  baseDamage: entity.damage,
-                  defense: getTotalDefense(loadoutRef.current),
-                  hpRatio: baseStats.hp / baseStats.maxHp,
-                  maxHp: baseStats.maxHp,
-                  cadenceMs: DAMAGE_COOLDOWN_MS,
-                  isBoss: entity.isBoss === true,
-                  level: state.currentLevel,
-                });
-                const newHp = Math.max(0, baseStats.hp - damage);
-                
-                enemyDamageCooldownRef.current.set(entity.id, now);
-                audioManager.playSound('damage');
-                haptic('medium');
-                statsRef.current = { ...statsRef.current, hp: newHp };
-            queueStatsUpdate({ hp: newHp });
-                
-                // Log damage event
-                const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
-                eventLogger.logEvent('combat', `Took ${damage} damage from ${enemyTypeName}`, {
-                  damage,
-                  enemyType: entity.mobSubtype,
-                  hp: newHp,
-                  maxHp: baseStats.maxHp
-                });
-                
-                if (newHp <= 0 && !gameOverTriggeredRef.current) {
-                  gameOverTriggeredRef.current = true;
-                  audioManager.playSound('gameOver');
-                  audioManager.stopMusic();
-                  onGameOver();
-                }
-              }
+            const enemyTypeName = formatEntityName(entity.mobSubtype, entity.isBoss);
+            eventLogger.logEvent('combat', `Took ${outcome.damage} damage from ${enemyTypeName}`, {
+              damage: outcome.damage,
+              enemyType: entity.mobSubtype,
+              // The tri-bite's event carried `isBoss` and the ordinary one did
+              // not. Preserved rather than tidied: unifying a logged payload is
+              // still a change, and this PR is an extraction.
+              ...(outcome.comboCount !== undefined ? { isBoss: entity.isBoss } : {}),
+              hp: outcome.newHp,
+              maxHp: baseStats.maxHp,
+            });
+
+            if (outcome.newHp <= 0 && !gameOverTriggeredRef.current) {
+              gameOverTriggeredRef.current = true;
+              audioManager.playSound('gameOver');
+              audioManager.stopMusic();
+              onGameOver();
             }
           }
         }
