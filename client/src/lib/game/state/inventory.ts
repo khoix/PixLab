@@ -110,9 +110,9 @@ export const STATE_INVENTORY: readonly StateCell[] = [
   // ---- shared: written by more than one seam ------------------------------
   {
     name: 'levelRef',
-    seam: 'shared',
-    writtenBy: ['UPDATE', 'DRAW', 'fx:initLevel'],
-    note: 'the whole world, and draw() writes it. All ten DRAW writes are levelRef.current.particles — spawn, integrate, expire. Finding 1 above; M8.3 is blocked on moving that loop into update()',
+    seam: 'engine',
+    writtenBy: ['UPDATE', 'fx:initLevel'],
+    note: "was 'shared' — draw() wrote levelRef.current.particles at ten sites, spawning and expiring the legacy 2D view's portal and sense effects there. M8.3 moved those to a render-owned field, so draw() now writes no engine state at all. It still shares the RNG stream and the clock, which is a separate problem",
   },
   {
     name: 'visualPosRef',
@@ -159,6 +159,12 @@ export const STATE_INVENTORY: readonly StateCell[] = [
   // ---- render -------------------------------------------------------------
   { name: 'canvasRef', seam: 'render', writtenBy: [], note: 'bound by React to the <canvas> element; never assigned in component code' },
   { name: 'canvasSizeRef', seam: 'render', writtenBy: ['fx:resize'] },
+  {
+    name: 'legacyEffectsRef',
+    seam: 'render',
+    writtenBy: ['DRAW', 'fx:initLevel'],
+    note: "M8.3. The legacy 2D view's portal and sense effects, which draw() used to push onto level.particles in screen pixels. Render-owned now, so draw() no longer writes engine state",
+  },
   { name: 'stableViewportRef', seam: 'render', writtenBy: ['snapshot'] },
   { name: 'renderedCameraRef', seam: 'render', writtenBy: ['DRAW', 'fx:resize', 'fx:initLevel'] },
   { name: 'frameSnapshotRef', seam: 'render', writtenBy: ['snapshot', 'fx:resize'], note: 'per-frame memo of getFrameSnapshot, keyed on frameCounterRef' },
