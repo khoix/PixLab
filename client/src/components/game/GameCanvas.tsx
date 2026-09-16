@@ -3,6 +3,12 @@ import { useGame } from '../../lib/store';
 import { generateLevel, checkCollision, getAttackablePositions } from '../../lib/game/engine';
 import { shuffleInPlace } from '../../lib/game/shuffle';
 import {
+  legacyScreenToTile,
+  portalAt,
+  portalDestinationCandidates,
+  tapHitsPortal,
+} from '../../lib/game/input/portalTap';
+import {
   TILE_SIZE,
   COLORS,
   MODS,
@@ -883,21 +889,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     return dx === 0 || dy === 0;
   };
 
-  /**
-   * Tiles the tap may land on and still count. The player's own thumb covers the
-   * tile they are standing on, so accept the 3x3 around the portal. Entry is
-   * gated on standing on the portal regardless, so this cannot reach a portal
-   * somewhere else on the map.
-   */
-  const PORTAL_TAP_FORGIVENESS_TILES = 1;
-
-  const portalUnderPlayer = (): Portal | null => {
-    const level = levelRef.current;
-    if (!level?.portals) return null;
-    const px = Math.floor(playerPosRef.current.x);
-    const py = Math.floor(playerPosRef.current.y);
-    return level.portals.find((p) => Math.floor(p.pos.x) === px && Math.floor(p.pos.y) === py) ?? null;
-  };
+  // The geometry lives in lib/game/input/portalTap.ts; what stays here is the
+  // ref reading, which is all these closures were ever adding.
+  const portalUnderPlayer = (): Portal | null =>
+    portalAt(levelRef.current, playerPosRef.current);
 
   /**
    * Take the portal underfoot. The destination is rolled here rather than read
@@ -909,14 +904,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const portal = portalUnderPlayer();
     if (!level || !portal) return false;
 
-    const candidates: Position[] = [];
-    for (let y = 0; y < level.height; y++) {
-      for (let x = 0; x < level.width; x++) {
-        if (level.tiles[y]?.[x] !== 'floor') continue;
-        if (x === level.exitPos.x && y === level.exitPos.y) continue;
-        candidates.push({ x, y });
-      }
-    }
+    const candidates = portalDestinationCandidates(level);
 
     const destination = rollPortalDestination({
       tiles: level.tiles,
@@ -959,19 +947,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const screen = clientToCanvas({ x: clientX, y: clientY }, rect, rendered.perspective);
     if (!screen) return null;
     if (rendered.perspectiveEnabled) return projectedScreenToTile(rendered.perspective, screen);
-    const { x: camX, y: camY } = rendered.legacyOffset;
-    return {
-      x: Math.floor((screen.x + camX) / TILE_SIZE),
-      y: Math.floor((screen.y + camY) / TILE_SIZE),
-    };
+    return legacyScreenToTile(screen, rendered.legacyOffset, TILE_SIZE);
   };
 
   const tryEnterPortalAt = (tile: Position): boolean => {
     const portal = portalUnderPlayer();
     if (!portal) return false;
-    const dx = Math.abs(tile.x - Math.floor(portal.pos.x));
-    const dy = Math.abs(tile.y - Math.floor(portal.pos.y));
-    if (dx > PORTAL_TAP_FORGIVENESS_TILES || dy > PORTAL_TAP_FORGIVENESS_TILES) return false;
+    if (!tapHitsPortal(tile, portal.pos)) return false;
     return enterPortalUnderPlayer();
   };
 
