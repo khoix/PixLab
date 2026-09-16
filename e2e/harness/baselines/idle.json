@@ -1,0 +1,172 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "world": {
+      "mazeHash": "64938661",
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 26,
+        "name": "Helmet of the Sentinel"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "world": {
+      "mazeHash": "64938661",
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 26,
+        "name": "Helmet of the Sentinel"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "world": {
+      "mazeHash": "64938661",
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 26,
+        "name": "Helmet of the Sentinel"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "world": {
+      "mazeHash": "64938661",
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 26,
+        "name": "Helmet of the Sentinel"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "64938661",
+      "floorCount": 412,
+      "exit": "27,27",
+      "rosterHash": "2388b56b"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 1000000
+    },
+    "entities": [],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 0
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 26,
+        "name": "Helmet of the Sentinel"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  }
+]

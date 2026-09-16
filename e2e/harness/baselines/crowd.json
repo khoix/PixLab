@@ -1,0 +1,1306 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999965
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 411,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 882,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 5,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 1,
+      "cap": 4,
+      "holders": 1,
+      "peakUsed": 1
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999931
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 1,
+        "hp": 411,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 882,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 5,
+        "y": 3,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 422,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 1,
+      "cap": 4,
+      "holders": 1,
+      "peakUsed": 1
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 2,
+      "hp": 999781
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 391,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 412,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 862,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 892,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 412,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999664
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 381,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 402,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 852,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 882,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 402,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 3,
+      "hp": 999481
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 371,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 392,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 842,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 872,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 392,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 360,
+    "virtualMs": 5760,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999315
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 361,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 382,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 832,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 862,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 382,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 420,
+    "virtualMs": 6720,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 2,
+      "hp": 999165
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 351,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 372,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 822,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 852,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 372,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "world": {
+      "mazeHash": "6dabbc3b",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "91833802"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 998999
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 2,
+        "y": 1,
+        "hp": 341,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 3,
+        "hp": 362,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-10",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 2,
+        "y": 5,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-11",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 5,
+        "hp": 902,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 5,
+        "y": 1,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-3",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 3,
+        "y": 1,
+        "hp": 812,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-4",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 4,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-5",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 5,
+        "y": 2,
+        "hp": 422,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-6",
+        "subtype": "swarm",
+        "type": "enemy",
+        "x": 1,
+        "y": 3,
+        "hp": 172,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-7",
+        "subtype": "guardian",
+        "type": "enemy",
+        "x": 4,
+        "y": 3,
+        "hp": 842,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-8",
+        "subtype": "drone",
+        "type": "enemy",
+        "x": 1,
+        "y": 5,
+        "hp": 431,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-9",
+        "subtype": "charger",
+        "type": "enemy",
+        "x": 3,
+        "y": 2,
+        "hp": 362,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 4,
+      "cap": 4,
+      "holders": 4,
+      "peakUsed": 4
+    },
+    "items": [
+      {
+        "x": 3,
+        "y": 19,
+        "name": "Helmet of Watchfulness"
+      },
+      {
+        "x": 8,
+        "y": 3,
+        "name": "Boots of the Nimble"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "name": "Stim of Quickness"
+      },
+      {
+        "x": 18,
+        "y": 23,
+        "name": "Thruster of Velocity"
+      },
+      {
+        "x": 21,
+        "y": 25,
+        "name": "Scroll of Commerce"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  }
+]

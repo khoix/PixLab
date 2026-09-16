@@ -5,6 +5,7 @@ import { generateItem } from './items';
 import { calculateScaling, calculatePlayerPower } from './scaling';
 import { recordItemOffer } from './itemEconomy';
 import { generateBossArena, type ArenaBoss } from './arena';
+import { shuffleInPlace } from './shuffle';
 import { ENTITY_CAP, selectionCost, threatBudget } from './ai/encounterBudget';
 
 export const generateLevel = (
@@ -414,7 +415,7 @@ export const generateLevel = (
     }
     
     // Shuffle and take positions
-    const shuffled = [...validItemPositions].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleInPlace([...validItemPositions]);
     const positionsToUse = shuffled.slice(0, Math.min(numItems, shuffled.length));
     
     for (const itemPos of positionsToUse) {
@@ -500,7 +501,7 @@ export const generateLevel = (
       
       // Spawn up to 4 lightswitches, ensuring they're not too close together
       const numLightswitches = Math.min(4, validLightswitchPositions.length);
-      const shuffled = [...validLightswitchPositions].sort(() => Math.random() - 0.5);
+      const shuffled = shuffleInPlace([...validLightswitchPositions]);
       const positionsToUse: Position[] = [];
       const MIN_DISTANCE = 5; // Minimum Manhattan distance between lightswitches
       

@@ -1,0 +1,618 @@
+[
+  {
+    "frame": 60,
+    "virtualMs": 960,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999978
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 4,
+        "y": 5,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 120,
+    "virtualMs": 1920,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999935
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 1.998,
+        "y": 3.292,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 180,
+    "virtualMs": 2880,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 2,
+      "y": 1,
+      "hp": 999892
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 1.432,
+        "y": 3.435,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 3,
+      "holders": 1,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 240,
+    "virtualMs": 3840,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999892
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 3.384,
+        "y": 1.752,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 3,
+      "holders": 1,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999806
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 3.518,
+        "y": 3.446,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 360,
+    "virtualMs": 5760,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999806
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 3.406,
+        "y": 1.677,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 420,
+    "virtualMs": 6720,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 3,
+      "y": 1,
+      "hp": 999806
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 3.593,
+        "y": 3.429,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  },
+  {
+    "frame": 480,
+    "virtualMs": 7680,
+    "world": {
+      "mazeHash": "ba0ac2e7",
+      "floorCount": 408,
+      "exit": "27,27",
+      "rosterHash": "f23504da"
+    },
+    "player": {
+      "x": 1,
+      "y": 1,
+      "hp": 999763
+    },
+    "entities": [
+      {
+        "id": "demo-enemy-0",
+        "subtype": "sniper",
+        "type": "enemy",
+        "x": 6,
+        "y": 1,
+        "hp": 77,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-1",
+        "subtype": "turret",
+        "type": "enemy",
+        "x": 6,
+        "y": 5,
+        "hp": 154,
+        "bossPhase": null
+      },
+      {
+        "id": "demo-enemy-2",
+        "subtype": "moth",
+        "type": "enemy",
+        "x": 1.799,
+        "y": 3.492,
+        "hp": 79,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 3,
+      "cap": 3,
+      "holders": 2,
+      "peakUsed": 3
+    },
+    "items": [
+      {
+        "x": 9,
+        "y": 5,
+        "name": "Scope of Clarity"
+      },
+      {
+        "x": 9,
+        "y": 24,
+        "name": "Scroll of Pathfinding"
+      },
+      {
+        "x": 13,
+        "y": 1,
+        "name": "Amplifier of Foresight"
+      },
+      {
+        "x": 17,
+        "y": 11,
+        "name": "Armor of Warding"
+      }
+    ],
+    "portals": [],
+    "timer": {
+      "advancedMs": 960,
+      "paused": false
+    }
+  }
+]

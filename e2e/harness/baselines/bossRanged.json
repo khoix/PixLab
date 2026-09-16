@@ -1,0 +1,306 @@
+[
+  {
+    "frame": 75,
+    "virtualMs": 1200,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 17,
+      "y": 15,
+      "hp": 1000000
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 0,
+      "paused": false
+    }
+  },
+  {
+    "frame": 150,
+    "virtualMs": 2400,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 17,
+      "y": 15,
+      "hp": 999861
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 225,
+    "virtualMs": 3600,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 18,
+      "y": 15,
+      "hp": 999861
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 300,
+    "virtualMs": 4800,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 18,
+      "y": 13,
+      "hp": 999792
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 375,
+    "virtualMs": 6000,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 17,
+      "y": 13,
+      "hp": 999792
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 450,
+    "virtualMs": 7200,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 19,
+      "y": 15,
+      "hp": 999723
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 0,
+      "cap": 2,
+      "holders": 0,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 525,
+    "virtualMs": 8400,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 17,
+      "y": 15,
+      "hp": 999654
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  },
+  {
+    "frame": 600,
+    "virtualMs": 9600,
+    "world": {
+      "mazeHash": "15749be5",
+      "floorCount": 780,
+      "exit": "28,28",
+      "rosterHash": "c2e16448"
+    },
+    "player": {
+      "x": 17,
+      "y": 14,
+      "hp": 999585
+    },
+    "entities": [
+      {
+        "id": "boss-1",
+        "subtype": "boss_zeus",
+        "type": "boss_enemy",
+        "x": 13,
+        "y": 15,
+        "hp": 634,
+        "bossPhase": null
+      }
+    ],
+    "pressure": {
+      "used": 2,
+      "cap": 2,
+      "holders": 1,
+      "peakUsed": 2
+    },
+    "items": [],
+    "portals": [],
+    "timer": {
+      "advancedMs": 1200,
+      "paused": false
+    }
+  }
+]
