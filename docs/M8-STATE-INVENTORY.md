@@ -186,4 +186,26 @@ The plan's stage order still holds, with one insertion:
    the first rather than stacking. Preserved deliberately: an extraction is the
    wrong place to change how much damage a crowd does, and the fix is a one-line
    read of `statsRef.current` whenever someone decides to.
+   M8.6 took the timers and the spawns: `world/lifetimes.ts` for the four
+   expiry passes, `combat/projectileStep.ts` for a shot's frame,
+   `combat/projectileSpawn.ts` for the four copies of the shot literal, and
+   `advanceTimedPhase` for the sequencing both boss machines share. Two of its
+   four named areas were already done in M6 — `ai/bossAdds.ts` and
+   `ai/encounterBudget.ts` — and the block that uses them is eight lines.
+
+   `claimAttackSlot` is the holdout. Every rule is in `ai/attackPressure.ts`
+   already; what keeps the closure in the component is that it owns
+   `attackPressureRef` and `peakPressureRef`. That is a state-ownership
+   question, so it belongs to M8.7 rather than to a slot-scheduling stage.
+
 5. **M8.7** Slim `GameCanvas` to `OrchestrationState` and confirm exit criteria.
+
+   **The arithmetic is worth stating before that stage starts.** The criterion
+   is ~800 lines and the file is at 3,769 after M8.6. The two blocks that could
+   close that gap are `draw()` at ~930 and the per-subtype AI switch at ~700 —
+   together nearly half of what is left — and neither is M8.7 work as the plan
+   describes it. `draw()` is M8.3's deferred half, still blocked on the renderer
+   sharing the simulation's RNG stream and clock; the switch is M8.5's nominal
+   scope, deferred because the Hades and Ares phase machines live inside it and
+   M8.6 owned boss cycles. Whoever takes M8.7 should expect to schedule both
+   before "confirm exit criteria" means anything.
