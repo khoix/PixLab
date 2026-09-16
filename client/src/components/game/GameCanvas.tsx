@@ -105,6 +105,14 @@ import {
   bufferGameInputDirection,
   gameInputDirectionRef,
 } from '../../lib/game/gameInput';
+import {
+  advanceInterpolation,
+  entersNewFootprintTile,
+  footprintFor,
+  hasLanded,
+  resolvePlayerStep,
+  shouldBufferDirection,
+} from '../../lib/game/movement/playerStep';
 import { triggerHaptic } from '../../lib/game/haptics';
 import { runtimeVisionDebuffRef } from '../../lib/game/runtimeRefs';
 import {
@@ -1071,389 +1079,387 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const effectiveStats = getEffectiveStats(baseStats, loadoutRef.current);
     const moveDelay = getPlayerMoveDelayMs(effectiveStats.speed);
 
-    // Buffer direction changes during tile interpolation for next legal move tick
-    const heldX = Math.round(gameInputDirectionRef.current.x);
-    const heldY = Math.round(gameInputDirectionRef.current.y);
-    if (moveProgressRef.current < 1 && (heldX !== 0 || heldY !== 0)) {
-      bufferGameInputDirection({ x: heldX, y: heldY });
-    }
+    // The step gate, read once at the top of the frame. Everything below wants
+    // this value rather than the interpolated one: a step that finishes inside
+    // this frame's `advanceInterpolation` must not also start the next one, or
+    // holding a direction would move a tile per frame instead of one per
+    // `moveDelay`.
+    const progressAtFrameStart = moveProgressRef.current;
 
-    if (moveProgressRef.current >= 1) {
+    // Buffer direction changes during tile interpolation for next legal move tick
+    const heldDirection = {
+      x: Math.round(gameInputDirectionRef.current.x),
+      y: Math.round(gameInputDirectionRef.current.y),
+    };
+    if (shouldBufferDirection(progressAtFrameStart, heldDirection)) {
+      bufferGameInputDirection(heldDirection);
+    }
+    if (hasLanded(progressAtFrameStart)) {
       applyBufferedGameInput();
     }
 
+    // Re-read rather than reusing `heldDirection`: applying the buffer above
+    // may have replaced it.
     const dx = Math.round(gameInputDirectionRef.current.x);
     const dy = Math.round(gameInputDirectionRef.current.y);
-    const hasInput = dx !== 0 || dy !== 0;
-    const canAttemptMove = moveProgressRef.current >= 1;
 
-    // Update visual position interpolation
-    if (moveProgressRef.current < 1) {
-      moveProgressRef.current = Math.min(1, moveProgressRef.current + (deltaTime / moveDelay));
-      // Use ease-out for smoother deceleration
-      const easedProgress = 1 - Math.pow(1 - moveProgressRef.current, 3);
-      visualPosRef.current = {
-        x: moveStartPosRef.current.x + (playerPosRef.current.x - moveStartPosRef.current.x) * easedProgress,
-        y: moveStartPosRef.current.y + (playerPosRef.current.y - moveStartPosRef.current.y) * easedProgress,
-      };
-    } else {
-      // Ensure visual position matches actual position when not moving
-      visualPosRef.current = { ...playerPosRef.current };
-    }
+    const interpolation = advanceInterpolation({
+      moveProgress: progressAtFrameStart,
+      moveStartPos: moveStartPosRef.current,
+      playerPos: playerPosRef.current,
+      deltaTime,
+      moveDelay,
+    });
+    moveProgressRef.current = interpolation.moveProgress;
+    visualPosRef.current = interpolation.visualPos;
 
-    if (hasInput && canAttemptMove) {
-      moveTimerRef.current += deltaTime;
-      if (moveTimerRef.current > moveDelay) {
-        const nextPos = { x: playerPosRef.current.x + dx, y: playerPosRef.current.y + dy };
-        
-        // Check if phasing is active
-        const isPhasing = activeScrollEffectsRef.current.phasing && activeScrollEffectsRef.current.phasing.active;
-        const canMove = isPhasing || !checkCollision(nextPos, levelRef.current);
-        
-        if (canMove) {
-          // Play movement sound
-          if (lastPlayerPosRef.current.x !== nextPos.x || lastPlayerPosRef.current.y !== nextPos.y) {
-            audioManager.playSound('move');
-          }
-          
-          // Create footprint if player moved to a new tile
-          const currentTileX = Math.floor(nextPos.x);
-          const currentTileY = Math.floor(nextPos.y);
-          const lastFootprintTile = lastFootprintPosRef.current 
-            ? { x: Math.floor(lastFootprintPosRef.current.x), y: Math.floor(lastFootprintPosRef.current.y) }
-            : null;
-          
-          // Create footprint when entering a new tile (not on the same tile)
-          if (!lastFootprintTile || lastFootprintTile.x !== currentTileX || lastFootprintTile.y !== currentTileY) {
-            if (levelRef.current && levelRef.current.footprints) {
-              const isLeftFoot = nextFootIsLeftRef.current;
-              const footprint: Footprint = {
-                id: `footprint-${footprintIdCounterRef.current++}`,
-                pos: { x: nextPos.x, y: nextPos.y },
-                direction: { x: dx, y: dy },
-                isLeftFoot: isLeftFoot,
-                createdAt: getGameNow(),
-                lifetime: 3000, // 3 seconds (fade sooner)
-              };
-              levelRef.current.footprints.push(footprint);
-              lastFootprintPosRef.current = { x: nextPos.x, y: nextPos.y };
-              // Alternate between left and right foot
-              nextFootIsLeftRef.current = !nextFootIsLeftRef.current;
-            }
-          }
-          
-          // Start smooth animation from current visual position (not actual position)
-          // This ensures smooth transitions even when changing direction mid-movement
-          moveStartPosRef.current = { ...visualPosRef.current };
-          moveProgressRef.current = 0;
-          
-          playerPosRef.current = nextPos;
-          lastPlayerPosRef.current = { ...nextPos };
-          moveTimerRef.current = 0;
-          
-          // Check tile triggers
-          const tile = levelRef.current.tiles[nextPos.y][nextPos.x];
-          if (tile === 'exit') {
-            audioManager.playSound('levelComplete');
-            haptic('success');
-            if (perfMonitor.isActive()) {
-              perfMonitor.recordSectorClear(state.currentLevel, true);
-            }
-            onLevelComplete();
-          }
+    const step = resolvePlayerStep({
+      playerPos: playerPosRef.current,
+      direction: { x: dx, y: dy },
+      moveProgress: progressAtFrameStart,
+      moveTimer: moveTimerRef.current,
+      deltaTime,
+      moveDelay,
+      phasing: !!activeScrollEffectsRef.current.phasing?.active,
+      level: levelRef.current,
+    });
+    // The decision owns the timer in every outcome: parked at the delay with no
+    // input, still hot after a block so the retry is immediate, zero after a
+    // step.
+    moveTimerRef.current = step.moveTimer;
 
-          // Check for lightswitch collision
-          const lightswitch = levelRef.current.lightswitches.find(
-            ls => !ls.activated && Math.floor(ls.pos.x) === nextPos.x && Math.floor(ls.pos.y) === nextPos.y
+    if (step.outcome === 'stepped' && step.nextPos) {
+      const nextPos = step.nextPos;
+      // Play movement sound
+      if (lastPlayerPosRef.current.x !== nextPos.x || lastPlayerPosRef.current.y !== nextPos.y) {
+        audioManager.playSound('move');
+      }
+      
+      // One footprint per tile entered, not per frame spent standing on it.
+      if (entersNewFootprintTile(lastFootprintPosRef.current, nextPos)) {
+        if (levelRef.current && levelRef.current.footprints) {
+          levelRef.current.footprints.push(
+            footprintFor({
+              id: `footprint-${footprintIdCounterRef.current++}`,
+              pos: nextPos,
+              direction: { x: dx, y: dy },
+              isLeftFoot: nextFootIsLeftRef.current,
+              createdAt: getGameNow(),
+            }),
           );
-          if (lightswitch) {
-            // Activate lightswitch: full maze reveal for 5 seconds, clear vision debuff, then remove lightswitch
-            audioManager.playSound('itemPickup'); // Reuse sound for lightswitch activation
-            lightswitch.activated = true;
-            lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
-            resetVisionDebuff(visionDebuffRef.current); // Clear Nyx effect
-            runtimeVisionDebuffRef.current = 0;
+          lastFootprintPosRef.current = { x: nextPos.x, y: nextPos.y };
+          // Alternate between left and right foot
+          nextFootIsLeftRef.current = !nextFootIsLeftRef.current;
+        }
+      }
+      
+      // Start smooth animation from current visual position (not actual position)
+      // This ensures smooth transitions even when changing direction mid-movement
+      moveStartPosRef.current = { ...visualPosRef.current };
+      moveProgressRef.current = 0;
+      
+      playerPosRef.current = nextPos;
+      lastPlayerPosRef.current = { ...nextPos };
+      
+      // Check tile triggers
+      const tile = levelRef.current.tiles[nextPos.y][nextPos.x];
+      if (tile === 'exit') {
+        audioManager.playSound('levelComplete');
+        haptic('success');
+        if (perfMonitor.isActive()) {
+          perfMonitor.recordSectorClear(state.currentLevel, true);
+        }
+        onLevelComplete();
+      }
 
-            // Log lightswitch activation event
-            eventLogger.logEvent('environment', 'Activated lightswitch - Full maze reveal for 5s', {
-              type: 'lightswitch',
-              duration: 5000
-            });
-            
-            // Remove lightswitch after reveal ends (handled in update loop)
-          }
+      // Check for lightswitch collision
+      const lightswitch = levelRef.current.lightswitches.find(
+        ls => !ls.activated && Math.floor(ls.pos.x) === nextPos.x && Math.floor(ls.pos.y) === nextPos.y
+      );
+      if (lightswitch) {
+        // Activate lightswitch: full maze reveal for 5 seconds, clear vision debuff, then remove lightswitch
+        audioManager.playSound('itemPickup'); // Reuse sound for lightswitch activation
+        lightswitch.activated = true;
+        lightswitchRevealEndTimeRef.current = now + 5000; // 5 seconds
+        resetVisionDebuff(visionDebuffRef.current); // Clear Nyx effect
+        runtimeVisionDebuffRef.current = 0;
 
-          // Check for item collection
-          const itemIndex = levelRef.current.items.findIndex(
-            item => item.pos.x === nextPos.x && item.pos.y === nextPos.y
-          );
-          if (itemIndex !== -1) {
-            const collectedItem = levelRef.current.items[itemIndex].item;
-            audioManager.playSound('itemPickup');
-            haptic('light');
-            dispatch({ type: 'ADD_ITEM', payload: collectedItem });
-            levelRef.current.items = levelRef.current.items.filter((_, i) => i !== itemIndex);
-            
-            // Log item pickup event
-            const itemName = formatItemName(collectedItem.name);
-            eventLogger.logEvent('loot', `Picked up ${itemName} (${collectedItem.rarity})`, {
-              item: collectedItem
-            });
-          }
+        // Log lightswitch activation event
+        eventLogger.logEvent('environment', 'Activated lightswitch - Full maze reveal for 5s', {
+          type: 'lightswitch',
+          duration: 5000
+        });
+        
+        // Remove lightswitch after reveal ends (handled in update loop)
+      }
 
-          // Auto-attack nearby enemies with weapon-specific mechanics
-          const weapon = loadoutRef.current.weapon;
-          const weaponBaseName = weapon ? getItemBaseName(weapon.name) : null;
+      // Check for item collection
+      const itemIndex = levelRef.current.items.findIndex(
+        item => item.pos.x === nextPos.x && item.pos.y === nextPos.y
+      );
+      if (itemIndex !== -1) {
+        const collectedItem = levelRef.current.items[itemIndex].item;
+        audioManager.playSound('itemPickup');
+        haptic('light');
+        dispatch({ type: 'ADD_ITEM', payload: collectedItem });
+        levelRef.current.items = levelRef.current.items.filter((_, i) => i !== itemIndex);
+        
+        // Log item pickup event
+        const itemName = formatItemName(collectedItem.name);
+        eventLogger.logEvent('loot', `Picked up ${itemName} (${collectedItem.rarity})`, {
+          item: collectedItem
+        });
+      }
+
+      // Auto-attack nearby enemies with weapon-specific mechanics
+      const weapon = loadoutRef.current.weapon;
+      const weaponBaseName = weapon ? getItemBaseName(weapon.name) : null;
+      
+      // Extract weapon level from item name (e.g., "Sword Lv5" -> 5, or use current level as fallback)
+      let weaponLevel = state.currentLevel;
+      if (weapon) {
+        const levelMatch = weapon.name.match(/Lv(\d+)/i);
+        if (levelMatch) {
+          weaponLevel = parseInt(levelMatch[1], 10);
+        }
+      }
+      
+      // Get attackable positions based on weapon type
+      const attackablePositions = getAttackablePositions(nextPos, weaponBaseName, levelRef.current);
+      
+      // Find enemies in attackable positions
+      const attackableEnemies = levelRef.current.entities.filter(enemy => {
+        if (enemy.type !== 'enemy' && enemy.type !== 'boss_enemy') return false;
+        
+        // Check if enemy is in any attackable position using distance-based check
+        // This matches mob attack logic (1.5 tile range for melee, 2.0 for spear)
+        const meleeRange = 1.5;
+        const isInRange = attackablePositions.some(pos => {
+          const dx = enemy.pos.x - pos.x;
+          const dy = enemy.pos.y - pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
           
-          // Extract weapon level from item name (e.g., "Sword Lv5" -> 5, or use current level as fallback)
-          let weaponLevel = state.currentLevel;
-          if (weapon) {
-            const levelMatch = weapon.name.match(/Lv(\d+)/i);
-            if (levelMatch) {
-              weaponLevel = parseInt(levelMatch[1], 10);
-            }
+          // For spear, use 2-tile range (spear attacks 2 tiles in each direction)
+          if (weaponBaseName?.toLowerCase() === 'spear') {
+            return distance <= 2.0;
           }
           
-          // Get attackable positions based on weapon type
-          const attackablePositions = getAttackablePositions(nextPos, weaponBaseName, levelRef.current);
-          
-          // Find enemies in attackable positions
-          const attackableEnemies = levelRef.current.entities.filter(enemy => {
-            if (enemy.type !== 'enemy' && enemy.type !== 'boss_enemy') return false;
-            
-            // Check if enemy is in any attackable position using distance-based check
-            // This matches mob attack logic (1.5 tile range for melee, 2.0 for spear)
-            const meleeRange = 1.5;
-            const isInRange = attackablePositions.some(pos => {
-              const dx = enemy.pos.x - pos.x;
-              const dy = enemy.pos.y - pos.y;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              
-              // For spear, use 2-tile range (spear attacks 2 tiles in each direction)
-              if (weaponBaseName?.toLowerCase() === 'spear') {
-                return distance <= 2.0;
-              }
-              
-              // Default melee range: 1.5 tiles (matching mob attack range)
-              return distance <= meleeRange;
-            });
-            
-            if (!isInRange) return false;
-            
-            // Check line of sight - prevent attacks through walls
-            // Spear has special wall-piercing logic handled later, but still check LOS here
-            if (levelRef.current) {
-              const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-              // For non-spear weapons, require line of sight
-              // For spear, allow it through (wall-piercing logic handles it later)
-              if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
-                return false;
-              }
+          // Default melee range: 1.5 tiles (matching mob attack range)
+          return distance <= meleeRange;
+        });
+        
+        if (!isInRange) return false;
+        
+        // Check line of sight - prevent attacks through walls
+        // Spear has special wall-piercing logic handled later, but still check LOS here
+        if (levelRef.current) {
+          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
+          // For non-spear weapons, require line of sight
+          // For spear, allow it through (wall-piercing logic handles it later)
+          if (weaponBaseName?.toLowerCase() !== 'spear' && !hasLOS) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      if (canPlayerAttack(lastPlayerAttackTimeRef.current, now) && attackableEnemies.length > 0) {
+        let playerAttackLanded = false;
+        attackableEnemies.forEach(enemy => {
+        // Spear: Check if enemy is behind a wall (10% chance to pierce through)
+        if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
+          const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
+          if (!hasLOS) {
+            // Enemy is behind a wall - only 10% chance to hit
+            if (Math.random() >= 0.10) {
+              return; // Attack fails, don't damage enemy
             }
-            
-            return true;
-          });
-          
-          if (canPlayerAttack(lastPlayerAttackTimeRef.current, now) && attackableEnemies.length > 0) {
-            let playerAttackLanded = false;
-            attackableEnemies.forEach(enemy => {
-            // Spear: Check if enemy is behind a wall (10% chance to pierce through)
-            if (weaponBaseName?.toLowerCase() === 'spear' && levelRef.current) {
-              const hasLOS = hasLineOfSightCached(nextPos, enemy.pos, levelRef.current);
-              if (!hasLOS) {
-                // Enemy is behind a wall - only 10% chance to hit
-                if (Math.random() >= 0.10) {
-                  return; // Attack fails, don't damage enemy
-                }
-                // Attack succeeds through wall, but with reduced damage
-                audioManager.playSound('attack');
-                let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
-                enemy.hp -= damage;
-                if (levelRef.current) {
-                  applyEnemyHitFeedback(levelRef.current, enemy, damage, now, false);
-                }
-                playerAttackLanded = true;
-                
-                // Log player attack event
-                const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
-                eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
-                  damage: Math.floor(damage),
-                  enemyType: enemy.mobSubtype,
-                  isBoss: enemy.isBoss,
-                  enemyHp: Math.floor(enemy.hp)
-                });
-                
-                return; // Skip other weapon mechanics for wall-piercing attacks
-              }
-            }
-            
+            // Attack succeeds through wall, but with reduced damage
             audioManager.playSound('attack');
-            
-            // Calculate base damage
-            let damage = effectiveStats.damage;
-            
-            // Dagger: Critical hit chance (higher level = more chance)
-            // Base 10% crit chance, +2% per level
-            let isCrit = false;
-            if (weaponBaseName?.toLowerCase() === 'dagger') {
-              const critChance = 0.10 + (weaponLevel - 1) * 0.02; // 10% base, +2% per level
-              if (Math.random() < critChance) {
-                damage *= 3; // Triple damage on crit
-                isCrit = true;
-              }
-            }
-            
-            // Apply damage
+            let damage = effectiveStats.damage * 0.5; // 50% damage when piercing through wall
             enemy.hp -= damage;
             if (levelRef.current) {
-              applyEnemyHitFeedback(levelRef.current, enemy, damage, now, isCrit);
+              applyEnemyHitFeedback(levelRef.current, enemy, damage, now, false);
             }
             playerAttackLanded = true;
             
             // Log player attack event
             const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
-            const damageMessage = isCrit 
-              ? `CRIT! Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`
-              : `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`;
-            eventLogger.logEvent('combat', damageMessage, {
+            eventLogger.logEvent('combat', `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`, {
               damage: Math.floor(damage),
               enemyType: enemy.mobSubtype,
               isBoss: enemy.isBoss,
-              enemyHp: Math.floor(enemy.hp),
-              isCrit
+              enemyHp: Math.floor(enemy.hp)
             });
             
-            // Mace: Knockback (higher level = more knockback)
-            if (weaponBaseName?.toLowerCase() === 'mace' && enemy.hp > 0) {
-              // Calculate knockback direction (away from player)
-              const dx = enemy.pos.x - nextPos.x;
-              const dy = enemy.pos.y - nextPos.y;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-              
-              if (distance > 0 && levelRef.current) {
-                // Knockback distance: 0.5 tiles base, +0.1 per level.
-                //
-                // Swept a whole tile at a time rather than applied as a vector.
-                // The old fractional push validated only the destination's
-                // floored tile, so a mob shoved to x = 28.45 passed the check
-                // while its sprite visibly overlapped the wall at tile 29 — and
-                // past one tile of distance it could land beyond a wall it was
-                // never allowed to cross.
-                const knockbackDistance = 0.5 + (weaponLevel - 1) * 0.1;
-                enemy.pos = knockbackDestination(
-                  levelRef.current,
-                  enemy.pos,
-                  dx,
-                  dy,
-                  knockbackDistance,
-                );
-              }
-            }
-            
-            if (enemy.hp <= 0) {
-                // Store boss death position for exit placement
-                const bossDeathPos = enemy.isBoss ? { x: Math.floor(enemy.pos.x), y: Math.floor(enemy.pos.y) } : null;
-                
-                // Remove enemy and award coins
-                audioManager.playSound('enemyDeath');
-                audioManager.playSound('coin');
-                levelRef.current!.entities = levelRef.current!.entities.filter(e => e.id !== enemy.id);
-                releaseMobBookkeeping(enemy.id);
-                
-                // Log kill event
-                const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
-                eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
-                  enemyType: enemy.mobSubtype,
-                  isBoss: enemy.isBoss
-                });
-                
-                // If boss was defeated, place exit at boss death location
-                if (enemy.isBoss && bossDeathPos && levelRef.current) {
-                  const exitX = bossDeathPos.x;
-                  const exitY = bossDeathPos.y;
-                  
-                  // Ensure position is within bounds and is a floor tile
-                  if (exitX >= 0 && exitX < levelRef.current.width && 
-                      exitY >= 0 && exitY < levelRef.current.height &&
-                      levelRef.current.tiles[exitY] &&
-                      (levelRef.current.tiles[exitY][exitX] === 'floor' || levelRef.current.tiles[exitY][exitX] === 'wall')) {
-                    // Set the tile to exit (convert wall to floor first if needed)
-                    if (levelRef.current.tiles[exitY][exitX] === 'wall') {
-                      levelRef.current.tiles[exitY][exitX] = 'floor';
-                    }
-                    levelRef.current.tiles[exitY][exitX] = 'exit';
-                    invalidateLosCache(levelRef.current);
-                    // Update exit position
-                    levelRef.current.exitPos = { x: exitX, y: exitY };
-                  }
-                  
-                  // Log boss defeat event
-                  const bossName = formatEntityName(enemy.mobSubtype, true);
-                  eventLogger.logEvent('progression', `Boss ${bossName} defeated`, {
-                    bossType: enemy.mobSubtype
-                  });
-                }
-                
-                // Calculate coin reward based on mob type
-                let coinReward = 10; // Default
-                if (enemy.isBoss) {
-                  coinReward = 100;
-                } else if (enemy.mobSubtype) {
-                  const mobType = MOB_TYPE_BY_SUBTYPE.get(enemy.mobSubtype);
-                  if (mobType) {
-                    coinReward = mobType.coinReward;
-                    // Add level scaling if coinPerLevel is defined
-                    if (mobType.coinPerLevel) {
-                      coinReward += Math.floor(state.currentLevel * mobType.coinPerLevel);
-                    }
-                  }
-                }
-                
-                coinReward *= getModifiers().coinMult;
-                
-                // Apply soft assist multiplier if economy ratio is low
-                const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
-                const assists = getSoftAssistAdjustments(metrics.economyRatio);
-                coinReward = Math.floor(coinReward * assists.coinRewardMultiplier);
-                
-                statsRef.current = { ...statsRef.current, coins: statsRef.current.coins + coinReward };
-                queueStatsUpdate({ coins: statsRef.current.coins });
-                
-                // Log coin collection event
-                eventLogger.logEvent('loot', `Collected ${coinReward} coins`, {
-                  amount: coinReward
-                });
-                
-                // Unlock compendium card on first defeat
-                if (enemy.mobSubtype) {
-                  queueCompendiumUnlock(enemy.mobSubtype);
-                }
-                
-                // Check if all non-boss enemies are cleared
-                if (levelRef.current && !levelRef.current.isBoss && !levelRef.current.isShop) {
-                  const remainingNonBossEnemies = levelRef.current.entities.filter(
-                    e => (e.type === 'enemy' || e.type === 'boss_enemy') && !e.isBoss
-                  );
-                  if (remainingNonBossEnemies.length === 0 && !bonusSelectionRef.current) {
-                    // Generate 2 random bonus options
-                    const allBonuses = ['restore_health', 'double_coins', 'skip_shop', 'skip_boss', 'mystery_box'];
-                    const shuffled = shuffleInPlace([...allBonuses]);
-                    const selectedOptions = shuffled.slice(0, 2);
-                    bonusSelectionRef.current = { options: selectedOptions };
-                    setShowBonusSelection(true);
-                    audioManager.playSound('levelComplete');
-                  }
-                }
-              }
-            });
-            if (playerAttackLanded) {
-              lastPlayerAttackTimeRef.current = now;
-            }
+            return; // Skip other weapon mechanics for wall-piercing attacks
           }
         }
+        
+        audioManager.playSound('attack');
+        
+        // Calculate base damage
+        let damage = effectiveStats.damage;
+        
+        // Dagger: Critical hit chance (higher level = more chance)
+        // Base 10% crit chance, +2% per level
+        let isCrit = false;
+        if (weaponBaseName?.toLowerCase() === 'dagger') {
+          const critChance = 0.10 + (weaponLevel - 1) * 0.02; // 10% base, +2% per level
+          if (Math.random() < critChance) {
+            damage *= 3; // Triple damage on crit
+            isCrit = true;
+          }
+        }
+        
+        // Apply damage
+        enemy.hp -= damage;
+        if (levelRef.current) {
+          applyEnemyHitFeedback(levelRef.current, enemy, damage, now, isCrit);
+        }
+        playerAttackLanded = true;
+        
+        // Log player attack event
+        const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
+        const damageMessage = isCrit 
+          ? `CRIT! Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`
+          : `Dealt ${Math.floor(damage)} damage to ${enemyTypeName}`;
+        eventLogger.logEvent('combat', damageMessage, {
+          damage: Math.floor(damage),
+          enemyType: enemy.mobSubtype,
+          isBoss: enemy.isBoss,
+          enemyHp: Math.floor(enemy.hp),
+          isCrit
+        });
+        
+        // Mace: Knockback (higher level = more knockback)
+        if (weaponBaseName?.toLowerCase() === 'mace' && enemy.hp > 0) {
+          // Calculate knockback direction (away from player)
+          const dx = enemy.pos.x - nextPos.x;
+          const dy = enemy.pos.y - nextPos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0 && levelRef.current) {
+            // Knockback distance: 0.5 tiles base, +0.1 per level.
+            //
+            // Swept a whole tile at a time rather than applied as a vector.
+            // The old fractional push validated only the destination's
+            // floored tile, so a mob shoved to x = 28.45 passed the check
+            // while its sprite visibly overlapped the wall at tile 29 — and
+            // past one tile of distance it could land beyond a wall it was
+            // never allowed to cross.
+            const knockbackDistance = 0.5 + (weaponLevel - 1) * 0.1;
+            enemy.pos = knockbackDestination(
+              levelRef.current,
+              enemy.pos,
+              dx,
+              dy,
+              knockbackDistance,
+            );
+          }
+        }
+        
+        if (enemy.hp <= 0) {
+            // Store boss death position for exit placement
+            const bossDeathPos = enemy.isBoss ? { x: Math.floor(enemy.pos.x), y: Math.floor(enemy.pos.y) } : null;
+            
+            // Remove enemy and award coins
+            audioManager.playSound('enemyDeath');
+            audioManager.playSound('coin');
+            levelRef.current!.entities = levelRef.current!.entities.filter(e => e.id !== enemy.id);
+            releaseMobBookkeeping(enemy.id);
+            
+            // Log kill event
+            const enemyTypeName = formatEntityName(enemy.mobSubtype, enemy.isBoss);
+            eventLogger.logEvent('combat', `Defeated ${enemyTypeName}`, {
+              enemyType: enemy.mobSubtype,
+              isBoss: enemy.isBoss
+            });
+            
+            // If boss was defeated, place exit at boss death location
+            if (enemy.isBoss && bossDeathPos && levelRef.current) {
+              const exitX = bossDeathPos.x;
+              const exitY = bossDeathPos.y;
+              
+              // Ensure position is within bounds and is a floor tile
+              if (exitX >= 0 && exitX < levelRef.current.width && 
+                  exitY >= 0 && exitY < levelRef.current.height &&
+                  levelRef.current.tiles[exitY] &&
+                  (levelRef.current.tiles[exitY][exitX] === 'floor' || levelRef.current.tiles[exitY][exitX] === 'wall')) {
+                // Set the tile to exit (convert wall to floor first if needed)
+                if (levelRef.current.tiles[exitY][exitX] === 'wall') {
+                  levelRef.current.tiles[exitY][exitX] = 'floor';
+                }
+                levelRef.current.tiles[exitY][exitX] = 'exit';
+                invalidateLosCache(levelRef.current);
+                // Update exit position
+                levelRef.current.exitPos = { x: exitX, y: exitY };
+              }
+              
+              // Log boss defeat event
+              const bossName = formatEntityName(enemy.mobSubtype, true);
+              eventLogger.logEvent('progression', `Boss ${bossName} defeated`, {
+                bossType: enemy.mobSubtype
+              });
+            }
+            
+            // Calculate coin reward based on mob type
+            let coinReward = 10; // Default
+            if (enemy.isBoss) {
+              coinReward = 100;
+            } else if (enemy.mobSubtype) {
+              const mobType = MOB_TYPE_BY_SUBTYPE.get(enemy.mobSubtype);
+              if (mobType) {
+                coinReward = mobType.coinReward;
+                // Add level scaling if coinPerLevel is defined
+                if (mobType.coinPerLevel) {
+                  coinReward += Math.floor(state.currentLevel * mobType.coinPerLevel);
+                }
+              }
+            }
+            
+            coinReward *= getModifiers().coinMult;
+            
+            // Apply soft assist multiplier if economy ratio is low
+            const metrics = getOfferPowerMetrics(state.currentLevel, state.loadout);
+            const assists = getSoftAssistAdjustments(metrics.economyRatio);
+            coinReward = Math.floor(coinReward * assists.coinRewardMultiplier);
+            
+            statsRef.current = { ...statsRef.current, coins: statsRef.current.coins + coinReward };
+            queueStatsUpdate({ coins: statsRef.current.coins });
+            
+            // Log coin collection event
+            eventLogger.logEvent('loot', `Collected ${coinReward} coins`, {
+              amount: coinReward
+            });
+            
+            // Unlock compendium card on first defeat
+            if (enemy.mobSubtype) {
+              queueCompendiumUnlock(enemy.mobSubtype);
+            }
+            
+            // Check if all non-boss enemies are cleared
+            if (levelRef.current && !levelRef.current.isBoss && !levelRef.current.isShop) {
+              const remainingNonBossEnemies = levelRef.current.entities.filter(
+                e => (e.type === 'enemy' || e.type === 'boss_enemy') && !e.isBoss
+              );
+              if (remainingNonBossEnemies.length === 0 && !bonusSelectionRef.current) {
+                // Generate 2 random bonus options
+                const allBonuses = ['restore_health', 'double_coins', 'skip_shop', 'skip_boss', 'mystery_box'];
+                const shuffled = shuffleInPlace([...allBonuses]);
+                const selectedOptions = shuffled.slice(0, 2);
+                bonusSelectionRef.current = { options: selectedOptions };
+                setShowBonusSelection(true);
+                audioManager.playSound('levelComplete');
+              }
+            }
+          }
+        });
+        if (playerAttackLanded) {
+          lastPlayerAttackTimeRef.current = now;
+        }
       }
-    } else {
-      moveTimerRef.current = moveDelay;
     }
 
     // Update projectiles FIRST (before entity movement) to avoid timing issues

@@ -21,6 +21,7 @@
  *   crowd     — the attack-pressure scheduler above cap (M8.5/M8.6)
  *   bossRanged — Zeus: ranged telegraph and projectile spawn  (M8.5/M8.6)
  *   bossPhased — Hades: the telegraph/execute/recover machine  (M8.6)
+ *   roam      — mob decisions taken on a coin flip            (M8.4-M8.6)
  *
  * Two boss scenarios, because the bosses do not share a mechanism. Only Hades
  * and Ares drive the `BOSS_CYCLES` phase machine; `boss_zeus`
@@ -238,6 +239,49 @@ export const SCENARIOS: Scenario[] = [
     mobs: [],
     keepGeneratedRoster: true,
     approachBoss: true,
+  },
+  {
+    /**
+     * The scenario that fails when the RNG stream shifts.
+     *
+     * M8.1 measured what the other seven actually gate, by adding one extra
+     * `Math.random()` per frame to `update()` and re-running the suite: only
+     * `ranged` noticed. Positions, hp and cadence were pinned; the *order the
+     * simulation consumes randomness in* was not — and M8.4-M8.6 extract
+     * precisely the code that consumes it. A stage that reordered two draws
+     * would have moved every mob decision downstream and gone green.
+     *
+     * Rather than record a draw count in the digest — which a rendering change
+     * can move, and which `snapshot.ts` explains at length is the wrong kind of
+     * field — this scenario makes a stream shift *visible in the behaviour that
+     * is already recorded*. Mobs are placed outside their own aggro ranges, so
+     * every one of them runs `performIdleRoaming` (GameCanvas.tsx:1920): a
+     * cardinal direction drawn from the stream every 2s of game time. Shift the
+     * stream by one draw and three rolls in four pick a different direction, so
+     * the entity positions in the digest move.
+     *
+     * Ring distances are per-subtype, just outside each mob's `aggroRange`
+     * (`constants.ts`) and inside `classifyAiTier`'s dormancy threshold of
+     * `max(aggroRange, awakeRadius) + 4` — roaming only happens in the band
+     * between the two. `turret` is excluded: `moveSpeed: 0` means it rolls a
+     * direction it can never take.
+     *
+     * The player is left with no input, as in `idle`, so the band holds for the
+     * length of the run rather than collapsing as the player walks in.
+     */
+    name: 'roam',
+    seed: 0x5eed0008,
+    sector: 9,
+    frames: 600,
+    stepMs: STEP_MS,
+    sampleEvery: 60,
+    mobs: [
+      { subtype: 'phase', ring: 5 },
+      { subtype: 'swarm', ring: 6 },
+      { subtype: 'guardian', ring: 7 },
+      { subtype: 'charger', ring: 7 },
+      { subtype: 'drone', ring: 8 },
+    ],
   },
 ];
 
