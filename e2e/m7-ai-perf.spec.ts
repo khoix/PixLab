@@ -137,24 +137,48 @@ test.describe('M7 — AI scheduler in a live sector', () => {
       return Math.hypot(e.pos.x - p.x, e.pos.y - p.y);
     }, ids.near);
 
+    const sample = () =>
+      page.evaluate(
+        ({ near, far, farPos }) => {
+          const api = window.__PIXLAB_LEVEL__!;
+          const p = api.getPlayerPos();
+          const n = api.getEntities().find((x) => x.id === near)!;
+          const f = api.getEntities().find((x) => x.id === far)!;
+          return {
+            nearDist: Math.hypot(n.pos.x - p.x, n.pos.y - p.y),
+            farMoved: f.pos.x !== farPos!.x || f.pos.y !== farPos!.y,
+            stats: window.__PIXLAB_AI__!.getStats(),
+          };
+        },
+        { ...ids, farPos },
+      );
+
+    // The original window, kept at 1500ms: the far mob's "never woke" assertion
+    // is only as strong as the time it had to wake in.
     await page.waitForTimeout(1500);
+    let after = await sample();
 
-    const after = await page.evaluate(
-      ({ near, far, farPos }) => {
-        const api = window.__PIXLAB_LEVEL__!;
-        const p = api.getPlayerPos();
-        const n = api.getEntities().find((x) => x.id === near)!;
-        const f = api.getEntities().find((x) => x.id === far)!;
-        return {
-          nearDist: Math.hypot(n.pos.x - p.x, n.pos.y - p.y),
-          farMoved: f.pos.x !== farPos!.x || f.pos.y !== farPos!.y,
-          stats: window.__PIXLAB_AI__!.getStats(),
-        };
-      },
-      { ...ids, farPos },
-    );
+    // Then wait longer, but only if the near mob has not closed yet.
+    //
+    // This sector runs on real frames and a real clock — a drone needs 250ms of
+    // game time per step — so a worker whose tab loses the compositor on a
+    // loaded machine can be handed *no* frames inside a fixed window. That is
+    // not the mob failing to pursue, it is the mob never being asked to, and it
+    // failed one full-suite run here with the distance unmoved at exactly its
+    // starting value. The assertion below is unchanged; only the patience is.
+    const deadline = Date.now() + 8000;
+    while (after.nearDist >= startDist && Date.now() < deadline) {
+      await page.waitForTimeout(150);
+      after = await sample();
+    }
 
-    expect(after.nearDist).toBeLessThan(startDist);
+    expect(
+      after.nearDist,
+      `the near mob never closed: ${startDist} -> ${after.nearDist} across ` +
+        `${after.stats.frames} scheduler frames (processed ${after.stats.processed}, ` +
+        `dormant-skipped ${after.stats.skippedDormant}). A frame count near zero means the ` +
+        `tab was starved; a healthy one means pursuit really did stop.`,
+    ).toBeLessThan(startDist);
     expect(after.farMoved).toBe(false);
     expect(after.stats.skippedDormant).toBeGreaterThan(0);
     expect(after.stats.processed).toBeGreaterThan(0);
